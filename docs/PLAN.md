@@ -9,7 +9,7 @@ A living document. Update the status table when a phase changes state.
 | 0 | Foundation: repo, sources, pedagogy, curriculum maps for sessions 1–5 | done 2026-09-14 | — |
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
-| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | not started | 1 session + 1–2 days of use |
+| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | build steps 1 and 2 done 2026-09-14. Next: Bibek uses the pages (step 3). | 1–2 days of use |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
 | 5 | Sessions 1 and 2, remaining modules (20) | not started | 40–80 h of packets, 3–6 sessions |
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
@@ -258,7 +258,7 @@ A curriculum question with no options, such as most pretest questions, is a
 ```ts
 {
   version: 1,
-  modules: { [id]: { startedAt: string, completedAt?: string, pretest?: { right, total } } },
+  modules: { [id]: { startedAt: string, completedAt?: string, pretest?: { right, total }, pretestDoneAt?: string } },
   answers: { [itemId]: Array<{ at: string, correct, confidence: "sure" | "think" | "guess" }> },
   cards:   { [cardId]: { box: 1..5, due: "YYYY-MM-DD", lapses } }
 }
