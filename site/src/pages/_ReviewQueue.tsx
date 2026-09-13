@@ -11,6 +11,8 @@ export interface ReviewCard {
   /** A card ID, or a quiz item ID that a check put in the queue. */
   id: string;
   front: string;
+  /** The options of a choice item, in file order. They show under the question. */
+  options?: string[];
   back: string;
   /** Only a quiz item has one. It shows under the answer. */
   explanation?: string;
@@ -120,6 +122,15 @@ export default function ReviewQueue({ cards, progressHref }: Props) {
         <h2 tabIndex={-1}>
           <Inline text={card.front} />
         </h2>
+        {card.options && card.options.length > 0 && (
+          <ul class="options">
+            {card.options.map((option) => (
+              <li key={option}>
+                <Inline text={option} />
+              </li>
+            ))}
+          </ul>
+        )}
         <div aria-live="polite">
           {!shown && (
             <>

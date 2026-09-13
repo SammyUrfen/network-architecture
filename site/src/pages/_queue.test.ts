@@ -44,7 +44,7 @@ describe('quizCard', () => {
   const base = { use: ['check'], prompt: 'The question?', explanation: 'Why.', covers: ['S01-C92'], tags: [] };
   const option = (text: string, correct: boolean) => ({ text, correct, feedback: 'f' });
 
-  it('puts the prompt on the front and the right answer on the back of each type', () => {
+  it('puts the prompt and the options on the front, and the right answer on the back, of each type', () => {
     const items = [
       { ...base, id: 's01-m08-q01', type: 'mcq', options: [option('No', false), option('Any split', true), option('Two', false)] },
       { ...base, id: 's01-m08-q05', type: 'multi', options: [option('A', true), option('B', false), option('C', true)] },
@@ -54,12 +54,12 @@ describe('quizCard', () => {
       { ...base, id: 's01-m08-q12', type: 'order', items: ['socket', 'connect'] },
     ].map((item) => quizItem.parse(item));
     expect(items.map(quizCard)).toEqual([
-      { id: 's01-m08-q01', front: 'The question?', back: 'Any split', explanation: 'Why.' },
-      { id: 's01-m08-q05', front: 'The question?', back: 'A\nC', explanation: 'Why.' },
-      { id: 's01-m08-q04', front: 'The question?', back: '255 bytes', explanation: 'Why.' },
-      { id: 's01-m08-q11', front: 'The question?', back: '1.5 ± 0.1', explanation: 'Why.' },
-      { id: 's01-m08-q07', front: 'The question?', back: 'A length or a delimiter.', explanation: 'Why.' },
-      { id: 's01-m08-q12', front: 'The question?', back: '1. socket\n2. connect', explanation: 'Why.' },
+      { id: 's01-m08-q01', front: 'The question?', options: ['No', 'Any split', 'Two'], back: 'Any split', explanation: 'Why.' },
+      { id: 's01-m08-q05', front: 'The question?', options: ['A', 'B', 'C'], back: 'A\nC', explanation: 'Why.' },
+      { id: 's01-m08-q04', front: 'The question?', options: [], back: '255 bytes', explanation: 'Why.' },
+      { id: 's01-m08-q11', front: 'The question?', options: [], back: '1.5 ± 0.1', explanation: 'Why.' },
+      { id: 's01-m08-q07', front: 'The question?', options: [], back: 'A length or a delimiter.', explanation: 'Why.' },
+      { id: 's01-m08-q12', front: 'The question?', options: [], back: '1. socket\n2. connect', explanation: 'Why.' },
     ]);
   });
 

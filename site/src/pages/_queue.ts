@@ -13,12 +13,14 @@ export function examDatesFor(session: number, assessments: ReadonlyArray<{ date:
 }
 
 /**
- * A quiz item as a review card: the prompt on the front, the right answer on
- * the back. A check answered "sure" and wrong puts its item ID in
- * `progress.cards` (components/check/record.ts), so the queue needs the item.
+ * A quiz item as a review card: the prompt and the options on the front, the
+ * right answer on the back. A check answered "sure" and wrong puts its item ID
+ * in `progress.cards` (components/check/record.ts), so the queue needs the item.
+ * A prompt such as "Which of these..." needs its options to make sense.
  */
-export function quizCard(item: QuizItem): { id: string; front: string; back: string; explanation: string } {
-  return { id: item.id, front: item.prompt, back: answerOf(item), explanation: item.explanation };
+export function quizCard(item: QuizItem): { id: string; front: string; options: string[]; back: string; explanation: string } {
+  const options = 'options' in item && item.options ? item.options.map((option) => option.text) : [];
+  return { id: item.id, front: item.prompt, options, back: answerOf(item), explanation: item.explanation };
 }
 
 // One line for each right option or each step. The review island keeps the line breaks.
