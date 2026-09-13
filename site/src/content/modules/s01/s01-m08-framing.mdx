@@ -9,7 +9,7 @@ covers: [S01-C89, S01-C90, S01-C91, S01-C92, S01-C93, S01-C94, S01-C95, S01-C96,
 prereqs: [s01-m01-seven-syscalls, s01-m07-see-the-bytes-tls]
 threads: [T-framing, T-skip-unknown]
 confidence: high
-status: draft
+status: ready
 terms:
   - term: byte stream
     meaning: bytes in order, with no marks between writes
@@ -226,7 +226,7 @@ HTTP uses a delimiter for its head. CR LF ends each header line, and an empty li
   ]}
 />
 
-Homework 3 of slide 47 asks you to make the echo server do more than echo, and to notice which framing you pick. Most people pick a newline first. Test it with a message that holds a newline.
+Homework 3 of slide 47 asks you to make the echo server do more than echo, and to notice which framing you pick. If you pick a newline, test it with a message that holds a newline.
 
 <ExamDepth>
 
@@ -265,6 +265,15 @@ The IPv4 header and the TCP header each have a fixed part of 20 bytes. Options c
 1. The sender counts the bytes of the message.
 2. It writes the count in a field of fixed width, such as 1 byte. Then it writes the bytes.
 3. The reader reads the count first. Then it takes exactly that many bytes as one message.
+
+<ByteView
+  caption="Length prefix: 1 byte of length before each message"
+  messages={[
+    { name: 'Message 1', fields: [{ hex: '02', kind: 'length', label: 'length: 2' }, { text: 'hi' }] },
+    { name: 'Message 2', fields: [{ hex: '05', kind: 'length', label: 'length: 5' }, { text: 'hello' }] },
+    { name: 'Message 3', fields: [{ hex: '03', kind: 'length', label: 'length: 3' }, { text: 'abc' }] },
+  ]}
+/>
 
 The reader never scans the data, so the data can hold any byte. That is why slide 39 calls the length prefix binary-safe.
 
@@ -306,34 +315,49 @@ Slide 39 calls the length prefix robust, binary-safe, and "what most modern prot
 | Fixed length | trivial parse | padding, and N can never change |
 | Delimiter | readable, no size needed up front | escape the delimiter in the data |
 | Length prefix | binary-safe, no scan | the sender must know the size first, and the field width caps it |
-| Both | readable control lines, a safe binary payload | two parsers, two ways to fail, and request smuggling in the gap (Session 5) |
+| Both | readable control lines, a safe binary payload | two parsers, two ways to fail, and request smuggling in the gap (Session 2 slide 36, Session 5) |
 
-- **Redis in two decks.** Slide 47 calls RESP "text and length-prefixed". Session 2 slide 36 lists Redis under delimiter. RESP uses both rules. The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\r\n`. Each `$N` gives the byte count of the next part, and CR LF ends each line.
+- **Redis in two decks.** Slide 47 calls RESP "text and length-prefixed". Session 2 slide 36 lists Redis under delimiter. Both decks hold, because RESP uses both rules.
+
+<Beyond source="Redis serialization protocol specification, sections Bulk strings and Sending commands" url="https://redis.io/docs/latest/develop/reference/protocol-spec/">
+
+The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\r\n`. Each `$N` gives the byte count of the next part, and CR LF ends each line. The diagram frames the three messages of Part 2 in the same way.
 
 <ByteView
-  caption="Both rules, in the RESP style of Redis: a text length, CR LF, the bytes, CR LF"
+  caption="Both rules, as RESP bulk strings: a text length, CR LF, the bytes, CR LF"
   view="text"
   messages={[
     {
-      name: 'Part 1',
+      name: 'Message 1',
       fields: [
-        { text: '$4', kind: 'length', label: 'length: 4' },
+        { text: '$2', kind: 'length', label: 'length: 2' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
-        { text: 'LLEN', label: 'data' },
-        { text: '\r\n', kind: 'delimiter', label: 'end of the part' },
+        { text: 'hi', label: 'data' },
+        { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
       ],
     },
     {
-      name: 'Part 2',
+      name: 'Message 2',
       fields: [
-        { text: '$6', kind: 'length', label: 'length: 6' },
+        { text: '$5', kind: 'length', label: 'length: 5' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
-        { text: 'mylist', label: 'data' },
-        { text: '\r\n', kind: 'delimiter', label: 'end of the part' },
+        { text: 'hello', label: 'data' },
+        { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
+      ],
+    },
+    {
+      name: 'Message 3',
+      fields: [
+        { text: '$3', kind: 'length', label: 'length: 3' },
+        { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
+        { text: 'abc', label: 'data' },
+        { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
       ],
     },
   ]}
 />
+
+</Beyond>
 
 - **A length lets a reader skip.** A reader that meets a message type it does not know can jump over it by its length. <ModuleLink id="s01-m11-tlv-asn1" /> builds on that idea.
 
@@ -379,7 +403,7 @@ A real network can split the same bytes in another way. So a reader must never c
     problem: 'A 1-byte length prefix. The stream `03 61 62 63 02 68 69` arrives in three reads: `03 61`, then `62 63 02 68`, then `69`.',
     steps: [
       'Read 1 starts with `03`, so message 1 has 3 bytes. Keep `61`, its first byte.',
-      'Read 2 gives `62 63`. Message 1 is `61 62 63`, the text "abc", across two reads.',
+      'Read 2 gives `62 63 02 68`. Its first two bytes, `62 63`, complete message 1: `61 62 63`, the text "abc", across two reads.',
       'The next byte, `02`, is the length of message 2. Keep `68`.',
       'Read 3 gives `69`. Message 2 is `68 69`, the text "hi", across two reads.',
     ],
