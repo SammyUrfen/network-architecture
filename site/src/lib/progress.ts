@@ -18,10 +18,18 @@ const PROGRESS_VERSION = 1;
 
 export type Confidence = 'sure' | 'think' | 'guess';
 
-/** Timestamps are ISO 8601 strings. */
+/**
+ * Timestamps are ISO 8601 strings. `pretestDoneAt` marks a pretest with every
+ * guess locked, recall guesses too. `pretest` is the score, and only a pretest
+ * with a grade for every item has one. A file from before `pretestDoneAt` has
+ * only the score, and it is still version 1.
+ */
 export interface Progress {
   version: typeof PROGRESS_VERSION;
-  modules: Record<string, { startedAt: string; completedAt?: string; pretest?: { right: number; total: number } }>;
+  modules: Record<
+    string,
+    { startedAt: string; completedAt?: string; pretestDoneAt?: string; pretest?: { right: number; total: number } }
+  >;
   answers: Record<string, Array<{ at: string; correct: boolean; confidence: Confidence }>>;
   cards: Record<string, CardState>;
 }
@@ -106,6 +114,7 @@ export function parseProgress(json: string): Progress {
       isRecord(m) &&
         isTime(m.startedAt) &&
         (m.completedAt === undefined || isTime(m.completedAt)) &&
+        (m.pretestDoneAt === undefined || isTime(m.pretestDoneAt)) &&
         (m.pretest === undefined ||
           (isRecord(m.pretest) && isCount(m.pretest.total) && isCount(m.pretest.right) && m.pretest.right <= m.pretest.total)),
       `modules.${id}`,

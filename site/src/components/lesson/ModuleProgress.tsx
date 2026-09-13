@@ -19,8 +19,10 @@ export default function ModuleProgress({ id }: Props) {
   const cards = count(progress.cards, 'c');
   // The exit quiz writes completedAt when every exit item has an answer.
   const completedAt = progress.modules[id]?.completedAt;
+  // A file from before pretestDoneAt marks a done pretest with its score only.
+  const pretestDone = Boolean(progress.modules[id]?.pretestDoneAt || progress.modules[id]?.pretest);
   const steps = [
-    { label: 'Pretest', done: Boolean(progress.modules[id]?.pretest), state: 'done' },
+    { label: 'Pretest', done: pretestDone, state: 'done' },
     { label: 'Questions', done: answered > 0, state: `${answered} answered` },
     { label: 'Review cards', done: cards > 0, state: `${cards} added` },
     { label: 'Done', done: Boolean(completedAt), state: completedAt ? `on ${localDay(new Date(completedAt))}` : '' },
