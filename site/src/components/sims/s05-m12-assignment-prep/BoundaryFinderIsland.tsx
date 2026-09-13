@@ -11,7 +11,7 @@ export interface Props {}
 
 function phaseText(phase: Phase, r: RequestLayout, arrived: number) {
   if (phase === 'waiting') return 'no bytes yet.';
-  if (phase === 'head') return 'the head is not complete, because its empty line did not arrive.';
+  if (phase === 'head') return 'the head is not complete, because its empty line did not fully arrive.';
   if (phase === 'body') return `the head is complete, but the body has ${arrived - r.headEnd - 1} of its ${r.end - r.headEnd} bytes.`;
   return 'complete.';
 }
@@ -155,7 +155,7 @@ export default function BoundaryFinderIsland(_: Props) {
               ? `The buffer keeps bytes ${view.buffer.start} to ${view.buffer.end}, a part of request ${bufferOwner}.`
               : 'The buffer is empty.'}
             {at === last &&
-              ' The stream ends here. If the client keeps the connection open, no end of file arrives, so the next read waits for more bytes.'}
+              ' The stream ends here. If the client keeps the connection open, no end of file arrives. A blocking read waits for more bytes, until the idle timeout fires.'}
           </p>
         </div>
         {at < last && (

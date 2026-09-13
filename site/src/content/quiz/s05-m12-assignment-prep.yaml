@@ -95,7 +95,7 @@ items:
     type: recall
     prompt: Two GET requests arrive back to back on one socket. Where does the first one end?
     model: At the empty line after its headers. A GET here has no body.
-    explanation: A request with no Content-Length has no body, so its empty line is its last 2 bytes. The next byte starts request 2.
+    explanation: A request with no Content-Length and no Transfer-Encoding has no body, so its empty line is its last 2 bytes. The next byte starts request 2.
     covers: [S05-C09]
     tags: []
 

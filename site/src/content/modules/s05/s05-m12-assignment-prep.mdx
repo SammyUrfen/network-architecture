@@ -9,7 +9,7 @@ covers: [S05-C04, S05-C05, S05-C06, S05-C07, S05-C08, S05-C09, S05-C10, S05-C11]
 prereqs: [s05-m02-keepalive-host, s05-m04-range-chunked-extras, s01-m08-framing, s01-m04-clients]
 threads: [T-framing, T-setup-off-path]
 confidence: high
-status: draft
+status: ready
 terms:
   - { term: persistent connection, meaning: "one TCP connection that carries many requests, one after another" }
   - { term: head, meaning: "the request line and the headers, up to and including the empty line" }
@@ -147,7 +147,7 @@ The stepper uses the stream and the reads of the finder: 30 bytes, then 50, then
       ],
     },
     {
-      caption: 'Read 3 gives bytes 80 to 113. The empty line ends at byte 113. The head has no Content-Length, so request 2 has no body.',
+      caption: 'Read 3 gives bytes 80 to 113. The empty line ends at byte 113. The head has no Content-Length and no Transfer-Encoding, so request 2 has no body.',
       lanes: [
         { label: 'Waiting for', chunks: ['nothing: request 2 is complete'] },
         { label: 'Buffer', chunks: ['head of request 2, bytes 67 to 113'] },
@@ -202,11 +202,11 @@ A valid Content-Length with no Transfer-Encoding gives the body length in bytes.
 
 <ExamDepth>
 
-**The timeout trade-off.** A short idle timeout frees server memory, but it drops a slow client. A long timeout keeps idle sockets open. The lab server sends `Keep-Alive: timeout=15, max=100` on the wire (our capture, loopback). Pick your own number, and be ready to defend it (S05-C10).
+**The timeout trade-off.** A short idle timeout frees server memory, but it drops a slow client. A long timeout keeps idle sockets open. The lab server sends `Keep-Alive: timeout=15, max=100` on the wire (our capture, scratch copy, loopback, 2026-09-13). Pick your own number, and be ready to defend it (S05-C10).
 
 **Pipelining.** If six requests arrive in one read, answer them in order. A response carries no request number, so the client matches each response to a request by its position. RFC 9112 §9.3.2 requires the same order.
 
-**Why a response needs its own length.** Your client reads a kept connection too. Without a Content-Length on the response, the client cannot find where the response ends.
+**Why a response needs its own length.** The client reads a kept connection too. Without a length on the response, a Content-Length or chunked encoding, the client cannot find where the response ends.
 
 </ExamDepth>
 
@@ -263,9 +263,13 @@ A 405 means that the server knows the method, but the target resource does not s
 
 <ExamDepth>
 
+<Beyond source="RFC 9110 §15.6.1, §15.6.2" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.6.1">
+
 **Why not 500 for a division by zero?** RFC 9110 §15.6.1 keeps 500 for an unexpected condition inside the server. A division by zero comes from the client input, and the server can see it before it divides. So the answer is 400.
 
 **Why not 501 for POST?** RFC 9110 §15.6.2 uses 501 when the server does not recognize the method for any resource. Your server knows POST as a method. Only this path refuses it, so the answer is 405.
+
+</Beyond>
 
 **Errors on a kept connection.** The marking run holds three errors: a 400, a 404 and a 405. The socket must stay open through all of them. Slide 3 does not say what must happen after the no-Host 400 or the a=x 400. Test those cases on separate connections, and ask the instructor.
 
@@ -281,10 +285,11 @@ A 405 means that the server knows the method, but the target resource does not s
 
 <Predict id="s05-m12-q08">
 
-Our run on a scratch copy of the lab, over loopback, on 2026-09-13. The dots mark lines that we left out.
+Our run on a scratch copy of the lab, over loopback, on 2026-09-13. The dots mark lines and values that we left out. `talk.py` prints its "no more data" line before it prints the responses.
 
 ```text
 --- sent 91 bytes
+--- no more data after 3.0s: the server is holding the connection open
 HTTP/1.1 200 OK
 ...
 Content-Length: 55
@@ -293,8 +298,7 @@ HTTP/1.1 200 OK
 ...
 Content-Length: 32
 ...
---- no more data after 3.0s: the server is holding the connection open
---- received 757 bytes
+--- received 757 bytes in ... ms
 ```
 
 </Predict>
