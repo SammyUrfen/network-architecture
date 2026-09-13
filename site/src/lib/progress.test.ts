@@ -128,6 +128,7 @@ describe('import', () => {
     ['a due date with a time', JSON.stringify({ ...saved, cards: { x: { box: 1, due: '2026-09-17T00:00', lapses: 0 } } }), /cards\.x/],
     ['a wrong confidence', JSON.stringify({ ...saved, answers: { q: [{ at: '2026-09-14T10:05:00Z', correct: true, confidence: 'maybe' }] } }), /answers\.q/],
     ['a pretest with more right than total', JSON.stringify({ ...saved, modules: { m: { startedAt: '2026-09-14T10:00:00Z', pretest: { right: 4, total: 3 } } } }), /modules\.m/],
+    ['a pretestDoneAt that is not a time', JSON.stringify({ ...saved, modules: { m: { startedAt: '2026-09-14T10:00:00Z', pretestDoneAt: true } } }), /modules\.m/],
     ['a missing section', JSON.stringify({ version: 1, modules: {}, answers: {} }), /cards/],
   ];
 
@@ -147,6 +148,17 @@ describe('parseProgress', () => {
     expect(p.parseProgress(JSON.stringify({ ...saved, cards: {} }))).toEqual({ ...saved, cards: {} });
     expect(storage.calls).toBe(0);
     expect(p.$progress.get()).toEqual(saved);
+  });
+
+  it('reads a version 1 file from before pretestDoneAt, and adds no field', () => {
+    const old = p.parseProgress(savedJson);
+    expect(old).toEqual(saved);
+    expect(old.modules['s01-m08-framing']).not.toHaveProperty('pretestDoneAt');
+  });
+
+  it('reads a recall-only pretest: pretestDoneAt with no score', () => {
+    const modules = { 's05-m12-assignment-prep': { startedAt: '2026-09-14T10:00:00.000Z', pretestDoneAt: '2026-09-14T10:02:00.000Z' } };
+    expect(p.parseProgress(JSON.stringify({ ...saved, modules })).modules).toEqual(modules);
   });
 
   it('throws the import error for a bad file, and still touches no storage', () => {

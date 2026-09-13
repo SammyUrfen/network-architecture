@@ -71,6 +71,10 @@ The check islands show these types: `mcq`, `predict`, `multi`, `numeric`,
 A missing quiz item ID, or a module with no item for a `use`, also fails the
 build.
 
+In a quiz file with 3 or more `mcq` and `predict` items, move the right
+option between positions. Verify rule 9 fails a file with the right option
+at the same position in all of them. The islands do not shuffle options.
+
 ---
 
 ## 2. Lesson blocks
@@ -117,9 +121,10 @@ All in `src/components/check/`. Each wrapper adds `client:load`.
 
 How the check blocks behave:
 
-- The pretest shows no grade and no model answer. It saves
-  `modules[id].pretest` only when every pretest item has a grade. A `recall`
-  guess has no grade.
+- The pretest shows no grade and no model answer. When every guess is
+  locked, it saves `modules[id].pretestDoneAt`, and the progress bar marks
+  the pretest done. It saves the score `modules[id].pretest` only when every
+  pretest item has a grade. A `recall` guess has no grade.
 - The exit quiz shows each pretest guess of this page view. A reload clears
   the guesses.
 - A wrong pick names its misconception with the statement from the
@@ -153,6 +158,7 @@ shows two layers.
 | `SourceBadge` | Astro | `status: 'complete' \| 'partial' \| 'missing'` | Session source status |
 | `/review/` island `_ReviewQueue.tsx` | Island, no wrapper | `cards: ReviewCard[]`, `progressHref: string`. `ReviewCard` is `{ id; front; options?; back; explanation?; examDates }`. | Holds the cards and every quiz item |
 | `/progress/` island `_ProgressTools.tsx` | Island, no wrapper | No props | Export, import, reset |
+| `/` island `_Today.tsx` | Island, no wrapper | `reviewIds: string[]`, `reviewHref: string`, `modules: { id; title; href }[]` in course order | The due count from the `/review/` logic. The "continue" link goes to the unfinished module that started last, else the first module with no start. With neither, no link. |
 
 The review queue holds two kinds of entries:
 
@@ -190,7 +196,7 @@ The store writes through to one `localStorage` key, `na-progress`.
 
 | Export | Type | What it does |
 |---|---|---|
-| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3 |
+| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3. A module also has the optional `pretestDoneAt`. A version 1 file with no `pretestDoneAt` stays valid. |
 | `Confidence` | type | `'sure' \| 'think' \| 'guess'` |
 | `$progress` | `atom<Progress>` | The progress. It reads storage on the first subscriber, never at import. |
 | `$progressProblem` | `atom<string \| null>` | The reason why the stored data is not in use: bad data, a newer version, or blocked storage. While it is set, changes stay in memory. |
@@ -236,6 +242,7 @@ narrow the item before the call.
 | Field | Writer | When |
 |---|---|---|
 | `modules[id].startedAt` | `Pretest`, `ExitQuiz` | The first time either one finishes |
+| `modules[id].pretestDoneAt` | `Pretest` | The first time every pretest guess is locked, a `recall` guess too |
 | `modules[id].pretest` | `Pretest` | Every pretest item has a grade |
 | `modules[id].completedAt` | `ExitQuiz` | Every exit item has an answer |
 | `answers[itemId]` | the check islands | Each graded answer |

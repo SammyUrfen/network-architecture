@@ -2,10 +2,20 @@
 import { getCollection } from 'astro:content';
 import SourceBadge from '../components/SourceBadge.astro';
 import Base from '../layouts/Base.astro';
-import { day, href, sessionHref } from '../lib/url';
+import { day, href, moduleHref, sessionHref } from '../lib/url';
+import Today from './_Today';
 
 const sessions = (await getCollection('sessions')).sort((a, b) => a.data.number - b.data.number);
 const modules = await getCollection('modules');
+const lessons = modules
+  .map((m) => m.data)
+  .sort((a, b) => a.session - b.session || a.order - b.order)
+  .map(({ id, title }) => ({ id, title, href: moduleHref(id) }));
+// The same IDs as the review queue: every card and every quiz item.
+const reviewIds = [
+  ...(await getCollection('cards')).flatMap((entry) => entry.data.items.map((card) => card.id)),
+  ...(await getCollection('quiz')).flatMap((entry) => entry.data.items.map((item) => item.id)),
+];
 const assessments = (await getCollection('assessments')).sort(
   (a, b) => (a.data.date?.getTime() ?? Infinity) - (b.data.date?.getTime() ?? Infinity),
 );
@@ -18,7 +28,9 @@ const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
 
   <section aria-labelledby="today">
     <h2 id="today">Today</h2>
-    <p><a href={href('review/')}>The review queue</a> shows the cards that are due today.</p>
+    <Today client:only="preact" reviewIds={reviewIds} reviewHref={href('review/')} modules={lessons}>
+      <p slot="fallback">Loading the cards that are due today.</p>
+    </Today>
   </section>
 
   <section aria-labelledby="graded">

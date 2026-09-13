@@ -1,0 +1,26 @@
+# The right option moves between the three choice items, so this file passes.
+items:
+  - id: s02-m01-gamma-q01
+    use: [practice]
+    type: mcq
+    prompt: One?
+    options:
+      - { text: One., correct: true, feedback: Yes. }
+      - { text: Two., correct: false, misconception: S02-M01, feedback: No. }
+      - { text: Three., correct: false, misconception: S02-M01, feedback: No. }
+  - id: s02-m01-gamma-q02
+    use: [practice]
+    type: predict
+    prompt: Two?
+    options:
+      - { text: One., correct: false, misconception: S02-M01, feedback: No. }
+      - { text: Two., correct: true, feedback: Yes. }
+      - { text: Three., correct: false, misconception: S02-M01, feedback: No. }
+  - id: s02-m01-gamma-q03
+    use: [practice]
+    type: mcq
+    prompt: Three?
+    options:
+      - { text: One., correct: false, misconception: S02-M01, feedback: No. }
+      - { text: Two., correct: false, misconception: S02-M01, feedback: No. }
+      - { text: Three., correct: true, feedback: Yes. }

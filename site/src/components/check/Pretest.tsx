@@ -23,10 +23,12 @@ export default function Pretest({ module, items, misconceptions }: Props) {
     const all = Object.values(next);
     if (all.length < items.length) return;
     // A guess at a recall item has no grade, so a score exists only when every item has a grade.
+    // The pretest is done either way: every guess is locked.
     const score = all.every((r) => r.correct !== null) ? { right: all.filter((r) => r.correct).length, total: all.length } : undefined;
     setSaveProblem(
       save((progress) => {
         const entry = (progress.modules[module] ??= { startedAt: new Date().toISOString() });
+        entry.pretestDoneAt ??= new Date().toISOString();
         if (score) entry.pretest = score;
         return progress;
       }),

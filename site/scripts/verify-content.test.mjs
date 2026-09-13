@@ -54,8 +54,15 @@ describe('content rules', () => {
     [6, 2],
     [7, 1],
     [8, 1],
+    [9, 1],
   ])('rule %i fails on its fixture, with %i failures', (rule, defects) => {
     const { failures } = verify(fixture(`content/rule${rule}`), curriculum);
     expect(failures.map((failure) => failure.rule)).toEqual(Array(defects).fill(rule));
+  });
+
+  test('rule 9 names the file and the position of the right option', () => {
+    const [failure] = verify(fixture('content/rule9'), curriculum).failures;
+    expect(failure.file).toMatch(/s01-m01-alpha\.yaml$/);
+    expect(failure.message).toMatch(/option 2 in all 3 mcq and predict items/);
   });
 });
