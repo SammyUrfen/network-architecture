@@ -1,8 +1,110 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { href } from '../lib/url';
+import ReviewQueue from './_ReviewQueue';
+import { examDatesFor } from './_queue';
+
+const assessments = (await getCollection('assessments')).map((entry) => entry.data);
+const cards = (await getCollection('cards')).flatMap((entry) =>
+  entry.data.items.map(({ id, front, back }) => ({
+    id,
+    front,
+    back,
+    // The digits after "s" are the session: s01-m08-c04 belongs to Session 1.
+    examDates: examDatesFor(Number(id.slice(1, 3)), assessments),
+  })),
+);
 ---
 
 <Base title="Review">
   <h1>Review</h1>
-  <p>The review queue comes in Phase 2.</p>
+  <p class="lead">
+    A card comes back after 1, 3, 7, 14 and then 30 days. A right answer moves it to the next gap. A wrong answer
+    brings it back tomorrow. Before a graded date, each card of its sessions comes back in the week before.
+  </p>
+  <div class="queue">
+    <ReviewQueue client:only="preact" cards={cards} progressHref={href('progress/')}>
+      <p slot="fallback">Loading your review queue.</p>
+    </ReviewQueue>
+  </div>
 </Base>
+
+<style>
+  .lead {
+    color: var(--text-muted);
+  }
+  .queue :global(.count),
+  .queue :global(.label) {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .queue :global(.card),
+  .queue :global(.empty) {
+    margin-top: var(--space-2);
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--interactive);
+    border-radius: var(--radius);
+  }
+  .queue :global(h2) {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-lg);
+  }
+  .queue :global(.back) {
+    margin-top: 0;
+    font-weight: 600;
+  }
+  .queue :global(fieldset) {
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    border: 0;
+  }
+  .queue :global(legend) {
+    margin-bottom: var(--space-2);
+    padding: 0;
+  }
+  .queue :global(.buttons) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .queue :global(button) {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .queue :global(button:hover) {
+    border-color: var(--interactive);
+  }
+  .queue :global(.result) {
+    padding: var(--space-2) var(--space-3);
+    border-left: 4px solid;
+    border-radius: var(--radius);
+  }
+  .queue :global(.right) {
+    color: var(--correct);
+    background: var(--correct-bg);
+  }
+  .queue :global(.wrong) {
+    color: var(--wrong);
+    background: var(--wrong-bg);
+  }
+  .queue :global(.loud) {
+    font-size: var(--text-lg);
+    border-left-width: 8px;
+  }
+  .queue :global(.problem) {
+    padding: var(--space-3);
+    color: var(--wrong);
+    background: var(--wrong-bg);
+    border-radius: var(--radius);
+  }
+</style>
