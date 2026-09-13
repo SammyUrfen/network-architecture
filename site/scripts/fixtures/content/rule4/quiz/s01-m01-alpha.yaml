@@ -19,6 +19,6 @@ items:
     type: mcq
     prompt: A wrong option with no feedback.
     options:
-      - { text: Right., correct: true, feedback: Right. }
       - { text: Wrong., correct: false, misconception: S01-M01, feedback: No. }
+      - { text: Right., correct: true, feedback: Right. }
       - { text: Also wrong., correct: false, misconception: S01-M02 }

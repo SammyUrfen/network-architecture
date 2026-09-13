@@ -1,4 +1,4 @@
-// The content gate. It checks the eight rules of "What `npm run verify`
+// The content gate. It checks the nine rules of "What `npm run verify`
 // checks" in docs/PLAN.md section 5, and prints one line for each failure.
 // The curriculum files stay the single source of truth: this script reads
 // only the four line patterns below from them, never a copy.
@@ -118,6 +118,14 @@ export function verify(contentDir, curriculumDir) {
   }
 
   for (const { file, items } of quizFiles) {
+    // Rule 9. An item with no right option already fails rule 4, so it does not count here.
+    const rightIndexes = items
+      .filter((item) => item.type === 'mcq' || item.type === 'predict')
+      .map((item) => list(item.options).findIndex((option) => option?.correct === true))
+      .filter((index) => index >= 0);
+    if (rightIndexes.length >= 3 && rightIndexes.every((index) => index === rightIndexes[0])) {
+      fail(file, 9, `the right option is option ${rightIndexes[0] + 1} in all ${rightIndexes.length} mcq and predict items, vary its position`);
+    }
     for (const item of items) {
       checkCovers(file, item.id, item.covers);
       // Rule 2

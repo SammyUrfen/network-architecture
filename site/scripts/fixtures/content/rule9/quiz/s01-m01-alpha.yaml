@@ -1,0 +1,33 @@
+# The right option is option 2 in all three choice items: one rule 9 failure.
+# The recall item has no options, so it does not count.
+items:
+  - id: s01-m01-alpha-q01
+    use: [practice]
+    type: mcq
+    prompt: One?
+    options:
+      - { text: Two., correct: false, misconception: S01-M01, feedback: No. }
+      - { text: One., correct: true, feedback: Yes. }
+      - { text: Three., correct: false, misconception: S01-M02, feedback: No. }
+  - id: s01-m01-alpha-q02
+    use: [practice]
+    type: predict
+    prompt: Two?
+    options:
+      - { text: One., correct: false, misconception: S01-M01, feedback: No. }
+      - { text: Two., correct: true, feedback: Yes. }
+      - { text: Three., correct: false, misconception: S01-M02, feedback: No. }
+  - id: s01-m01-alpha-q03
+    use: [practice]
+    type: mcq
+    prompt: Three?
+    options:
+      - { text: One., correct: false, misconception: S01-M01, feedback: No. }
+      - { text: Three., correct: true, feedback: Yes. }
+      - { text: Two., correct: false, misconception: S01-M02, feedback: No. }
+      - { text: Four., correct: false, misconception: S01-M02, feedback: No. }
+  - id: s01-m01-alpha-q04
+    use: [practice]
+    type: recall
+    prompt: Four?
+    model: Four.
