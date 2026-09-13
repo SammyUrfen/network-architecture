@@ -12,9 +12,6 @@ items:
     type: spot-bug
     prompt: A server calls recv(4096) one time and treats the bytes as one whole request. What breaks?
     options:
-      - text: A read can hold half a request, or the end of one request and the start of the next.
-        correct: true
-        feedback: TCP keeps no message edges, so even a small request can arrive split or joined.
       - text: Nothing. One read is one request.
         correct: false
         misconception: S05-M44
@@ -23,6 +20,9 @@ items:
         correct: false
         misconception: S05-M44
         feedback: Size does not protect a request. A 47-byte request can arrive in two reads, or share a read with the next request.
+      - text: A read can hold half a request, or the end of one request and the start of the next.
+        correct: true
+        feedback: TCP keeps no message edges, so even a small request can arrive split or joined.
     explanation: A recv() returns the bytes that wait, up to the size you ask for. The server must find where each request ends in those bytes.
     covers: [S05-C09]
     tags: []
@@ -33,6 +33,10 @@ items:
     type: mcq
     prompt: 'The calculator gets `GET /div?a=1&b=0`, a division by zero. Which status fits?'
     options:
+      - text: 200 OK, with an error message in the body
+        correct: false
+        misconception: S05-M45
+        feedback: A 200 says that the request worked. The client sent bad input, so 400.
       - text: 400 Bad Request
         correct: true
         feedback: The input is wrong, not the server.
@@ -40,10 +44,6 @@ items:
         correct: false
         misconception: S05-M45
         feedback: The server did not fail. The client sent bad input, so 400.
-      - text: 200 OK, with an error message in the body
-        correct: false
-        misconception: S05-M45
-        feedback: A 200 says that the request worked. The client sent bad input, so 400.
     explanation: Slide 3 asks for 400 when the input is bad, such as a division by zero or a value that is not a number. RFC 9110 §15.5.1 ties 400 to a client error.
     covers: [S05-C06]
     tags: []
@@ -54,13 +54,13 @@ items:
     type: mcq
     prompt: '`POST /add` arrives, and the path allows only GET. Which status fits?'
     options:
-      - text: 405 Method Not Allowed
-        correct: true
-        feedback: The path exists and the server knows POST, so 405, with an Allow header that lists GET.
       - text: 404 Not Found
         correct: false
         misconception: S05-M46
         feedback: The path exists. Only the method is wrong for it, so 405.
+      - text: 405 Method Not Allowed
+        correct: true
+        feedback: The path exists and the server knows POST, so 405, with an Allow header that lists GET.
       - text: 501 Not Implemented
         correct: false
         misconception: S05-M46
@@ -122,13 +122,13 @@ items:
     type: predict
     prompt: 'The lab server runs on port 8011, over loopback. `talk.py` sends two GET requests, for /style.css and /app.js, in one send, and keeps the socket open. The requests have no Connection header. How many status lines come back?'
     options:
-      - text: Two, one for each request, in the order of the requests.
-        correct: true
-        feedback: That is what the loopback run showed. Two 200 responses came back, and then the socket stayed open with no more data.
       - text: One. One send holds one request, so the server answers one.
         correct: false
         misconception: S05-M44
         feedback: The server found two requests in the bytes of one send, so it gave two answers.
+      - text: Two, one for each request, in the order of the requests.
+        correct: true
+        feedback: That is what the loopback run showed. Two 200 responses came back, and then the socket stayed open with no more data.
       - text: One, and then the server closes, because the requests do not ask for keep-alive.
         correct: false
         misconception: S05-M05
