@@ -1,8 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
+import ModuleLink from '../../components/lesson/ModuleLink.astro';
 import SourceBadge from '../../components/SourceBadge.astro';
 import Base from '../../layouts/Base.astro';
-import { day, href, moduleHref } from '../../lib/url';
+import { day, href } from '../../lib/url';
 
 export async function getStaticPaths() {
   const sessions = await getCollection('sessions');
@@ -10,9 +11,15 @@ export async function getStaticPaths() {
 }
 
 const { data: s } = Astro.props.entry;
-const modules = (await getCollection('modules', (m) => m.data.session === s.number)).sort(
-  (a, b) => a.data.order - b.data.order,
-);
+const pages = new Map((await getCollection('modules', (m) => m.data.session === s.number)).map((m) => [m.id, m.data]));
+
+// The planned modules, in the order of their headings in the curriculum file,
+// with the line pattern of scripts/verify-content.mjs. Sessions 6 to 8 have no file yet.
+const curriculum = import.meta.glob<string>('../../../../docs/curriculum/session-*.md', { query: '?raw', import: 'default', eager: true });
+const text = curriculum[`../../../../docs/curriculum/session-${String(s.number).padStart(2, '0')}.md`] ?? '';
+const planned = [...text.matchAll(/^### (s\d\d-m\d\d-[a-z0-9-]+)$/gm)].map((match) => match[1]);
+// A page with no heading still shows, after the planned modules.
+const modules = [...planned, ...[...pages.keys()].filter((id) => !planned.includes(id))];
 ---
 
 <Base title={`Session ${s.number}: ${s.title}`}>
@@ -30,17 +37,22 @@ const modules = (await getCollection('modules', (m) => m.data.session === s.numb
   <h2>Lessons</h2>
   {
     modules.length === 0 ? (
-      <p class="empty">No lesson pages yet.</p>
+      <p class="empty">No lessons are planned yet. The plan comes after the class.</p>
     ) : (
       <ol class="modules">
-        {modules.map(({ id, data: m }) => (
-          <li value={m.order}>
-            <a href={moduleHref(id)}>{m.title}</a>
-            <span class="minutes">
-              {m.minutes} min{m.status === 'draft' ? ' · draft' : ''}
-            </span>
-          </li>
-        ))}
+        {modules.map((id) => {
+          const m = pages.get(id);
+          return (
+            <li>
+              <ModuleLink id={id} />
+              {m && (
+                <span class="minutes">
+                  {m.minutes} min{m.status === 'draft' ? ' · draft' : ''}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ol>
     )
   }

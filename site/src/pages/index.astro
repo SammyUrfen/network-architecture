@@ -18,7 +18,7 @@ const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
 
   <section aria-labelledby="today">
     <h2 id="today">Today</h2>
-    <p class="placeholder">Cards due today and a "continue" link come in Phase 2.</p>
+    <p><a href={href('review/')}>The review queue</a> shows the cards that are due today.</p>
   </section>
 
   <section aria-labelledby="graded">
@@ -62,10 +62,6 @@ const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
   .lead {
     font-size: var(--text-lg);
     color: var(--text-muted);
-  }
-  .placeholder {
-    color: var(--text-muted);
-    font-style: italic;
   }
   .plain {
     padding-left: var(--space-6);

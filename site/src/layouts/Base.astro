@@ -118,6 +118,34 @@ const here = Astro.url.pathname;
   details > summary {
     cursor: pointer;
   }
+  /* Text for screen readers only. Islands and components use this one class. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* The plain button of pages and progress islands. The check islands and the
+     Stepper keep their own button looks in check.css and Stepper.astro. The
+     min-height gives a 44 px touch target. */
+  .btn,
+  input[type='file']::file-selector-button {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .btn:hover,
+  input[type='file']::file-selector-button:hover {
+    border-color: var(--interactive);
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -180,18 +208,17 @@ const here = Astro.url.pathname;
     text-decoration-color: var(--key);
     text-decoration-thickness: 2px;
   }
-  /* On a phone the toggle sits next to the site name and the nav takes its
-     own row. Tab order stays: name, nav, toggle. */
+  /* On a phone the site name takes the first row. The nav is a grid of two
+     columns, so no link sits alone on a row, and the toggle sits to its
+     right. The screen order then matches the Tab order: name, nav, toggle. */
   @media (max-width: 40rem) {
-    .site-header {
-      justify-content: space-between;
-    }
-    nav {
-      order: 3;
+    .brand {
       flex-basis: 100%;
     }
     nav ul {
-      column-gap: var(--space-3);
+      display: grid;
+      grid-template-columns: repeat(2, max-content);
+      column-gap: var(--space-6);
     }
   }
   main {

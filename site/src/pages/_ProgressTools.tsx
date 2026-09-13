@@ -6,6 +6,7 @@ import {
   $progressProblem,
   exportProgress,
   importProgress,
+  parseProgress,
   resetProgress,
   type Progress,
 } from '../lib/progress';
@@ -56,6 +57,14 @@ export default function ProgressTools(_: Props) {
     if (!file) return;
     const json = await file.text();
     input.value = ''; // so the same file can be chosen again
+    // A bad file shows its error now, not after a confirm step that it can never pass.
+    try {
+      parseProgress(json);
+    } catch (error) {
+      setPending(null);
+      setStatus({ action: 'import', ok: false, text: `${(error as Error).message} Your saved progress did not change.` });
+      return;
+    }
     // Ask first only when the import can replace saved progress.
     if (isEmpty($progress.get())) apply(file.name, json);
     else ask({ action: 'import', name: file.name, json });
@@ -94,10 +103,10 @@ export default function ProgressTools(_: Props) {
     <div class="confirm" role="group" aria-label="Confirm">
       <p>{question}</p>
       <div class="buttons">
-        <button type="button" ref={cancelButton} onClick={close}>
+        <button type="button" class="btn" ref={cancelButton} onClick={close}>
           Cancel
         </button>
-        <button type="button" class="danger" onClick={confirm}>
+        <button type="button" class="btn danger" onClick={confirm}>
           {label}
         </button>
       </div>
@@ -129,7 +138,7 @@ export default function ProgressTools(_: Props) {
 
       <h2>Export</h2>
       <p>Save your progress as a JSON file. Export before you clear the browser data or open the site at a new address. The file does not hold the theme choice.</p>
-      <button type="button" onClick={download}>
+      <button type="button" class="btn" onClick={download}>
         Export progress
       </button>
       {note('export')}
@@ -146,7 +155,7 @@ export default function ProgressTools(_: Props) {
 
       <h2>Reset</h2>
       <p>Delete all progress on this site: modules, answers and review cards. The theme choice stays.</p>
-      <button type="button" ref={resetButton} onClick={() => ask({ action: 'reset' })}>
+      <button type="button" class="btn" ref={resetButton} onClick={() => ask({ action: 'reset' })}>
         Reset progress
       </button>
       {pending?.action === 'reset' &&

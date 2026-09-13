@@ -8,7 +8,7 @@ A living document. Update the status table when a phase changes state.
 |---|---|---|---|
 | 0 | Foundation: repo, sources, pedagogy, curriculum maps for sessions 1–5 | done 2026-09-14 | — |
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
-| 2 | Components for the two pilot pages, progress store, review page | not started | 2 sessions, 6–8 h |
+| 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
 | 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | not started | 1 session + 1–2 days of use |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
 | 5 | Sessions 1 and 2, remaining modules (20) | not started | 40–80 h of packets, 3–6 sessions |
