@@ -13,8 +13,8 @@ items:
     back: Both sides agreed on the length N before the connection started.
     covers: [S01-C93, S01-C97]
   - id: s01-m08-c04
-    front: What is the cost of a delimiter?
-    back: The sender must escape it when it appears in the data.
+    front: What is the cost of framing messages with a delimiter?
+    back: The sender must escape the delimiter when the data holds it. Otherwise the reader ends the message too early.
     covers: [S01-C95]
   - id: s01-m08-c05
     front: What is the cost of a length prefix?
