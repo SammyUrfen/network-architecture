@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import ModuleLink from '../../components/lesson/ModuleLink.astro';
+import Base from '../../layouts/Base.astro';
+import { href } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const threads = await getCollection('threads');
+  return threads.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const modules = (await getCollection('modules', (m) => m.data.threads.includes(entry.id))).sort(
+  (a, b) => a.data.session - b.data.session || a.data.order - b.data.order,
+);
+---
+
+<Base title={entry.id}>
+  <p class="crumb"><a href={href('threads/')}>Threads</a></p>
+  <h1>{entry.id}</h1>
+  <p>{entry.data.idea}</p>
+  <p class="crumb">First seen in Session {entry.data.firstSeen}. Design questions come in Phase 8.</p>
+  <h2>Lessons that use it</h2>
+  {
+    modules.length === 0 ? (
+      <p class="crumb">No lesson pages yet.</p>
+    ) : (
+      <ul>
+        {modules.map((m) => (
+          <li>
+            <ModuleLink id={m.id} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Base>
+
+<style>
+  .crumb {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

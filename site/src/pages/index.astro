@@ -1,17 +1,108 @@
 ---
+import { getCollection } from 'astro:content';
+import SourceBadge from '../components/SourceBadge.astro';
+import Base from '../layouts/Base.astro';
+import { day, href, sessionHref } from '../lib/url';
 
+const sessions = (await getCollection('sessions')).sort((a, b) => a.data.number - b.data.number);
+const modules = await getCollection('modules');
+const assessments = (await getCollection('assessments')).sort(
+  (a, b) => (a.data.date?.getTime() ?? Infinity) - (b.data.date?.getTime() ?? Infinity),
+);
+const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base title="Map">
+  <h1>Network Architecture</h1>
+  <p class="lead">The course, one idea at a time. Pick a session, or review what is due.</p>
+
+  <section aria-labelledby="today">
+    <h2 id="today">Today</h2>
+    <p class="placeholder">Cards due today and a "continue" link come in Phase 2.</p>
+  </section>
+
+  <section aria-labelledby="graded">
+    <h2 id="graded">Graded work</h2>
+    <ul class="plain">
+      {
+        assessments.map((a) => (
+          <li>
+            <strong>{a.data.title}</strong>, {a.data.weight}% of the grade:{' '}
+            {a.data.date ? `${a.data.dateApprox ? 'about ' : ''}${day(a.data.date)}` : 'date not known'}
+          </li>
+        ))
+      }
+    </ul>
+    <p><a href={href('assessments/')}>All graded work</a></p>
+  </section>
+
+  <section aria-labelledby="map">
+    <h2 id="map">Sessions</h2>
+    <ol class="sessions">
+      {
+        sessions.map(({ data: s }) => (
+          <li>
+            <a class="card" href={sessionHref(s.number)}>
+              <span class="num">Session {s.number}</span>
+              <span class="title">{s.title}</span>
+              <span class="meta">
+                {s.dateApprox ? 'about ' : ''}
+                {day(s.date)} · {pages(s.number)} lesson {pages(s.number) === 1 ? 'page' : 'pages'}
+              </span>
+              <SourceBadge status={s.sourceStatus} />
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+</Base>
+
+<style>
+  .lead {
+    font-size: var(--text-lg);
+    color: var(--text-muted);
+  }
+  .placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .plain {
+    padding-left: var(--space-6);
+  }
+  .sessions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    height: 100%;
+    padding: var(--space-4);
+    color: var(--text);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--key);
+    border-radius: var(--radius);
+  }
+  .card:hover {
+    border-color: var(--border);
+    border-left-color: var(--key);
+  }
+  .num,
+  .meta {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .title {
+    font-weight: 600;
+    color: var(--interactive);
+  }
+</style>

@@ -1,0 +1,6 @@
+number: 3
+title: Server Side Considerations for scale
+subtitle: select · epoll · CGI · FastCGI · and what your favourite server actually does
+date: 2026-08-27
+dateApprox: true
+sourceStatus: complete
