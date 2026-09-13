@@ -1,0 +1,15 @@
+# Instructor material stays local. The repo may go public later, and the
+# slides, notes and code belong to the instructor and the school.
+sources/*
+!sources/MANIFEST.md
+
+# Site build output (the site lives in site/ from Phase 1)
+node_modules/
+dist/
+.astro/
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+__pycache__/
