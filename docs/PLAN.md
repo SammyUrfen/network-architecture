@@ -7,7 +7,7 @@ A living document. Update the status table when a phase changes state.
 | Phase | What | Status | Estimate |
 |---|---|---|---|
 | 0 | Foundation: repo, sources, pedagogy, curriculum maps for sessions 1–5 | done 2026-09-14 | — |
-| 1 | Site skeleton, theme, content schema, gate scripts | not started | 1 session, 3–4 h |
+| 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | not started | 2 sessions, 6–8 h |
 | 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | not started | 1 session + 1–2 days of use |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
@@ -532,6 +532,9 @@ rows in Sessions 2 to 5. No script reads them. Phase 8 reads them by hand.
 - Use port 4399 for preview, or 4401 and up in a worktree. Bibek reads on
   port 4400. Never stop or reuse a dev server that Bibek started.
 - Stop only the process you started, by its PID. Never use a broad `pkill`.
+- In Astro 7, `astro preview` runs as a background daemon. The PID from `$!`
+  is only the wrapper. Stop the PID that the log line names, for example
+  "pid 915797".
 
 ---
 
