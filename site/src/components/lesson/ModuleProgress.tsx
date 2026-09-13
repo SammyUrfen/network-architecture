@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/preact';
 import { $progress } from '../../lib/progress';
+import { localDay } from '../../lib/schedule';
 
 export interface Props {
   /** The module ID, such as s01-m08-framing. */
@@ -16,10 +17,13 @@ export default function ModuleProgress({ id }: Props) {
     Object.keys(record).filter((key) => key.startsWith(`${id.slice(0, 8)}${kind}`)).length;
   const answered = count(progress.answers, 'q');
   const cards = count(progress.cards, 'c');
+  // The exit quiz writes completedAt when every exit item has an answer.
+  const completedAt = progress.modules[id]?.completedAt;
   const steps = [
     { label: 'Pretest', done: Boolean(progress.modules[id]?.pretest), state: 'done' },
     { label: 'Questions', done: answered > 0, state: `${answered} answered` },
     { label: 'Review cards', done: cards > 0, state: `${cards} added` },
+    { label: 'Done', done: Boolean(completedAt), state: completedAt ? `on ${localDay(new Date(completedAt))}` : '' },
   ];
 
   return (
@@ -27,11 +31,12 @@ export default function ModuleProgress({ id }: Props) {
       <p style={{ margin: '0 0 var(--space-1)', color: 'var(--text-muted)' }}>
         Your progress: {steps.filter((step) => step.done).length} of {steps.length} steps
       </p>
-      <ol style={{ display: 'flex', gap: 'var(--space-2)', margin: 0, padding: 0, listStyle: 'none' }}>
+      {/* 9rem steps: four in a row on a wide screen, two in a row on a phone. */}
+      <ol style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', margin: 0, padding: 0, listStyle: 'none' }}>
         {steps.map((step) => (
           <li
             style={{
-              flex: '1 1 0',
+              flex: '1 1 9rem',
               paddingTop: 'var(--space-1)',
               borderTop: `6px solid ${step.done ? 'var(--correct)' : 'var(--rule)'}`,
             }}

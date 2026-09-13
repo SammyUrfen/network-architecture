@@ -77,8 +77,12 @@ export function resetProgress(): void {
   $progress.set(emptyProgress());
 }
 
-/** Validates a progress file. Throws an Error with a message for the learner. */
-function parseProgress(json: string): Progress {
+/**
+ * Validates a progress file and changes no data. Throws an Error with a
+ * message for the learner. The progress page calls it before it asks to
+ * replace the saved progress.
+ */
+export function parseProgress(json: string): Progress {
   let data: unknown;
   try {
     data = JSON.parse(json);

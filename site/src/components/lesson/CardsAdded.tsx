@@ -43,7 +43,7 @@ export default function CardsAdded({ cards }: Props) {
         )}
       </p>
       {missing > 0 && (
-        <button type="button" onClick={add}>
+        <button type="button" class="btn" onClick={add}>
           {missing === cards.length ? `Add ${missing} cards to my review queue` : `Add the other ${missing} cards`}
         </button>
       )}

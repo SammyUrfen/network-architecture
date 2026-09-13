@@ -1,4 +1,5 @@
 // The pure parts of the review page, out of the island so that a test can run them.
+import type { QuizItem } from '../lib/grade';
 import { day } from '../lib/url';
 import { isDue, type CardState } from '../lib/schedule';
 
@@ -12,12 +13,38 @@ export function examDatesFor(session: number, assessments: ReadonlyArray<{ date:
 }
 
 /**
+ * A quiz item as a review card: the prompt and the options on the front, the
+ * right answer on the back. A check answered "sure" and wrong puts its item ID
+ * in `progress.cards` (components/check/record.ts), so the queue needs the item.
+ * A prompt such as "Which of these..." needs its options to make sense.
+ */
+export function quizCard(item: QuizItem): { id: string; front: string; options: string[]; back: string; explanation: string } {
+  const options = 'options' in item && item.options ? item.options.map((option) => option.text) : [];
+  return { id: item.id, front: item.prompt, options, back: answerOf(item), explanation: item.explanation };
+}
+
+// One line for each right option or each step. The review island keeps the line breaks.
+function answerOf(item: QuizItem): string {
+  if ('options' in item && item.options) {
+    return item.options.flatMap((option) => (option.correct ? [option.text] : [])).join('\n');
+  }
+  if (item.type === 'numeric') {
+    const { value, tolerance, unit } = item.answer;
+    return [String(value), tolerance ? `± ${tolerance}` : '', unit ?? ''].filter(Boolean).join(' ');
+  }
+  if (item.type === 'order') return item.items.map((text, i) => `${i + 1}. ${text}`).join('\n');
+  if (item.type === 'recall') return item.model;
+  if (item.type === 'bytes') return item.answer ?? `Bytes ${item.field?.[0]} to ${item.field?.[1]} of \`${item.hex}\``;
+  return item.type === 'spot-bug' ? `Line ${item.bugLines?.join(', ')}` : '';
+}
+
+/**
  * The cards with a saved state that is due, the oldest due day first. On the
- * same day, the card number comes next, so the modules mix: every c01, then
- * every c02 (docs/PEDAGOGY.md, "Interleaving in review").
+ * same day, the number at the end of the ID comes next, so the modules mix:
+ * every c01 and q01, then every c02 (docs/PEDAGOGY.md, "Interleaving in review").
  */
 export function dueCards<T extends { id: string }>(cards: readonly T[], saved: Record<string, CardState>, now: Date): T[] {
-  const number = (id: string) => Number(id.slice(id.lastIndexOf('-c') + 2));
+  const number = (id: string) => Number(/\d+$/.exec(id)?.[0]);
   return cards
     .filter((card) => saved[card.id] && isDue(saved[card.id], now))
     .sort((a, b) => saved[a.id].due.localeCompare(saved[b.id].due) || number(a.id) - number(b.id) || a.id.localeCompare(b.id));
