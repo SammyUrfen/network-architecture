@@ -1,0 +1,14 @@
+# Stub for Phase 1. The item is the sample in docs/PLAN.md section 3.
+items:
+  - id: s01-m08-q01
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: The sender calls write() two times, "hello" then "world". What can one read() return?
+    options:
+      - { text: "Always exactly \"hello\".", correct: false, misconception: S01-M04, feedback: TCP keeps no mark between writes. }
+      - { text: "Any split, such as \"helloworld\".", correct: true, feedback: Right. A read returns the bytes that arrived. }
+      - { text: "The two words in two reads, one for each packet.", correct: false, misconception: S01-M32, feedback: TCP can split or merge writes. }
+    explanation: A read returns the bytes available, from 1 up to the buffer size. The application finds the message end.
+    covers: [S01-C92]
+    tags: []

@@ -1,0 +1,6 @@
+# Stub for Phase 1. The card is the sample in docs/PLAN.md section 3.
+items:
+  - id: s01-m08-c04
+    front: What is the cost of a delimiter?
+    back: The sender must escape it when it appears in the data.
+    covers: [S01-C95]

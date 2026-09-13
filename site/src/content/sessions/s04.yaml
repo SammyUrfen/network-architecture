@@ -1,0 +1,6 @@
+number: 4
+title: nginx deep dive
+subtitle: A trimmed history · what nginx actually changed · the features you configure · and one long walk through the source.
+date: 2026-09-04
+dateApprox: true
+sourceStatus: complete
