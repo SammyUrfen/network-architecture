@@ -1,0 +1,22 @@
+# The review cards of s05-m12-assignment-prep, from docs/curriculum/session-05.md.
+items:
+  - id: s05-m12-c01
+    front: On a persistent connection, what marks the end of a request with no body?
+    back: The empty line after the headers.
+    covers: [S05-C09]
+  - id: s05-m12-c02
+    front: How many body bytes belong to a request with Content-Length n?
+    back: Exactly n. Byte n+1 belongs to the next request.
+    covers: [S05-C09]
+  - id: s05-m12-c03
+    front: Which status fits bad query values, such as a division by zero?
+    back: 400 Bad Request.
+    covers: [S05-C06]
+  - id: s05-m12-c04
+    front: Which status fits a known path with a method that the path does not allow?
+    back: 405 Method Not Allowed, with an Allow header.
+    covers: [S05-C07]
+  - id: s05-m12-c05
+    front: When is the calculator assignment due?
+    back: Before Session 7.
+    covers: [S05-C04]
