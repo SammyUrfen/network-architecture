@@ -254,13 +254,4 @@ if ('error' in first) throw new Error(`FramingSandbox "${props.title}": ${first.
     font-size: var(--text-sm);
     color: var(--text-muted);
   }
-  .sandbox-figure :global(.sr-only) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
 </style>

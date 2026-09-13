@@ -319,9 +319,9 @@ Slide 39 calls the length prefix robust, binary-safe, and "what most modern prot
 
 - **Redis in two decks.** Slide 47 calls RESP "text and length-prefixed". Session 2 slide 36 lists Redis under delimiter. Both decks hold, because RESP uses both rules.
 
-<Beyond source="Redis serialization protocol specification, sections Bulk strings and Sending commands" url="https://redis.io/docs/latest/develop/reference/protocol-spec/">
+<Beyond source="Redis serialization protocol specification, sections Bulk strings, Arrays and Sending commands" url="https://redis.io/docs/latest/develop/reference/protocol-spec/">
 
-The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\r\n`. Each `$N` gives the byte count of the next part, and CR LF ends each line. The diagram frames the three messages of Part 2 in the same way.
+The command `LLEN mylist` crosses the wire as `*2\r\n`, then `$4\r\nLLEN\r\n`, then `$6\r\nmylist\r\n`, with no gaps. `*2` says that two elements follow. In each element, `$N` gives the byte count of the data after it, and CR LF ends each line. The diagram frames the three messages of Part 2 in the same way.
 
 <ByteView
   caption="Both rules, as RESP bulk strings: a text length, CR LF, the bytes, CR LF"
@@ -330,7 +330,7 @@ The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\
     {
       name: 'Message 1',
       fields: [
-        { text: '$2', kind: 'length', label: 'length: 2' },
+        { text: '$2', kind: 'length', label: '$, then the length as text' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
         { text: 'hi', label: 'data' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
@@ -339,7 +339,7 @@ The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\
     {
       name: 'Message 2',
       fields: [
-        { text: '$5', kind: 'length', label: 'length: 5' },
+        { text: '$5', kind: 'length', label: '$, then the length as text' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
         { text: 'hello', label: 'data' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
@@ -348,7 +348,7 @@ The command `LLEN mylist` crosses the wire as `*2\r\n$4\r\nLLEN\r\n$6\r\nmylist\
     {
       name: 'Message 3',
       fields: [
-        { text: '$3', kind: 'length', label: 'length: 3' },
+        { text: '$3', kind: 'length', label: '$, then the length as text' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the length line' },
         { text: 'abc', label: 'data' },
         { text: '\r\n', kind: 'delimiter', label: 'end of the message' },
