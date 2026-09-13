@@ -1,6 +1,22 @@
-# Stub for Phase 1. The card is the sample in docs/PLAN.md section 3.
+# The review cards of s01-m08-framing, from docs/curriculum/session-01.md.
 items:
+  - id: s01-m08-c01
+    front: What does TCP deliver to the receiver?
+    back: A byte stream, with no edges between messages.
+    covers: [S01-C92]
+  - id: s01-m08-c02
+    front: Which two rules can mark where a message ends?
+    back: A length or a delimiter.
+    covers: [S01-C97]
+  - id: s01-m08-c03
+    front: Why is a fixed length a length rule?
+    back: Both sides agreed on the length N before the connection started.
+    covers: [S01-C93, S01-C97]
   - id: s01-m08-c04
     front: What is the cost of a delimiter?
     back: The sender must escape it when it appears in the data.
     covers: [S01-C95]
+  - id: s01-m08-c05
+    front: What is the cost of a length prefix?
+    back: The sender must know the size of the message before it sends the first byte.
+    covers: [S01-C96]
