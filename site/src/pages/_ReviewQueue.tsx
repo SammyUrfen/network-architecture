@@ -1,13 +1,19 @@
 import { useStore } from '@nanostores/preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { $progress, $progressProblem, updateProgress, type Confidence } from '../lib/progress';
+import Confidence from '../components/check/Confidence';
+import Inline from '../components/check/Inline';
+import '../components/check/check.css';
+import { $progress, $progressProblem, updateProgress, type Confidence as Level } from '../lib/progress';
 import { localDay, newCard, reviewCard } from '../lib/schedule';
 import { dueCards, when } from './_queue';
 
 export interface ReviewCard {
+  /** A card ID, or a quiz item ID that a check put in the queue. */
   id: string;
   front: string;
   back: string;
+  /** Only a quiz item has one. It shows under the answer. */
+  explanation?: string;
   /** "YYYY-MM-DD" dates of the dated assessments that cover the session of the card. */
   examDates: string[];
 }
@@ -17,19 +23,14 @@ export interface Props {
   progressHref: string;
 }
 
-// The shared check/Confidence picker replaces these buttons in a later step.
-const CONFIDENCE: Array<[Confidence, string]> = [
-  ['sure', 'Sure'],
-  ['think', 'Think so'],
-  ['guess', 'Guessing'],
-];
-
 export default function ReviewQueue({ cards, progressHref }: Props) {
   const progress = useStore($progress);
   const problem = useStore($progressProblem);
   // The card on the screen stays until "Next card", after its review moves its due day.
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState<Confidence | null>(null);
+  const [confidence, setConfidence] = useState<Level | null>(null);
+  const [shown, setShown] = useState(false);
+  const [hint, setHint] = useState('');
   const [result, setResult] = useState<{ correct: boolean; due: string } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const acted = useRef(false);
@@ -39,17 +40,24 @@ export default function ReviewQueue({ cards, progressHref }: Props) {
   const due = dueCards(cards, progress.cards, now);
   const card = cards.find((c) => c.id === currentId) ?? due[0];
 
-  // After each step, focus goes to the next thing to read or press. Not on page load.
+  // After each step, focus goes to the next thing to read or press. Not on page load,
+  // and not on a confidence pick, so the arrow keys stay in the radio group.
   useEffect(() => {
     if (!acted.current) return;
-    const target = result ? '[data-next]' : confidence ? '[data-mark]' : 'h2';
+    const target = result ? '[data-next]' : shown ? '[data-mark]' : 'h2';
     root.current?.querySelector<HTMLElement>(target)?.focus();
-  }, [card?.id, confidence, result]);
+  }, [card?.id, shown, result]);
 
-  function pick(level: Confidence) {
-    acted.current = true;
+  function pick(level: Level) {
     setCurrentId(card.id);
     setConfidence(level);
+    setHint('');
+  }
+
+  function show() {
+    if (!confidence) return setHint('Pick how sure you are.');
+    acted.current = true;
+    setShown(true);
   }
 
   function mark(correct: boolean) {
@@ -69,6 +77,7 @@ export default function ReviewQueue({ cards, progressHref }: Props) {
   function nextCard() {
     setCurrentId(null);
     setConfidence(null);
+    setShown(false);
     setResult(null);
   }
 
@@ -108,34 +117,41 @@ export default function ReviewQueue({ cards, progressHref }: Props) {
       </p>
       <article class="card">
         <p class="label">Question</p>
-        <h2 tabIndex={-1}>{card.front}</h2>
+        <h2 tabIndex={-1}>
+          <Inline text={card.front} />
+        </h2>
         <div aria-live="polite">
-          {!confidence && (
-            <fieldset>
-              <legend>Say the answer to yourself. How sure are you?</legend>
-              <div class="buttons">
-                {CONFIDENCE.map(([level, label]) => (
-                  <button type="button" onClick={() => pick(level)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          )}
-          {confidence && (
+          {!shown && (
             <>
-              <p class="label">Answer</p>
-              <p class="back">{card.back}</p>
+              <p>Say the answer to yourself.</p>
+              <Confidence name={`review-${card.id}-confidence`} value={confidence} onChange={pick} />
+              <button type="button" class="btn" onClick={show}>
+                Show the answer
+              </button>
+              <p class="hint">{hint}</p>
             </>
           )}
-          {confidence && !result && (
+          {shown && (
+            <>
+              <p class="label">Answer</p>
+              <p class="back">
+                <Inline text={card.back} />
+              </p>
+              {card.explanation && card.explanation !== card.back && (
+                <p class="why">
+                  <Inline text={card.explanation} />
+                </p>
+              )}
+            </>
+          )}
+          {shown && !result && (
             <fieldset>
               <legend>Was your answer right?</legend>
               <div class="buttons">
-                <button type="button" data-mark onClick={() => mark(true)}>
+                <button type="button" class="btn" data-mark onClick={() => mark(true)}>
                   I got it right
                 </button>
-                <button type="button" onClick={() => mark(false)}>
+                <button type="button" class="btn" onClick={() => mark(false)}>
                   I got it wrong
                 </button>
               </div>
@@ -160,7 +176,7 @@ export default function ReviewQueue({ cards, progressHref }: Props) {
                   <span aria-hidden="true">✗ </span>Missed. This card comes back {when(result.due, today)}.
                 </p>
               )}
-              <button type="button" data-next onClick={nextCard}>
+              <button type="button" class="btn" data-next onClick={nextCard}>
                 {due.length > 0 ? 'Next card' : 'Finish'}
               </button>
             </>

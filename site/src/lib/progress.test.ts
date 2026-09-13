@@ -141,6 +141,21 @@ describe('import', () => {
   });
 });
 
+describe('parseProgress', () => {
+  it('gives the progress of a valid file and touches no storage or store', async () => {
+    await load({ 'na-progress': savedJson });
+    expect(p.parseProgress(JSON.stringify({ ...saved, cards: {} }))).toEqual({ ...saved, cards: {} });
+    expect(storage.calls).toBe(0);
+    expect(p.$progress.get()).toEqual(saved);
+  });
+
+  it('throws the import error for a bad file, and still touches no storage', () => {
+    expect(() => p.parseProgress(JSON.stringify({ ...saved, version: 2 }))).toThrow(/version 2/);
+    expect(storage.calls).toBe(0);
+    expect(p.$progressProblem.get()).toBeNull();
+  });
+});
+
 describe('reset', () => {
   it('clears the progress key and keeps the theme key', async () => {
     await load({ 'na-progress': savedJson, 'na-theme': 'dark' });

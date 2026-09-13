@@ -1,8 +1,10 @@
 ---
 import { getCollection, render } from 'astro:content';
-import ModuleLink from '../../components/lesson/ModuleLink.astro';
+import ModuleHeader from '../../components/lesson/ModuleHeader.astro';
+import ModuleProgress from '../../components/lesson/ModuleProgress.tsx';
+import { segmentTitles } from '../../components/lesson/segments';
 import Base from '../../layouts/Base.astro';
-import { href, moduleParams, sessionHref } from '../../lib/url';
+import { moduleParams, sessionHref } from '../../lib/url';
 
 export async function getStaticPaths() {
   const modules = await getCollection('modules');
@@ -16,61 +18,15 @@ const { Content } = await render(entry);
 
 <Base title={m.title}>
   <p class="crumb"><a href={sessionHref(m.session)}>Session {m.session}</a></p>
-  <header class="module-header">
-    <h1>{m.title}</h1>
-    <p class="meta">
-      {m.minutes} min{m.status === 'draft' && <span class="draft">Draft</span>}
-    </p>
-    <p class="big-idea"><strong>The big idea.</strong> {m.bigIdea}</p>
-    {
-      m.prereqs.length > 0 && (
-        <p class="meta">
-          Before this:{' '}
-          {m.prereqs.map((id, i) => (
-            <>
-              {i > 0 && ', '}
-              <ModuleLink id={id} />
-            </>
-          ))}
-        </p>
-      )
-    }
-    {
-      m.threads.length > 0 && (
-        <p class="meta">
-          Threads:{' '}
-          {m.threads.map((id, i) => (
-            <>
-              {i > 0 && ', '}
-              <a href={href(`threads/${id}/`)}>{id}</a>
-            </>
-          ))}
-        </p>
-      )
-    }
-  </header>
+  <ModuleHeader {...m} segments={segmentTitles(entry.body ?? '')}>
+    <ModuleProgress slot="progress" client:only="preact" id={m.id} />
+  </ModuleHeader>
   <Content />
 </Base>
 
 <style>
-  .crumb,
-  .meta {
+  .crumb {
     color: var(--text-muted);
     font-size: var(--text-sm);
-  }
-  .draft {
-    margin-left: var(--space-2);
-    padding: 0 var(--space-2);
-    border: 1px solid currentColor;
-    border-radius: 999px;
-  }
-  .big-idea {
-    padding: var(--space-3) var(--space-4);
-    background: var(--key-bg);
-    border-left: 4px solid var(--key);
-    border-radius: var(--radius);
-  }
-  .big-idea strong {
-    color: var(--key);
   }
 </style>

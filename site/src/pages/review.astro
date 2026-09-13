@@ -3,18 +3,18 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import { href } from '../lib/url';
 import ReviewQueue from './_ReviewQueue';
-import { examDatesFor } from './_queue';
+import { examDatesFor, quizCard } from './_queue';
 
 const assessments = (await getCollection('assessments')).map((entry) => entry.data);
-const cards = (await getCollection('cards')).flatMap((entry) =>
-  entry.data.items.map(({ id, front, back }) => ({
-    id,
-    front,
-    back,
-    // The digits after "s" are the session: s01-m08-c04 belongs to Session 1.
-    examDates: examDatesFor(Number(id.slice(1, 3)), assessments),
-  })),
-);
+// Quiz items join the cards, because a check answered "sure" and wrong puts its item in the queue.
+const cards = [
+  ...(await getCollection('cards')).flatMap((entry) => entry.data.items.map(({ id, front, back }) => ({ id, front, back }))),
+  ...(await getCollection('quiz')).flatMap((entry) => entry.data.items.map(quizCard)),
+].map((card) => ({
+  ...card,
+  // The digits after "s" are the session: s01-m08-c04 belongs to Session 1.
+  examDates: examDatesFor(Number(card.id.slice(1, 3)), assessments),
+}));
 ---
 
 <Base title="Review">
@@ -53,9 +53,22 @@ const cards = (await getCollection('cards')).flatMap((entry) =>
     margin: 0 0 var(--space-4);
     font-size: var(--text-lg);
   }
+  /* A quiz item with two right options gives one line for each. */
   .queue :global(.back) {
     margin-top: 0;
     font-weight: 600;
+    white-space: pre-line;
+  }
+  .queue :global(.why) {
+    color: var(--text-muted);
+  }
+  .queue :global(.hint) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--wrong);
+  }
+  .queue :global(.hint:empty) {
+    margin: 0;
   }
   .queue :global(fieldset) {
     margin: 0 0 var(--space-3);
@@ -70,19 +83,6 @@ const cards = (await getCollection('cards')).flatMap((entry) =>
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-  }
-  .queue :global(button) {
-    min-height: 2.75rem;
-    padding: var(--space-2) var(--space-4);
-    font: inherit;
-    color: var(--text);
-    background: var(--interactive-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-  .queue :global(button:hover) {
-    border-color: var(--interactive);
   }
   .queue :global(.result) {
     padding: var(--space-2) var(--space-3);

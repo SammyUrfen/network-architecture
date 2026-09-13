@@ -18,8 +18,8 @@ import { href } from '../../lib/url';
   <h2>QA tools</h2>
   <p>These buttons change the saved progress in this browser.</p>
   <div class="qa">
-    <button type="button" data-qa="due">Make every saved card due today</button>
-    <button type="button" data-qa="pretest">Save a pretest and one answer</button>
+    <button type="button" class="btn" data-qa="due">Make every saved card due today</button>
+    <button type="button" class="btn" data-qa="pretest">Save a pretest and one answer</button>
   </div>
   <p role="status" data-qa-status></p>
   <p><a href={href('review/')}>Review</a> · <a href={href('progress/')}>Progress</a></p>
@@ -61,15 +61,5 @@ import { href } from '../../lib/url';
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-  }
-  button {
-    min-height: 2.75rem;
-    padding: var(--space-2) var(--space-4);
-    font: inherit;
-    color: var(--text);
-    background: var(--interactive-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    cursor: pointer;
   }
 </style>
