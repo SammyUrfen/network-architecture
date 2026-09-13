@@ -1,0 +1,25 @@
+---
+// Rung 4: trade-offs, rejected alternatives, "what if" questions. A closed box,
+// so a first reading can skip it (PEDAGOGY rule 3). The content goes in the
+// default slot.
+export interface Props {}
+---
+
+<details class="rung">
+  <summary>Exam depth</summary>
+  <slot />
+</details>
+
+<style>
+  .rung {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--interactive);
+    border-radius: var(--radius);
+  }
+  summary {
+    font-weight: 600;
+  }
+</style>

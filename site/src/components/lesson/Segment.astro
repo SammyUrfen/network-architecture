@@ -1,0 +1,34 @@
+---
+import { segmentAnchor } from './segments';
+
+// About 5 minutes of reading and doing. npm run verify numbers segments by
+// their order in the MDX, so this component takes no number. The CSS counter
+// shows the same number.
+export interface Props {
+  /** A plain string, so segmentTitles() can read it from the MDX. */
+  title: string;
+}
+const { title } = Astro.props;
+const id = segmentAnchor(title);
+---
+
+<section class="segment" aria-labelledby={id}>
+  <h2 id={id}>{title}</h2>
+  <slot />
+</section>
+
+<style>
+  .segment {
+    counter-increment: segment;
+    margin: var(--space-8) 0;
+    padding-top: var(--space-2);
+    border-top: 2px solid var(--rule);
+  }
+  h2 {
+    margin-top: var(--space-3);
+  }
+  h2::before {
+    content: 'Part ' counter(segment) '. ';
+    color: var(--text-muted);
+  }
+</style>

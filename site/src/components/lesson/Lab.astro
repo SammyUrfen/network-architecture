@@ -1,0 +1,35 @@
+---
+// Exact commands on Linux, what to look at, and the expected result. Put a
+// Terminal for each command in the default slot.
+export interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<section class="lab" aria-label={`Lab: ${title}`}>
+  <p class="label">Lab: run it yourself on Linux</p>
+  <p class="title">{title}</p>
+  <slot />
+</section>
+
+<style>
+  .lab {
+    margin: var(--space-6) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--correct);
+    border-radius: var(--radius);
+  }
+  .label {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--correct);
+  }
+  .title {
+    margin-top: var(--space-1);
+    font-weight: 600;
+  }
+</style>

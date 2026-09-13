@@ -1,0 +1,145 @@
+---
+// Messages between actors in time order, as inline SVG. The theme colors come
+// from CSS custom properties, so the diagram follows light and dark. Screen
+// readers get the same messages as a list.
+export interface Props {
+  title: string;
+  /** Lifelines, left to right. */
+  actors: string[];
+  /** In time order. A message whose from equals its to is a note on that lifeline. */
+  messages: { from: string; to: string; label: string }[];
+}
+const { title, actors, messages } = Astro.props;
+
+// SVG units. The width fits a 390 px phone at about 1:1, so the text stays readable.
+const WIDTH = 360;
+const EDGE = 60; // lane center to the side of the picture: room for a short actor name
+const TOP = 40; // room for the actor names
+const ROW = 44; // one message
+const FONT = 14;
+const CHAR = FONT * 0.6; // width of one monospace character
+
+const laneX = (name: string) => {
+  const i = actors.indexOf(name);
+  if (i < 0) throw new Error(`SequenceDiagram "${title}": no actor named "${name}".`);
+  return actors.length === 1 ? WIDTH / 2 : EDGE + (i * (WIDTH - 2 * EDGE)) / (actors.length - 1);
+};
+// SVG text does not wrap. A label that does not fit fails the build, not the page.
+const textWidth = (label: string) => {
+  const width = label.length * CHAR;
+  if (width > WIDTH - 24) throw new Error(`SequenceDiagram "${title}": label "${label}" is too long.`);
+  return width;
+};
+
+const height = TOP + ROW * messages.length + 16;
+const drawn = messages.map((m, i) => {
+  const y = TOP + ROW * i + 28;
+  const x1 = laneX(m.from);
+  const x2 = laneX(m.to);
+  const w = textWidth(m.label);
+  if (x1 === x2) {
+    const boxW = w + 16;
+    const boxX = Math.min(Math.max(x1 - boxW / 2, 4), WIDTH - 4 - boxW);
+    return { ...m, note: true as const, y, boxX, boxW, textX: boxX + boxW / 2 };
+  }
+  const dir = Math.sign(x2 - x1);
+  return { ...m, note: false as const, y, x1, x2, dir, textX: (x1 + x2) / 2 };
+});
+---
+
+<figure class="sequence">
+  <figcaption>{title}</figcaption>
+  <svg viewBox={`0 0 ${WIDTH} ${height}`} font-size={FONT} aria-hidden="true">
+    {
+      actors.map((actor) => (
+        <g>
+          <text class="actor" x={laneX(actor)} y="18" text-anchor="middle">
+            {actor}
+          </text>
+          <line class="life" x1={laneX(actor)} y1="28" x2={laneX(actor)} y2={height - 6} />
+        </g>
+      ))
+    }
+    {
+      drawn.map((d) =>
+        d.note ? (
+          <g>
+            <rect class="note" x={d.boxX} y={d.y - 20} width={d.boxW} height="26" rx="4" />
+            <text x={d.textX} y={d.y - 3} text-anchor="middle">
+              {d.label}
+            </text>
+          </g>
+        ) : (
+          <g>
+            <line class="msg" x1={d.x1} y1={d.y} x2={d.x2 - d.dir * 9} y2={d.y} />
+            <path class="head" d={`M${d.x2} ${d.y} l${-d.dir * 9} -4.5 v9 z`} />
+            <text class="halo" x={d.textX} y={d.y - 7} text-anchor="middle">
+              {d.label}
+            </text>
+          </g>
+        ),
+      )
+    }
+  </svg>
+  <ol class="sr-only">
+    {messages.map((m) => <li>{m.from === m.to ? `${m.from}: ${m.label}` : `${m.from} to ${m.to}: ${m.label}`}</li>)}
+  </ol>
+</figure>
+
+<style>
+  .sequence {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-2);
+    font-weight: 600;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    max-width: 28rem;
+    height: auto;
+    margin: 0 auto;
+  }
+  text {
+    font-family: var(--font-mono);
+    fill: var(--text);
+  }
+  .actor {
+    font-weight: 700;
+  }
+  /* A stroke in the box color behind the letters hides the lifeline under a label */
+  .halo {
+    stroke: var(--surface);
+    stroke-width: 4px;
+    paint-order: stroke;
+  }
+  .life {
+    stroke: var(--border);
+    stroke-dasharray: 4 4;
+  }
+  .msg {
+    stroke: var(--text);
+    stroke-width: 1.5;
+  }
+  .head {
+    fill: var(--text);
+  }
+  .note {
+    fill: var(--key-bg);
+    stroke: var(--key);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

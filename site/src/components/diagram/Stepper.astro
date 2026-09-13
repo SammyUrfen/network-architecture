@@ -1,0 +1,123 @@
+---
+import StepperIsland, { type Props as IslandProps } from './StepperIsland.tsx';
+
+// A picture that changes one step at a time. Each step gives the full state
+// of every lane, and the island marks what changed. The page before hydration
+// shows step 1.
+export interface Props extends IslandProps {}
+const { title, steps } = Astro.props;
+if (steps.length === 0) throw new Error(`Stepper "${title}" has no steps.`);
+---
+
+<figure class="stepper-figure">
+  <figcaption>{title}</figcaption>
+  <StepperIsland client:visible title={title} steps={steps} />
+</figure>
+
+<style>
+  .stepper-figure {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+  .stepper-figure :global(.lanes) {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .stepper-figure :global(.lane) {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .stepper-figure :global(.lane-label) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .stepper-figure :global(.chunks) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    min-height: 2.25rem;
+  }
+  .stepper-figure :global(.chunk),
+  .stepper-figure :global(.empty) {
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  /* A new chunk has a thicker border as well as the color, so color is not the only cue */
+  .stepper-figure :global(.chunk.new) {
+    background: var(--key-bg);
+    border: 3px solid var(--key);
+  }
+  .stepper-figure :global(.empty) {
+    font-family: var(--font-prose);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    border-style: dashed;
+  }
+  .stepper-figure :global(.caption) {
+    min-height: 3.2em;
+  }
+  .stepper-figure :global(.ask) {
+    padding: var(--space-2) var(--space-3);
+    background: var(--interactive-bg);
+    border-left: 4px solid var(--interactive);
+    border-radius: var(--radius);
+  }
+  .stepper-figure :global(.controls) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .stepper-figure :global(.controls button) {
+    min-width: 5.5rem;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    font-weight: 600;
+    color: var(--interactive);
+    background: var(--surface);
+    border: 2px solid var(--interactive);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .stepper-figure :global(.controls button:hover) {
+    background: var(--interactive-bg);
+  }
+  .stepper-figure :global(.controls button[aria-disabled='true']) {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: var(--surface-2);
+    cursor: default;
+  }
+  .stepper-figure :global(.keys) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .stepper-figure :global(.sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  @media (max-width: 40rem) {
+    .stepper-figure :global(.lane) {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>

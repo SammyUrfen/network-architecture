@@ -1,0 +1,101 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { href } from '../../lib/url';
+import ModuleLink from './ModuleLink.astro';
+import { segmentAnchor } from './segments';
+
+type Module = CollectionEntry<'modules'>['data'];
+
+// Lesson contract block 1: title, minutes, big idea, progress, outline.
+export interface Props extends Pick<Module, 'title' | 'minutes' | 'bigIdea' | 'status' | 'prereqs' | 'threads'> {
+  /** Segment titles in page order. The module page gets them with segmentTitles(entry.body). */
+  segments: string[];
+}
+const { title, minutes, bigIdea, status, prereqs, threads, segments } = Astro.props;
+---
+
+<header class="module-header">
+  <h1>{title}</h1>
+  <p class="meta">
+    {minutes} min{status === 'draft' && <span class="draft">Draft</span>}
+  </p>
+  <p class="big-idea"><strong>The big idea.</strong> {bigIdea}</p>
+  {
+    Astro.slots.has('progress') && (
+      <div class="progress">
+        <slot name="progress" />
+      </div>
+    )
+  }
+  {
+    segments.length > 0 && (
+      <nav class="outline" aria-label="Segments on this page">
+        <ol>
+          {segments.map((segment) => (
+            <li>
+              <a href={`#${segmentAnchor(segment)}`}>{segment}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    )
+  }
+  {
+    prereqs.length > 0 && (
+      <p class="meta">
+        Before this:{' '}
+        {prereqs.map((id, i) => (
+          <>
+            {i > 0 && ', '}
+            <ModuleLink id={id} />
+          </>
+        ))}
+      </p>
+    )
+  }
+  {
+    threads.length > 0 && (
+      <p class="meta">
+        Threads:{' '}
+        {threads.map((id, i) => (
+          <>
+            {i > 0 && ', '}
+            <a href={href(`threads/${id}/`)}>{id}</a>
+          </>
+        ))}
+      </p>
+    )
+  }
+</header>
+
+<style>
+  .meta {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+  .draft {
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+  }
+  .big-idea {
+    padding: var(--space-3) var(--space-4);
+    background: var(--key-bg);
+    border-left: 4px solid var(--key);
+    border-radius: var(--radius);
+  }
+  .big-idea strong {
+    color: var(--key);
+  }
+  .progress {
+    margin: var(--space-4) 0;
+  }
+  .outline ol {
+    margin: var(--space-4) 0;
+    padding-left: var(--space-6);
+  }
+  .outline li {
+    padding: var(--space-1) 0;
+  }
+</style>
