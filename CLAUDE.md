@@ -20,7 +20,7 @@ arrive each week, so the site grows one session at a time.
 | Part | State |
 |---|---|
 | Curriculum maps | Sessions 1–5 written and reviewed on 2026-09-14: 57 modules, 894 claims. Sessions 6–8 not taught yet. |
-| Site | Phase 1 done on 2026-09-14: skeleton, theme, schemas, gate scripts. Next: Phase 2 in `docs/PLAN.md`. |
+| Site | Phases 1 and 2 done on 2026-09-14: skeleton, theme, schemas, gate scripts, components (`docs/COMPONENTS.md`), review and progress pages. Next: Phase 3 pilot in `docs/PLAN.md`. |
 | Sources | All five decks complete. No transcripts. See `sources/MANIFEST.md`. |
 
 Update this table when a phase ends.
