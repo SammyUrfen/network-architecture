@@ -1,0 +1,188 @@
+---
+import '../styles/tokens.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import { href } from '../lib/url';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+
+const nav = [
+  ['', 'Map'],
+  ['review/', 'Review'],
+  ['practice/', 'Practice'],
+  ['threads/', 'Threads'],
+  ['assessments/', 'Assessments'],
+  ['progress/', 'Progress'],
+];
+const here = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <title>{title} · Network Architecture</title>
+    <script is:inline>
+      // Runs before the first paint, so a stored theme never flashes.
+      // The theme is not progress, so export leaves the na-theme key out.
+      (function () {
+        var theme = 'system';
+        try {
+          var stored = localStorage.getItem('na-theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+    <header class="site-header">
+      <a class="brand" href={href()}>Network Architecture</a>
+      <nav aria-label="Site">
+        <ul>
+          {
+            nav.map(([path, label]) => (
+              <li>
+                <a href={href(path)} aria-current={here === href(path) ? 'page' : undefined}>
+                  {label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <ThemeToggle />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-prose);
+    font-size: var(--text-base);
+    line-height: var(--leading);
+    color: var(--text);
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+  h1,
+  h2,
+  h3 {
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: var(--text-2xl);
+    margin: 0 0 var(--space-3);
+  }
+  h2 {
+    font-size: var(--text-xl);
+    margin: var(--space-8) 0 var(--space-3);
+  }
+  h3 {
+    font-size: var(--text-lg);
+  }
+  a {
+    color: var(--interactive);
+    text-underline-offset: 0.15em;
+  }
+  code,
+  kbd,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  code {
+    padding: 0.1em 0.3em;
+    background: var(--surface-2);
+    border-radius: 4px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  details > summary {
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+
+<style>
+  .skip {
+    position: absolute;
+    left: var(--space-2);
+    top: -3rem;
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .skip:focus {
+    top: var(--space-2);
+  }
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-6);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--rule);
+  }
+  .brand {
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+  nav {
+    flex: 1 1 auto;
+  }
+  nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  nav a {
+    display: inline-block;
+    padding: var(--space-1) 0;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  nav a:hover,
+  nav a[aria-current='page'] {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--key);
+    text-decoration-thickness: 2px;
+  }
+  main {
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-4) var(--space-8);
+  }
+</style>

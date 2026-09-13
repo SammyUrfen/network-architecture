@@ -1,0 +1,58 @@
+---
+// One button that steps through system, light and dark. The theme script in
+// the base layout already set data-theme before the first paint.
+---
+
+<button type="button" class="theme-toggle" data-theme-toggle>
+  <span class="icon" aria-hidden="true"></span>
+  <span>Theme: <span data-theme-label>system</span></span>
+</button>
+
+<script>
+  const order = ['system', 'light', 'dark'];
+  const root = document.documentElement;
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')) {
+    const label = button.querySelector('[data-theme-label]')!;
+    const show = () => (label.textContent = root.dataset.theme ?? 'system');
+    show();
+    button.addEventListener('click', () => {
+      const next = order[(order.indexOf(root.dataset.theme ?? 'system') + 1) % order.length];
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('na-theme', next);
+      } catch {
+        // Storage can be blocked. The theme still changes for this page.
+      }
+      show();
+    });
+  }
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    font-size: var(--text-sm);
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .theme-toggle:hover {
+    background: var(--surface-2);
+  }
+  /* A half-filled circle: the sun side and the dark side of the switch */
+  .icon {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+</style>

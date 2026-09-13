@@ -1,0 +1,78 @@
+/*
+ * Theme "Patch Panel". The hues come from the four pairs of a network cable
+ * (orange, green, blue, brown), on paper in light mode and a dark rack in
+ * dark mode. Violet, the fifth layer hue, is not a cable color.
+ *
+ * Each token is light-dark(light value, dark value). The color-scheme on
+ * <html> picks the side: "light dark" follows the OS, and data-theme="light"
+ * or "dark" (set by the theme script in the base layout) forces one side.
+ *
+ * Contrast, checked on 2026-09-14:
+ * - Text inks (text, text-muted, interactive, key, correct, wrong, story) are
+ *   4.5:1 or more on bg, surface, surface-2 and their own -bg tint.
+ * - border is 3:1 or more on bg and surface (WCAG 1.4.11 for controls).
+ * - The layer hues pass the dataviz validator (lightness band, chroma floor,
+ *   CVD and normal-vision separation of adjacent layers, 3:1 on bg) in both
+ *   themes, in the order physical, link, network, transport, application.
+ * A color never carries meaning alone. Pair it with an icon or a word.
+ */
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root {
+  /* Surfaces and ink */
+  --bg: light-dark(#f8f4ec, #16181c);
+  --surface: light-dark(#fffdf8, #1e2126);
+  --surface-2: light-dark(#efe9dc, #262a30);
+  --text: light-dark(#1f1d1a, #e8e4dc);
+  --text-muted: light-dark(#5c564c, #a8a298);
+  --rule: light-dark(#ddd4c3, #2f333a); /* decorative dividers only */
+  --border: light-dark(#8f8574, #6b717b); /* controls and boxes that hold input */
+
+  /* Semantic colors: ink for text and borders, -bg for a tinted box */
+  --interactive: light-dark(#1f5fbf, #7fb0f5);
+  --interactive-bg: light-dark(#e3ecfa, #1c2a3d);
+  --key: light-dark(#a24d0c, #f0a060);
+  --key-bg: light-dark(#fbe9d8, #3a2718);
+  --correct: light-dark(#1a7038, #6fcf8e);
+  --correct-bg: light-dark(#e2f2e6, #1a3324);
+  --wrong: light-dark(#b3261e, #f28b82);
+  --wrong-bg: light-dark(#f9e1de, #3d1f1d);
+  --story: light-dark(#7a4a24, #d4a47a);
+  --story-bg: light-dark(#f1e6da, #33271d);
+  --focus: var(--interactive);
+
+  /* Layer colors: the same in every diagram and every ByteView */
+  --layer-physical: light-dark(#9a5b2e, #b5703a);
+  --layer-link: light-dark(#2a6fd6, #4f8ce0);
+  --layer-network: light-dark(#c9611a, #d9782c);
+  --layer-transport: light-dark(#8a4fd0, #9a6fda);
+  --layer-application: light-dark(#2e9a52, #3ea862);
+
+  /* Type */
+  --font-prose: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace;
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.125rem;
+  --leading: 1.6;
+
+  /* Space and shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius: 6px;
+  --measure: 42rem; /* line length of prose, about 70 characters */
+}
