@@ -1,0 +1,64 @@
+---
+// Productive failure, for design questions only (PEDAGOGY rule 9). The learner
+// types an idea, then opens the full explanation in the default slot. The
+// text box has no script: nothing is saved or graded.
+export interface Props {
+  /** The design question. */
+  prompt: string;
+}
+const { prompt } = Astro.props;
+---
+
+<section class="invent" aria-label="Try to invent it first">
+  <p class="label">Try to invent it first</p>
+  <p class="prompt">{prompt}</p>
+  <label>
+    <span>Your idea. A wrong idea is normal here. Nothing is saved.</span>
+    <textarea rows="3"></textarea>
+  </label>
+  <details>
+    <summary>Compare with the answers</summary>
+    <div class="body">
+      <slot />
+    </div>
+  </details>
+</section>
+
+<style>
+  .invent {
+    margin: var(--space-6) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .label {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--interactive);
+  }
+  .prompt {
+    font-weight: 600;
+  }
+  label span {
+    display: block;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  textarea {
+    display: block;
+    width: 100%;
+    margin: var(--space-1) 0 var(--space-3);
+    padding: var(--space-2);
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  summary {
+    font-weight: 600;
+    color: var(--interactive);
+  }
+</style>

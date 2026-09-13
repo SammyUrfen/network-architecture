@@ -1,0 +1,245 @@
+---
+// Phase 2 dev page for the lesson blocks and the diagrams. The fixture data
+// comes from the pilot sections s01-m08-framing (docs/curriculum/session-01.md)
+// and s05-m12-assignment-prep (docs/curriculum/session-05.md). Not in the nav.
+import { getEntry } from 'astro:content';
+import ByteView from '../../components/diagram/ByteView.astro';
+import SequenceDiagram from '../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../components/diagram/Stepper.astro';
+import Terminal from '../../components/diagram/Terminal.astro';
+import Beyond from '../../components/lesson/Beyond.astro';
+import ExamDepth from '../../components/lesson/ExamDepth.astro';
+import InventFirst from '../../components/lesson/InventFirst.astro';
+import Lab from '../../components/lesson/Lab.astro';
+import ModuleHeader from '../../components/lesson/ModuleHeader.astro';
+import Picture from '../../components/lesson/Picture.astro';
+import Segment from '../../components/lesson/Segment.astro';
+import WordCard from '../../components/lesson/WordCard.astro';
+import type { ByteMessage } from '../../components/diagram/bytes';
+import type { Step } from '../../components/diagram/stepper';
+import Base from '../../layouts/Base.astro';
+
+const m08 = (await getEntry('modules', 's01-m08-framing'))!.data;
+const m08Segments = ['A byte stream has no edges', 'Two rules, or three?'];
+
+const terms = [
+  ...m08.terms,
+  { term: 'delimiter', meaning: 'a byte or a byte sequence that marks the end of a message' },
+  { term: 'length prefix', meaning: 'the byte count of a message, sent before its bytes' },
+  { term: 'fixed length', meaning: 'every message is N bytes, and both sides agree on N ahead of time' },
+];
+
+const lanes = (writes: string[], buffer: string[], segments: string[], reads: string[]) => [
+  { label: 'write() calls', chunks: writes },
+  { label: 'Send buffer', chunks: buffer },
+  { label: 'Segments sent', chunks: segments },
+  { label: 'read() returns', chunks: reads },
+];
+const steps: Step[] = [
+  {
+    caption: 'The sender calls write() with 5 bytes: hello. TCP copies them into its send buffer.',
+    lanes: lanes(['hello'], ['hello'], [], []),
+  },
+  {
+    caption: 'The sender calls write() again, with world. The buffer holds 10 bytes, with no mark between the writes.',
+    ask: 'How many segments does TCP use for these 10 bytes?',
+    lanes: lanes(['hello', 'world'], ['helloworld'], [], []),
+  },
+  {
+    caption: 'TCP picks the segment sizes, not the writer. Here it sends 3, 4 and 3 bytes.',
+    lanes: lanes(['hello', 'world'], ['helloworld'], ['hel', 'lowo', 'rld'], []),
+  },
+  {
+    caption: 'The first segment arrives, and the receiver calls read(). It gets the 3 bytes that are there: hel.',
+    ask: 'The other two segments arrive before the next read(). What does that read() return?',
+    lanes: lanes(['hello', 'world'], ['helloworld'], ['hel', 'lowo', 'rld'], ['hel']),
+  },
+  {
+    caption: 'One read() returns all 7 bytes that arrived: loworld. It joins two segments.',
+    lanes: lanes(['hello', 'world'], ['helloworld'], ['hel', 'lowo', 'rld'], ['hel', 'loworld']),
+  },
+  {
+    caption: 'The writes were 5 and 5 bytes. The reads were 3 and 7. Nothing marks where hello ended, so the protocol adds that edge.',
+    lanes: lanes(['hello', 'world'], ['helloworld'], ['hel', 'lowo', 'rld'], ['hel', 'loworld']),
+  },
+];
+
+// The same three messages, framed four ways (session-01.md, s01-m08 Diagrams).
+const words = ['hi', 'hello', 'abc'];
+const pad = (w: string) => (w.length < 5 ? [{ hex: '00 '.repeat(5 - w.length), kind: 'pad' as const, label: 'pad' }] : []);
+const fixed: ByteMessage[] = words.map((w, i) => ({ name: `Message ${i + 1}`, fields: [{ text: w }, ...pad(w)] }));
+const delimited: ByteMessage[] = words.map((w, i) => ({
+  name: `Message ${i + 1}`,
+  fields: [{ text: w }, { text: '\n', kind: 'delimiter', label: 'end' }],
+}));
+const prefixed: ByteMessage[] = words.map((w, i) => ({
+  name: `Message ${i + 1}`,
+  fields: [{ hex: w.length.toString(16).padStart(2, '0'), kind: 'length', label: 'length' }, { text: w }],
+}));
+const both: ByteMessage[] = words.map((w, i) => ({
+  name: `Message ${i + 1}`,
+  fields: [
+    { text: String(w.length), kind: 'length', label: 'length' },
+    { text: '\n', kind: 'delimiter', label: 'end' },
+    { text: w },
+  ],
+}));
+
+const serverCmd = 'strace -e trace=read,write ./02_echo_server_persistent';
+const clientCmd = `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'`;
+
+// s05-m12: the worked example stream, two requests back to back.
+const ruler: ByteMessage[] = [
+  {
+    name: 'Request 1',
+    fields: [
+      { text: 'POST /echo HTTP/1.1\r\n', label: 'request line' },
+      { text: 'Host: site-a.local\r\n', label: 'header' },
+      { text: 'Content-Length: 5\r\n', kind: 'length', label: 'header: the body length' },
+      { text: '\r\n', kind: 'delimiter', label: 'empty line: the head ends' },
+      { text: 'hello', label: 'body' },
+    ],
+  },
+  {
+    name: 'Request 2',
+    fields: [
+      { text: 'GET /style.css HTTP/1.1\r\n', label: 'request line' },
+      { text: 'Host: site-a.local\r\n', label: 'header' },
+      { text: '\r\n', kind: 'delimiter', label: 'empty line: the head ends' },
+    ],
+  },
+];
+---
+
+<Base title="Dev: lesson blocks">
+  <p class="dev-note">
+    Dev page for the Phase 2 lesson blocks and diagrams. The data comes from the two pilot sections. It is not a
+    lesson.
+  </p>
+
+  <article>
+    <ModuleHeader {...m08} segments={m08Segments}>
+      <p slot="progress" class="dev-note">The progress bar goes in this slot.</p>
+    </ModuleHeader>
+
+    <WordCard terms={terms} />
+
+    <InventFirst prompt="Design a chat app where a message can hold any byte, even a newline. How does the receiver know where one message stops?">
+      <p>
+        There are three answers. Every message has the same length. Or a delimiter byte ends each message. Or a
+        length prefix gives the byte count first.
+      </p>
+    </InventFirst>
+
+    <Segment title={m08Segments[0]}>
+      <Picture
+        rows={[
+          { picture: 'You pour the pages of a letter into a water pipe.', real: 'A program calls write() on a TCP socket.' },
+          {
+            picture: 'Your friend gets one long flow. The pipe keeps no gap between pages.',
+            real: 'read() returns bytes with no gap between writes.',
+          },
+          {
+            picture: 'So you agree: 100 words a page, or a page ends at STOP, or the first word gives the count.',
+            real: 'Fixed length, delimiter, or length prefix.',
+          },
+        ]}
+        breaks="a real pipe can spill or mix water. TCP never loses, reorders or mixes bytes. It only forgets where each write stopped."
+      />
+
+      <h3>How it works</h3>
+      <Stepper title="Two writes, three segments, two reads" steps={steps} />
+
+      <h3>The real thing</h3>
+      <ByteView
+        caption="A 2-byte big-endian length, 5, then hello"
+        messages={[
+          {
+            fields: [
+              { hex: '00 05', kind: 'length', label: 'length: 5' },
+              { hex: '68 65 6c 6c 6f', label: 'hello' },
+            ],
+          },
+        ]}
+      />
+
+      <ExamDepth>
+        <p>
+          <strong>Three answers or two?</strong> Slide 39 gives three rules. Later decks say "length or delimiter".
+          Both hold, because a fixed length is a length that both sides agreed on before the connection started.
+        </p>
+        <p>
+          <strong>Field width.</strong> A 1-byte length caps a message at 255 bytes, 2 bytes at 65,535, and 4 bytes
+          at about 4 GB.
+        </p>
+      </ExamDepth>
+    </Segment>
+
+    <Segment title={m08Segments[1]}>
+      <ByteView caption="Fixed length, N = 5. The reader counts 5 bytes. The pad fills a short message." messages={fixed} />
+      <ByteView caption="Delimiter: a newline ends each message" messages={delimited} />
+      <ByteView caption="Length prefix: 1 byte of length before each message" messages={prefixed} />
+      <ByteView caption="Both: a text length, a newline, then the bytes" messages={both} />
+    </Segment>
+
+    <Lab title="Watch the server read two writes as one">
+      <Terminal
+        title="Terminal 1: the server under strace, on loopback. The output shows only the read of the two sends."
+        runs={[{ cmd: serverCmd, out: 'read(4, "helloworld", 4096) = 10' }]}
+      />
+      <Terminal title="Terminal 2: the client" runs={[{ cmd: clientCmd }]} />
+    </Lab>
+  </article>
+
+  <hr />
+
+  <article>
+    <ModuleHeader
+      title="Assignment prep: a calculator that stays on the line"
+      minutes={20}
+      bigIdea="The arithmetic is trivial, and the real skill is to take exactly one request off a persistent byte stream and pick the right status."
+      status="draft"
+      prereqs={['s05-m02-keepalive-host', 's05-m04-range-chunked-extras', 's01-m08-framing', 's01-m04-clients']}
+      threads={['T-framing', 'T-setup-off-path']}
+      segments={['Where one request ends']}
+    />
+
+    <Segment title="Where one request ends">
+      <ByteView
+        caption="Two requests back to back on one connection. Request 2 starts at byte 67."
+        view="text"
+        messages={ruler}
+      />
+
+      <SequenceDiagram
+        title="One send with two requests, two responses back (loopback, 2026-09-13)"
+        actors={['Client', 'Server']}
+        messages={[
+          { from: 'Client', to: 'Server', label: '2 requests in one send, 91 bytes' },
+          { from: 'Server', to: 'Client', label: '200 OK, Content-Length: 55' },
+          { from: 'Server', to: 'Client', label: '200 OK, Content-Length: 32' },
+          { from: 'Client', to: 'Client', label: 'no data for 3 s, socket open' },
+        ]}
+      />
+
+      <Beyond source="RFC 9110 §15.5.6" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6">
+        <p>A 405 response must carry an Allow header that lists the methods the path allows.</p>
+      </Beyond>
+    </Segment>
+  </article>
+</Base>
+
+<style>
+  .dev-note {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+  hr {
+    margin: var(--space-8) 0;
+    border: 0;
+    border-top: 4px double var(--rule);
+  }
+</style>

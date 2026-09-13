@@ -1,0 +1,182 @@
+---
+import { byteChar, escapeBytes, hex, layout, type ByteMessage } from './bytes';
+
+// Every byte of a real exchange, with each field annotated next to its bytes
+// (PEDAGOGY rung 3). A thick left rule marks where each message starts. The
+// label word carries the meaning of a field, and the color only repeats it.
+export interface Props {
+  /** What the bytes show. */
+  caption: string;
+  /** Messages in stream order. Offsets count from 0 and run on across messages. */
+  messages: ByteMessage[];
+  /** bytes: each hex byte over its character. text: one escaped line for each field, for text protocols. */
+  view?: 'bytes' | 'text';
+}
+const { caption, messages, view = 'bytes' } = Astro.props;
+const laid = layout(messages);
+---
+
+<figure class:list={['byteview', view]}>
+  <figcaption>{caption}</figcaption>
+  <div class="stream">
+    {
+      laid.map((message) => (
+        <div class="message">
+          {message.name && <p class="name">{message.name}</p>}
+          <div class="fields">
+            {message.fields.map((field) => (
+              <div class:list={['field', field.kind]}>
+                <span class="offset" aria-hidden="true">
+                  {field.start}
+                </span>
+                {view === 'bytes' ? (
+                  <span class="data" aria-hidden="true">
+                    {field.bytes.map((b) => (
+                      <span class="cell">
+                        <span>{hex([b])}</span>
+                        <span class="char">{byteChar(b)}</span>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <code class="data" aria-hidden="true">
+                    {escapeBytes(field.bytes)}
+                  </code>
+                )}
+                <span class="label" aria-hidden="true">
+                  {field.label}
+                  {view === 'text' && ` (${field.bytes.length} bytes)`}
+                </span>
+                <span class="sr-only">
+                  {`${field.label ?? 'data'}, bytes ${field.start} to ${field.end}: ${
+                    view === 'bytes' ? hex(field.bytes) : escapeBytes(field.bytes)
+                  }`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</figure>
+
+<style>
+  .byteview {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+  .stream {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-4);
+  }
+  .message {
+    min-width: 0;
+    padding-left: var(--space-2);
+    border-left: 3px solid var(--text);
+  }
+  .name {
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .offset,
+  .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .offset {
+    font-family: var(--font-mono);
+  }
+  .data {
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    border-bottom: 3px solid var(--border);
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 2.4ch;
+    padding: 0 0.2ch;
+  }
+  .char {
+    min-height: 1.6em;
+    color: var(--text-muted);
+  }
+  .length .data {
+    border-bottom-color: var(--key);
+  }
+  .length .label {
+    color: var(--key);
+  }
+  .delimiter .data {
+    border-bottom-color: var(--interactive);
+  }
+  .delimiter .label {
+    color: var(--interactive);
+  }
+  .pad .data {
+    border-bottom-style: dashed;
+    border-bottom-color: var(--text-muted);
+  }
+
+  /* Text view: one field per line, as the protocol writes it */
+  .text .stream {
+    flex-direction: column;
+  }
+  .text .fields {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .text .field {
+    display: grid;
+    grid-template-columns: 2.5rem auto 1fr;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  .text .data {
+    display: inline;
+    padding: 0 0.2em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    border-radius: 0;
+  }
+  @media (max-width: 40rem) {
+    .text .field {
+      grid-template-columns: 2rem 1fr;
+    }
+    .text .label {
+      grid-column: 2;
+    }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

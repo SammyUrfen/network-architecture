@@ -1,0 +1,74 @@
+---
+// Rung 1. The analogy and the real mechanism side by side, in an open box
+// (PEDAGOGY rules 2 and 3).
+export interface Props {
+  /** One row for each step of the analogy. */
+  rows: { picture: string; real: string }[];
+  /** Where the analogy breaks. Every analogy has one. */
+  breaks: string;
+}
+const { rows, breaks } = Astro.props;
+---
+
+<details open class="rung">
+  <summary>The picture</summary>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">The picture</th>
+        <th scope="col">The real thing</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map(({ picture, real }) => (
+          <tr>
+            <td>{picture}</td>
+            <td>{real}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <p class="breaks"><strong>Where this breaks:</strong> {breaks}</p>
+</details>
+
+<style>
+  .rung {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  summary {
+    font-weight: 600;
+  }
+  table {
+    width: 100%;
+    margin-top: var(--space-3);
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    width: 50%;
+    padding: var(--space-2);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+  }
+  th {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .breaks {
+    margin-bottom: 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--wrong-bg);
+    border-left: 4px solid var(--wrong);
+    border-radius: var(--radius);
+  }
+  .breaks strong {
+    color: var(--wrong);
+  }
+</style>

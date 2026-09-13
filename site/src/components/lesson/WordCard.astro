@@ -1,0 +1,52 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+// Lesson contract block 3. It sits in an open box: a learner who knows the
+// words closes it (PEDAGOGY rule 3).
+export interface Props {
+  /** The `terms` of the module frontmatter. */
+  terms: CollectionEntry<'modules'>['data']['terms'];
+}
+const { terms } = Astro.props;
+---
+
+<details open class="word-card">
+  <summary>Words on this page</summary>
+  <dl>
+    {
+      terms.map(({ term, meaning }) => (
+        <div>
+          <dt>{term}</dt>
+          <dd>{meaning}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</details>
+
+<style>
+  .word-card {
+    margin: var(--space-6) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  summary {
+    font-weight: 600;
+  }
+  dl {
+    margin: var(--space-3) 0 0;
+  }
+  div {
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--rule);
+  }
+  dt {
+    font-weight: 600;
+  }
+  dd {
+    margin: 0;
+    color: var(--text-muted);
+  }
+</style>

@@ -1,0 +1,48 @@
+---
+// A real command and the output it printed. Measured output keeps its
+// conditions in the title (CLAUDE.md content rule 3).
+export interface Props {
+  /** What the run shows and where it ran, such as "Server side, loopback". */
+  title?: string;
+  /** Each command, with the output it printed. Leave out output that the lesson does not use. */
+  runs: { cmd: string; out?: string }[];
+}
+const { title, runs } = Astro.props;
+---
+
+<figure class="terminal">
+  {title && <figcaption>{title}</figcaption>}
+  <pre
+    tabindex="0"><code>{runs.map(({ cmd, out }) => (<><span class="cmd"><span class="prompt" aria-hidden="true">$ </span>{cmd}</span>{out && <span class="out">{out}</span>}</>))}</code></pre>
+</figure>
+
+<style>
+  .terminal {
+    margin: var(--space-4) 0;
+  }
+  figcaption {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  pre {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    overflow-x: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  code {
+    padding: 0;
+    background: none;
+  }
+  .cmd,
+  .out {
+    display: block;
+  }
+  .prompt,
+  .out {
+    color: var(--text-muted);
+  }
+</style>
