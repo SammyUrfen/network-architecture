@@ -1,0 +1,213 @@
+---
+import BoundaryFinderIsland from './BoundaryFinderIsland.tsx';
+
+// The request boundary finder of s05-m12 (docs/curriculum/session-05.md,
+// Interactives). The learner sees where the reads cut a byte stream and where
+// the requests really end. The logic is in src/lib/sims/s05-m12-assignment-prep.ts.
+// The page before hydration shows read 1.
+export interface Props {}
+---
+
+<figure class="finder-figure">
+  <figcaption>Request boundary finder</figcaption>
+  <BoundaryFinderIsland client:visible />
+  <p class="simplifies">
+    <strong>What this simplifies:</strong> the finder knows where every request ends before the first read, but a
+    server sees only bytes. Real reads split where packets and timing put them, not where you type. The finder shows
+    only Content-Length bodies, not chunked ones.
+  </p>
+</figure>
+
+<style>
+  .finder-figure {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+  .simplifies {
+    margin: var(--space-3) 0 0;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .finder-figure :global(.finder) {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .finder-figure :global(fieldset) {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .finder-figure :global(legend) {
+    padding: 0 var(--space-1);
+    font-weight: 600;
+  }
+  .finder-figure :global(.choice) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 2.75rem;
+  }
+  .finder-figure :global(.choice input) {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0 var(--space-1) 0 0;
+    accent-color: var(--interactive);
+  }
+  .finder-figure :global(.sizes) {
+    display: grid;
+    gap: var(--space-1);
+    margin-top: var(--space-3);
+    font-weight: 600;
+  }
+  .finder-figure :global(.sizes input) {
+    max-width: 20rem;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--text);
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .finder-figure :global(.sizes input[aria-invalid='true']) {
+    border-color: var(--wrong);
+  }
+  .finder-figure :global(.hint),
+  .finder-figure :global(.error) {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+  }
+  .finder-figure :global(.hint) {
+    color: var(--text-muted);
+  }
+  .finder-figure :global(.error) {
+    padding: var(--space-1) var(--space-2);
+    color: var(--wrong);
+    background: var(--wrong-bg);
+    border-radius: var(--radius);
+  }
+
+  /* The ruler: one row for each line of the stream, one cell for each byte */
+  .finder-figure :global(.ruler) {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--bg);
+    border-radius: var(--radius);
+  }
+  .finder-figure :global(.row) {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: start;
+  }
+  .finder-figure :global(.offset) {
+    padding-top: 0.15em;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .finder-figure :global(.cells) {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+  }
+  .finder-figure :global(.byte) {
+    min-width: 1.2ch;
+    padding: 0 0.1ch;
+    white-space: pre;
+    text-align: center;
+    border-bottom: 3px solid transparent;
+  }
+  .finder-figure :global(.byte.req-1) {
+    background: var(--surface-2);
+  }
+  /* The current read has a thick underline as well as the color, so color is not the only cue */
+  .finder-figure :global(.byte.now) {
+    background: var(--key-bg);
+    border-bottom-color: var(--key);
+  }
+  .finder-figure :global(.byte.later) {
+    color: var(--text-muted);
+    border-bottom: 1px dashed var(--border);
+  }
+  .finder-figure :global(.mark) {
+    padding: 0 0.3ch;
+    margin: 0 0.2ch;
+    font-family: var(--font-prose);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 4px;
+  }
+  .finder-figure :global(.mark.start) {
+    color: var(--surface);
+    background: var(--text);
+  }
+  .finder-figure :global(.mark.cut) {
+    color: var(--key);
+    border: 1px solid var(--key);
+  }
+  .finder-figure :global(.legend) {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .finder-figure :global(.status p),
+  .finder-figure :global(.status ul) {
+    margin: 0 0 var(--space-2);
+  }
+  .finder-figure :global(.ask) {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--interactive-bg);
+    border-left: 4px solid var(--interactive);
+    border-radius: var(--radius);
+  }
+  .finder-figure :global(.controls) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .finder-figure :global(.controls button) {
+    min-width: 5.5rem;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    font-weight: 600;
+    color: var(--interactive);
+    background: var(--surface);
+    border: 2px solid var(--interactive);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .finder-figure :global(.controls button:hover) {
+    background: var(--interactive-bg);
+  }
+  .finder-figure :global(.controls button[aria-disabled='true']) {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: var(--surface-2);
+    cursor: default;
+  }
+  .finder-figure :global(.keys) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  @media (max-width: 40rem) {
+    .finder-figure :global(.row) {
+      grid-template-columns: 2rem 1fr;
+    }
+  }
+</style>
