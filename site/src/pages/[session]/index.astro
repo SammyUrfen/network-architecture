@@ -34,7 +34,7 @@ const modules = (await getCollection('modules', (m) => m.data.session === s.numb
     ) : (
       <ol class="modules">
         {modules.map(({ id, data: m }) => (
-          <li>
+          <li value={m.order}>
             <a href={moduleHref(id)}>{m.title}</a>
             <span class="minutes">
               {m.minutes} min{m.status === 'draft' ? ' · draft' : ''}

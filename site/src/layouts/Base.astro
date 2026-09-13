@@ -13,7 +13,7 @@ const nav = [
   ['review/', 'Review'],
   ['practice/', 'Practice'],
   ['threads/', 'Threads'],
-  ['assessments/', 'Assessments'],
+  ['assessments/', 'Graded work'],
   ['progress/', 'Progress'],
 ];
 const here = Astro.url.pathname;
@@ -179,6 +179,20 @@ const here = Astro.url.pathname;
     text-decoration: underline;
     text-decoration-color: var(--key);
     text-decoration-thickness: 2px;
+  }
+  /* On a phone the toggle sits next to the site name and the nav takes its
+     own row. Tab order stays: name, nav, toggle. */
+  @media (max-width: 40rem) {
+    .site-header {
+      justify-content: space-between;
+    }
+    nav {
+      order: 3;
+      flex-basis: 100%;
+    }
+    nav ul {
+      column-gap: var(--space-3);
+    }
   }
   main {
     max-width: var(--measure);
