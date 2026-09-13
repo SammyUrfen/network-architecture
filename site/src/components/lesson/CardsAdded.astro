@@ -1,0 +1,54 @@
+---
+// Block 10 of the lesson contract. The list is static HTML. Only the queue
+// state and the "Add" button need the island, because they read the store.
+import { getEntry } from 'astro:content';
+import CardsAddedIsland from './CardsAdded.tsx';
+
+export interface Props {
+  /** The module ID, such as s01-m08-framing. Its card file has the same name. */
+  id: string;
+}
+const { id } = Astro.props;
+const entry = await getEntry('cards', id);
+if (!entry) throw new Error(`CardsAdded: no card file src/content/cards/${id}.yaml`);
+const { items } = entry.data;
+---
+
+<section class="cards-added" aria-labelledby={`${id}-cards`}>
+  <h2 id={`${id}-cards`}>Cards added</h2>
+  <p>These {items.length} questions come back in your review queue over the next days and weeks.</p>
+  <ol>
+    {items.map((card) => <li>{card.front}</li>)}
+  </ol>
+  <CardsAddedIsland client:only="preact" cards={items.map((card) => card.id)} />
+</section>
+
+<style>
+  .cards-added {
+    margin: var(--space-8) 0;
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--key);
+    border-radius: var(--radius);
+  }
+  h2 {
+    margin-top: 0;
+  }
+  .cards-added :global(.cards-state p) {
+    margin-bottom: var(--space-3);
+  }
+  .cards-added :global(button) {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .cards-added :global(button:hover) {
+    border-color: var(--interactive);
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+// Fixture page for the Phase 2 visual QA of the progress blocks. Not in the nav.
+import CardsAdded from '../../components/lesson/CardsAdded.astro';
+import ModuleProgress from '../../components/lesson/ModuleProgress.tsx';
+import Base from '../../layouts/Base.astro';
+import { href } from '../../lib/url';
+---
+
+<Base title="Dev: progress blocks">
+  <h1>Dev: progress blocks</h1>
+  <p>This page shows <code>ModuleProgress</code> and <code>CardsAdded</code> for <code>s01-m08-framing</code>.</p>
+
+  <h2>ModuleProgress</h2>
+  <ModuleProgress client:only="preact" id="s01-m08-framing" />
+
+  <CardsAdded id="s01-m08-framing" />
+
+  <h2>QA tools</h2>
+  <p>These buttons change the saved progress in this browser.</p>
+  <div class="qa">
+    <button type="button" data-qa="due">Make every saved card due today</button>
+    <button type="button" data-qa="pretest">Save a pretest and one answer</button>
+  </div>
+  <p role="status" data-qa-status></p>
+  <p><a href={href('review/')}>Review</a> · <a href={href('progress/')}>Progress</a></p>
+</Base>
+
+<script>
+  import { updateProgress } from '../../lib/progress';
+  import { localDay } from '../../lib/schedule';
+
+  const status = document.querySelector('[data-qa-status]')!;
+
+  document.querySelector('[data-qa="due"]')!.addEventListener('click', () => {
+    const today = localDay(new Date());
+    let count = 0;
+    updateProgress((p) => {
+      for (const card of Object.values(p.cards)) {
+        card.due = today;
+        count++;
+      }
+      return p;
+    });
+    status.textContent = `${count} saved cards are due today, ${today}.`;
+  });
+
+  document.querySelector('[data-qa="pretest"]')!.addEventListener('click', () => {
+    const at = new Date().toISOString();
+    updateProgress((p) => {
+      p.modules['s01-m08-framing'] ??= { startedAt: at };
+      p.modules['s01-m08-framing'].pretest = { right: 1, total: 3 };
+      (p.answers['s01-m08-q01'] ??= []).push({ at, correct: false, confidence: 'sure' });
+      return p;
+    });
+    status.textContent = 'Saved a pretest of 1 right out of 3, and one wrong answer to s01-m08-q01.';
+  });
+</script>
+
+<style>
+  .qa {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  button {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+</style>

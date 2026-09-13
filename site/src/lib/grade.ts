@@ -2,59 +2,33 @@
 // The island passes the item and the answer of the learner. Each function
 // gives the result and the one feedback text to show.
 
-// These types copy the quiz schema in docs/PLAN.md section 3, because
-// content.config.ts is on another branch. Option and Distractor are full
-// copies. The item types name only the fields that grading reads. Switch them
-// to the collection types after the merge.
-export interface Option {
-  text: string;
-  correct: boolean;
-  misconception?: string;
-  feedback: string;
-}
+// The types come from the quiz schema in content.config.ts. Each item type
+// names only the fields that grading reads. The schema has a bytes item with
+// `answer` or `field`, and a spot-bug item with `bugLines` or `options`. So
+// the island narrows the item before it calls the grade function.
+import type { z } from 'astro/zod';
+import type { quizItem } from '../content.config';
 
-export interface Distractor {
-  value: unknown;
-  misconception?: string;
-  feedback: string;
-}
+export type QuizItem = z.infer<typeof quizItem>;
+// Not Extract: one schema member has `type: 'mcq' | 'predict' | 'multi'`.
+type Having<I, T> = I extends { type: infer U } ? (T extends U ? I : never) : never;
+type ItemOf<T extends QuizItem['type']> = Having<QuizItem, T>;
+
+export type Option = ItemOf<'mcq'>['options'][number];
 
 interface Explained {
   explanation: string;
-  distractors?: Distractor[];
+  distractors?: Array<{ value: unknown; feedback: string }>;
 }
 
-export interface ChoiceItem {
-  options: Option[];
-}
-
-export interface MultiItem {
-  options: Option[];
-  explanation: string;
-}
-
-export interface NumericItem extends Explained {
-  answer: { value: number; tolerance?: number };
-}
-
-export interface OrderItem extends Explained {
-  items: string[];
-}
-
-export interface BytesItem extends Explained {
-  answer: string;
-}
-
-export interface ByteFieldItem extends Explained {
-  field: [number, number];
-}
-
-export interface BugLinesItem {
-  bugLines: number[];
-  explanation: string;
-}
-
-export type RecallItem = Explained;
+export type ChoiceItem = Pick<ItemOf<'mcq'>, 'options'>;
+export type MultiItem = Pick<ItemOf<'multi'>, 'options' | 'explanation'>;
+export type NumericItem = Pick<ItemOf<'numeric'>, 'answer' | 'explanation' | 'distractors'>;
+export type OrderItem = Pick<ItemOf<'order'>, 'items' | 'explanation' | 'distractors'>;
+export type BytesItem = Pick<ItemOf<'bytes'>, 'explanation' | 'distractors'> & Required<Pick<ItemOf<'bytes'>, 'answer'>>;
+export type ByteFieldItem = Pick<ItemOf<'bytes'>, 'explanation' | 'distractors'> & Required<Pick<ItemOf<'bytes'>, 'field'>>;
+export type BugLinesItem = Pick<ItemOf<'spot-bug'>, 'explanation'> & Required<Pick<ItemOf<'spot-bug'>, 'bugLines'>>;
+export type RecallItem = Pick<ItemOf<'recall'>, 'explanation' | 'distractors'>;
 
 export interface Grade {
   correct: boolean;

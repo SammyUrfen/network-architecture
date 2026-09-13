@@ -1,8 +1,100 @@
 ---
 import Base from '../layouts/Base.astro';
+import ProgressTools from './_ProgressTools';
 ---
 
 <Base title="Progress">
   <h1>Progress</h1>
-  <p>Export, import and reset come in Phase 2.</p>
+  <p class="lead">
+    Your progress lives only in this browser, at this address. Export it to keep a copy, and import it in a new place.
+  </p>
+  <div class="tools">
+    <ProgressTools client:only="preact">
+      <p slot="fallback">Loading your saved progress.</p>
+    </ProgressTools>
+  </div>
 </Base>
+
+<style>
+  .lead {
+    color: var(--text-muted);
+  }
+  .tools :global(.summary) {
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  .tools :global(.buttons) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .tools :global(button) {
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .tools :global(button:hover) {
+    border-color: var(--interactive);
+  }
+  .tools :global(.danger) {
+    color: var(--wrong);
+    background: var(--wrong-bg);
+    border-color: var(--wrong);
+    font-weight: 600;
+  }
+  .tools :global(.file) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-weight: 600;
+  }
+  .tools :global(.file input) {
+    font: inherit;
+    font-weight: 400;
+    max-width: 100%;
+  }
+  .tools :global(.file input::file-selector-button) {
+    min-height: 2.75rem;
+    margin-right: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    color: var(--text);
+    background: var(--interactive-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .tools :global(.confirm) {
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--wrong-bg);
+    border-left: 4px solid var(--wrong);
+    border-radius: var(--radius);
+  }
+  .tools :global(.confirm p) {
+    margin-top: 0;
+  }
+  /* An empty live region stays in the page, so a screen reader reads its next message. */
+  .tools :global(.note:empty) {
+    margin: 0;
+  }
+  .tools :global(.ok) {
+    color: var(--correct);
+  }
+  .tools :global(.bad),
+  .tools :global(.problem) {
+    color: var(--wrong);
+  }
+  .tools :global(.problem) {
+    padding: var(--space-3);
+    background: var(--wrong-bg);
+    border-radius: var(--radius);
+  }
+</style>

@@ -400,7 +400,10 @@ Before any public push:
 
 1. Keep `docs/curriculum/` and the pages for graded work (`s05-m12`,
    `s05-m13`) out of the public tree until the grades are final. Bibek
-   picks how: a private branch or `.gitignore`.
+   picks how: a private branch or `.gitignore`. The build reads
+   `docs/curriculum/README.md` (the threads loader) and
+   `docs/curriculum/session-*.md` (misconception text for the check
+   islands). The chosen way must keep the build working.
 2. Ask the instructor before a public release.
 3. Scan every tracked file for long quotes from `sources/`.
 
@@ -465,7 +468,9 @@ session runs a fix packet for each open line.
 
 ### Contract change requests
 
-None yet.
+| Date | From | Request | State |
+|---|---|---|---|
+| 2026-09-14 | p2-libs, p2-checks | The quiz schema gives a `bytes` distractor a string `value`, but `gradeByteField` matches `[start, end]` arrays. So a byte-field distractor never matches. No pilot uses it. | open, for Phase 4 |
 
 ---
 

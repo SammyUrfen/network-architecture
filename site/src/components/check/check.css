@@ -1,0 +1,257 @@
+/* The check blocks: pretest, check, predict, explain it back, faded example,
+   exam prompts, exit quiz. Islands cannot use scoped Astro styles, so every
+   class starts with "chk-". A color never carries meaning alone: each state
+   also has a word or a mark. */
+
+.chk {
+  margin: var(--space-6) 0;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--interactive);
+  border-radius: var(--radius);
+}
+.chk p {
+  margin: 0 0 var(--space-3);
+}
+.chk-kind {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--interactive);
+}
+.chk-step {
+  margin-top: var(--space-6) !important;
+  font-weight: 700;
+}
+.chk-note {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.chk-list,
+.chk-steps {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-6);
+}
+.chk-list > li + li {
+  margin-top: var(--space-6);
+}
+.chk-steps > li + li {
+  margin-top: var(--space-1);
+}
+
+/* One question */
+.chk-question fieldset {
+  min-width: 0;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 0;
+}
+.chk-prompt {
+  display: block;
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+/* On a phone the mark wraps below the option text instead of squeezing it. */
+.chk-option {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: flex-start;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.chk-option:not(.is-right, .is-wrong):has(input:checked) {
+  background: var(--interactive-bg);
+}
+.chk-option input {
+  flex: none;
+  margin: 0.35em 0 0;
+  accent-color: var(--interactive);
+}
+.chk-option > span:not(.chk-mark) {
+  flex: 1 1 12rem;
+}
+.chk-option.is-right {
+  border: 2px solid var(--correct);
+  background: var(--correct-bg);
+}
+.chk-option.is-wrong {
+  border: 2px solid var(--wrong);
+  background: var(--wrong-bg);
+}
+.chk-mark {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chk-mark.is-right,
+.is-right > .chk-mark {
+  color: var(--correct);
+}
+.chk-mark.is-wrong,
+.is-wrong > .chk-mark {
+  color: var(--wrong);
+}
+.chk-field {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+.chk-number {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.chk input[type='text'],
+.chk textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+}
+.chk textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+}
+.chk-number input {
+  width: 8rem;
+}
+.chk-blank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.chk-blank > span:first-child {
+  min-width: 10rem;
+}
+.chk-blank input {
+  width: 10rem;
+}
+.chk-blank .chk-mark {
+  margin-left: 0;
+  white-space: normal;
+}
+.chk-list .chk-question + .chk-note {
+  margin-top: var(--space-2);
+}
+
+.chk-confidence .chk-confidence-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+.chk-confidence legend {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.chk-confidence label {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+.chk-confidence input {
+  accent-color: var(--interactive);
+}
+
+.chk button {
+  font: inherit;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  color: var(--bg);
+  background: var(--interactive);
+  border: 1px solid var(--interactive);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.chk button.chk-secondary {
+  color: var(--interactive);
+  background: transparent;
+}
+.chk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+.chk-hint {
+  margin-top: var(--space-2) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--wrong);
+}
+.chk-hint:empty {
+  margin: 0 !important;
+}
+
+/* After the answer */
+.chk-after:focus,
+.chk-model:focus,
+.chk-note:focus {
+  outline-offset: 4px;
+}
+.chk-model,
+.chk-result {
+  padding: var(--space-3);
+  border-left: 4px solid;
+  border-radius: var(--radius);
+}
+.chk-model {
+  background: var(--key-bg);
+  border-color: var(--key);
+}
+.chk-model strong {
+  color: var(--key);
+}
+.chk-result.is-right {
+  background: var(--correct-bg);
+  border-color: var(--correct);
+}
+.chk-result.is-wrong {
+  background: var(--wrong-bg);
+  border-color: var(--wrong);
+}
+.chk-result.is-right > p:first-child > strong {
+  color: var(--correct);
+}
+.chk-result.is-wrong > p:first-child > strong {
+  color: var(--wrong);
+}
+.chk-result > p:last-child {
+  margin-bottom: 0;
+}
+.chk-myth {
+  font-style: italic;
+}
+.chk-id {
+  white-space: nowrap;
+}
+.chk-loud {
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--wrong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.chk-why {
+  color: var(--text-muted);
+}
+.chk-observe:not([hidden]) {
+  margin: var(--space-3) 0;
+}
+.chk-summary {
+  font-weight: 700;
+}
