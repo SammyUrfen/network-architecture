@@ -169,7 +169,7 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
             </p>
             {myths.map((id) => (
               <p key={id} class="chk-myth">
-                The common mistake: “<Inline text={misconceptions[id] ?? id} />” ({id})
+                The common mistake: “<Inline text={misconceptions[id] ?? id} />” <span class="chk-id">({id})</span>
               </p>
             ))}
             {!grade.correct && confidence === 'sure' && (

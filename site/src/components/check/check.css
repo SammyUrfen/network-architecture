@@ -54,9 +54,11 @@
   margin-bottom: var(--space-2);
   font-weight: 600;
 }
+/* On a phone the mark wraps below the option text instead of squeezing it. */
 .chk-option {
   display: flex;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
   align-items: flex-start;
   margin-bottom: var(--space-2);
   padding: var(--space-2) var(--space-3);
@@ -64,13 +66,16 @@
   border-radius: var(--radius);
   cursor: pointer;
 }
-.chk-option:has(input:checked) {
+.chk-option:not(.is-right, .is-wrong):has(input:checked) {
   background: var(--interactive-bg);
 }
 .chk-option input {
   flex: none;
   margin: 0.35em 0 0;
   accent-color: var(--interactive);
+}
+.chk-option > span:not(.chk-mark) {
+  flex: 1 1 12rem;
 }
 .chk-option.is-right {
   border: 2px solid var(--correct);
@@ -82,9 +87,9 @@
 }
 .chk-mark {
   margin-left: auto;
-  padding-left: var(--space-2);
   font-size: var(--text-sm);
   font-weight: 700;
+  white-space: nowrap;
 }
 .chk-mark.is-right,
 .is-right > .chk-mark {
@@ -135,7 +140,10 @@
 }
 .chk-blank .chk-mark {
   margin-left: 0;
-  padding-left: 0;
+  white-space: normal;
+}
+.chk-list .chk-question + .chk-note {
+  margin-top: var(--space-2);
 }
 
 .chk-confidence .chk-confidence-row {
@@ -228,6 +236,9 @@
 }
 .chk-myth {
   font-style: italic;
+}
+.chk-id {
+  white-space: nowrap;
 }
 .chk-loud {
   padding: var(--space-2) var(--space-3);

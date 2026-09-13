@@ -100,7 +100,7 @@ items:
         correct: false
         misconception: S01-M76
         feedback: The newline is a delimiter. The reader learns the count only after it scans to the newline.
-    explanation: A length gives the reader the count before it reads. A delimiter is found by a scan. Content-Length and the 2-byte prefix are lengths. The empty line and the newline are delimiters.
+    explanation: A length gives the reader the count before it reads. The reader finds a delimiter with a scan. Content-Length and the 2-byte prefix are lengths. The empty line and the newline are delimiters.
     covers: [S01-C95, S01-C96]
     tags: []
 
