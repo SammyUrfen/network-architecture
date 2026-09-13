@@ -10,14 +10,14 @@ items:
     type: mcq
     prompt: 'The sender calls write() two times, "hello" then "world". What can one read() return?'
     options:
+      - text: 'Any split, such as "helloworld".'
+        correct: true
+        feedback: TCP keeps no edges between writes, so a read returns the bytes that arrived.
       - text: 'Always exactly "hello".'
         correct: false
         misconception: S01-M04
         feedback: TCP keeps no edges between writes. A read returns the bytes that wait, which can be part of a message or parts of two.
-      - text: 'Any split, such as "helloworld".'
-        correct: true
-        feedback: TCP keeps no edges between writes, so a read returns the bytes that arrived.
-      - text: The two words in two reads, one for each packet.
+      - text: Always two reads, one for each packet.
         correct: false
         misconception: S01-M32
         feedback: TCP can split or merge writes. One write is not one packet, and one packet is not one read.
@@ -31,9 +31,6 @@ items:
     type: mcq
     prompt: A protocol says that every message is exactly 100 bytes. What is that fixed length, underneath?
     options:
-      - text: A length that both sides agreed on before the connection started.
-        correct: true
-        feedback: The length lives in the protocol spec, not in each message.
       - text: A third rule that has no length in it.
         correct: false
         misconception: S01-M30
@@ -42,6 +39,9 @@ items:
         correct: false
         misconception: S01-M74
         feedback: The reader counts 100 bytes, so it needs no marker.
+      - text: A length that both sides agreed on before the connection started.
+        correct: true
+        feedback: The length lives in the protocol spec, not in each message.
     explanation: 'Slide 39 gives three rules. Later decks say "length or delimiter", with no third option. Both hold, because a fixed length is a length agreed ahead of time.'
     covers: [S01-C93, S01-C94, S01-C97]
     tags: []
@@ -52,18 +52,18 @@ items:
     type: mcq
     prompt: What is the main risk of a delimiter?
     options:
-      - text: The delimiter can show up inside the data.
-        correct: true
-        feedback: The sender must escape the delimiter when the data holds it.
       - text: It has no risk. It works for any bytes.
         correct: false
         misconception: S01-M31
         feedback: Data that holds the delimiter needs escaping, or the reader stops too early.
+      - text: The delimiter can show up inside the data.
+        correct: true
+        feedback: The sender must escape the delimiter when the data holds it.
       - text: The sender must know the message size first.
         correct: false
         misconception: S01-M75
         feedback: That cost belongs to a length prefix. A delimiter lets the sender stream.
-    explanation: The reader scans for the delimiter. If the data holds the same bytes, the reader stops too early, unless the sender escapes them. SMTP does this with a leading dot.
+    explanation: The reader scans for the delimiter. If the data holds the same bytes, the reader stops too early, unless the sender escapes them. SMTP adds a dot to a body line that starts with a dot.
     covers: [S01-C95]
     tags: []
 
@@ -73,10 +73,7 @@ items:
     type: numeric
     prompt: A protocol puts a 1-byte length in front of each message. What is the largest payload that this length can describe?
     answer: { value: 255, tolerance: 0, unit: bytes }
-    distractors:
-      - value: 256
-        feedback: One byte holds 256 values, but they run from 0 to 255. The largest length is 255.
-    explanation: One byte holds the values 0 to 255. So a 1-byte length caps a message at 255 bytes. Two bytes cap it at 65,535.
+    explanation: One byte holds 256 values, from 0 to 255. So the largest length that it can say is 255, and a 1-byte length caps a message at 255 bytes. Two bytes cap it at 65,535.
     covers: [S01-C96]
     tags: []
 
@@ -86,20 +83,20 @@ items:
     type: multi
     prompt: Which of these mark the end of a message with a length? Pick every one that does.
     options:
-      - text: '`Content-Length: 219` in an HTTP response'
-        correct: true
-        feedback: The reader reads exactly 219 body bytes.
-      - text: The 2-byte prefix `00 05` in front of `hello`
-        correct: true
-        feedback: The reader reads 2 bytes, gets the length 5, then reads 5 bytes.
-      - text: The empty line, CR LF CR LF, after the HTTP headers
+      - text: The CR LF CR LF at the end of the HTTP headers
         correct: false
         misconception: S01-M76
         feedback: The empty line is a delimiter. The reader learns the count only after it scans to the empty line.
+      - text: '`Content-Length: 219` in an HTTP response'
+        correct: true
+        feedback: The reader reads exactly 219 body bytes.
       - text: The newline at the end of a homework 3 chat line
         correct: false
         misconception: S01-M76
         feedback: The newline is a delimiter. The reader learns the count only after it scans to the newline.
+      - text: The 2-byte prefix `00 05` in front of `hello`
+        correct: true
+        feedback: The reader reads 2 bytes, gets the length 5, then reads 5 bytes.
     explanation: A length gives the reader the count before it reads. The reader finds a delimiter with a scan. Content-Length and the 2-byte prefix are lengths. The empty line and the newline are delimiters.
     covers: [S01-C95, S01-C96]
     tags: []
@@ -110,9 +107,6 @@ items:
     type: mcq
     prompt: A program calls write() one time with 10 bytes. How many TCP segments carry those bytes?
     options:
-      - text: One or more, as TCP decides.
-        correct: true
-        feedback: TCP can send the 10 bytes in one segment, split them, or merge them with other writes.
       - text: Always exactly one.
         correct: false
         misconception: S01-M32
@@ -121,6 +115,9 @@ items:
         correct: false
         misconception: S01-M77
         feedback: TCP sends small writes soon, and it can split or merge them.
+      - text: One or more, as TCP decides.
+        correct: true
+        feedback: TCP can send the 10 bytes in one segment, split them, or merge them with other writes.
     explanation: TCP owns the send buffer and picks the segment sizes. So the edges of a write do not reach the receiver.
     covers: [S01-C92]
     tags: []
@@ -138,7 +135,7 @@ items:
     use: [pretest, exit]
     type: recall
     prompt: What ends the HTTP header block?
-    model: An empty line, the bytes CR LF CR LF.
+    model: An empty line, CR LF. With the CR LF that ends the last header line, the bytes are CR LF CR LF.
     explanation: The empty line is a delimiter. The reader scans for it to find where the headers stop.
     covers: [S01-C95]
     tags: []
@@ -157,13 +154,13 @@ items:
     type: predict
     prompt: 'The persistent echo server runs under strace, over loopback. A client calls send(b"hello"), then send(b"world"), on one connection. How many read() calls does the server make for the two sends?'
     options:
-      - text: One read that returns all 10 bytes.
-        correct: true
-        feedback: That is what this loopback run showed. A real network can split the bytes another way.
       - text: Two reads of 5 bytes, one for each send.
         correct: false
         misconception: S01-M32
         feedback: TCP can split or merge writes. On this loopback run, the two sends arrived as one read.
+      - text: One read that returns all 10 bytes.
+        correct: true
+        feedback: That is what this loopback run showed. A real network can split the bytes another way.
       - text: No read, until the send buffer fills.
         correct: false
         misconception: S01-M77

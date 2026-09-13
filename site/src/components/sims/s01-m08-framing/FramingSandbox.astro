@@ -1,0 +1,257 @@
+---
+import { sandbox } from '../../../lib/sims/s01-m08-framing';
+import SandboxIsland, { type Props as IslandProps } from './SandboxIsland.tsx';
+
+// The framing sandbox of s01-m08-framing. The build fails when the first
+// messages cannot be framed, so a page never opens on an error. The page
+// before hydration shows step 1 of the first setup.
+export interface Props extends IslandProps {}
+const props = Astro.props;
+const first = sandbox(props.messages, props.rule, props.n ?? 8);
+if ('error' in first) throw new Error(`FramingSandbox "${props.title}": ${first.error}`);
+---
+
+<figure class="sandbox-figure">
+  <figcaption>{props.title}</figcaption>
+  <SandboxIsland client:visible {...props} />
+</figure>
+
+<style>
+  .sandbox-figure {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+  .sandbox-figure :global(.sandbox) {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .sandbox-figure :global(.sandbox p) {
+    margin: 0;
+  }
+
+  /* Inputs */
+  .sandbox-figure :global(.inputs) {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .sandbox-figure :global(.messages) {
+    display: grid;
+    gap: var(--space-1);
+    font-weight: 600;
+  }
+  .sandbox-figure :global(textarea),
+  .sandbox-figure :global(input[type='number']) {
+    padding: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .sandbox-figure :global(input[type='number']) {
+    width: 6rem;
+  }
+  .sandbox-figure :global(.hint) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .sandbox-figure :global(fieldset) {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .sandbox-figure :global(legend) {
+    padding: 0 var(--space-1);
+    font-weight: 600;
+  }
+  .sandbox-figure :global(.choice),
+  .sandbox-figure :global(.number) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+  }
+  .sandbox-figure :global(.choice input) {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    accent-color: var(--interactive);
+  }
+
+  /* Lanes of bytes */
+  .sandbox-figure :global(.lane) {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .sandbox-figure :global(.lane-label) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .sandbox-figure :global(.groups) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2) var(--space-3);
+    min-height: 3.5rem;
+  }
+  .sandbox-figure :global(.group) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: var(--space-1) var(--space-1) 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  /* The newest read has a thicker border as well as the color, so color is not the only cue */
+  .sandbox-figure :global(.group.now) {
+    background: var(--key-bg);
+    border: 3px solid var(--key);
+  }
+  .sandbox-figure :global(.group-label) {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .sandbox-figure :global(.bytes) {
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+  }
+  .sandbox-figure :global(.cell) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 2.4ch;
+    padding: 0 0.2ch;
+    border-bottom: 3px solid var(--border);
+  }
+  .sandbox-figure :global(.char) {
+    min-height: 1.6em;
+    color: var(--text-muted);
+  }
+  .sandbox-figure :global(.cell.length),
+  .sandbox-figure :global(.key.length) {
+    border-bottom-color: var(--key);
+  }
+  .sandbox-figure :global(.cell.delimiter),
+  .sandbox-figure :global(.key.delimiter) {
+    border-bottom-color: var(--interactive);
+  }
+  .sandbox-figure :global(.cell.pad),
+  .sandbox-figure :global(.key.pad) {
+    border-bottom-style: dashed;
+    border-bottom-color: var(--text-muted);
+  }
+  .sandbox-figure :global(.legend) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .sandbox-figure :global(.key) {
+    border-bottom: 3px solid var(--border);
+  }
+  .sandbox-figure :global(.empty) {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+  }
+
+  /* The reads, one step at a time */
+  .sandbox-figure :global(.reads) {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--rule);
+  }
+  .sandbox-figure :global(.caption) {
+    min-height: 3.2em;
+  }
+  .sandbox-figure :global(.found) {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+  .sandbox-figure :global(.match) {
+    color: var(--correct);
+  }
+  .sandbox-figure :global(.miss) {
+    color: var(--wrong);
+  }
+  .sandbox-figure :global(.found code) {
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .sandbox-figure :global(.verdict) {
+    padding: var(--space-2) var(--space-3);
+    font-weight: 600;
+    border-left: 4px solid currentColor;
+    border-radius: var(--radius);
+  }
+  .sandbox-figure :global(.verdict.match) {
+    background: var(--correct-bg);
+  }
+  .sandbox-figure :global(.verdict.miss) {
+    background: var(--wrong-bg);
+  }
+  .sandbox-figure :global(.problem) {
+    padding: var(--space-2) var(--space-3);
+    color: var(--wrong);
+    background: var(--wrong-bg);
+    border-left: 4px solid var(--wrong);
+    border-radius: var(--radius);
+  }
+  .sandbox-figure :global(.simplifies) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  /* Buttons, as in the Stepper */
+  .sandbox-figure :global(.controls) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .sandbox-figure :global(button) {
+    justify-self: start;
+    min-width: 5.5rem;
+    min-height: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    font-weight: 600;
+    color: var(--interactive);
+    background: var(--surface);
+    border: 2px solid var(--interactive);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .sandbox-figure :global(button:hover) {
+    background: var(--interactive-bg);
+  }
+  .sandbox-figure :global(button[aria-disabled='true']) {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: var(--surface-2);
+    cursor: default;
+  }
+  .sandbox-figure :global(.keys) {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+</style>
