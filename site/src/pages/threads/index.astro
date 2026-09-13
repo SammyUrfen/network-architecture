@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { href } from '../../lib/url';
+
+const threads = await getCollection('threads');
+---
+
+<Base title="Threads">
+  <h1>Threads</h1>
+  <p>A thread is an idea that comes back in more than one session.</p>
+  <ul class="threads">
+    {
+      threads.map(({ id, data: t }) => (
+        <li>
+          <a href={href(`threads/${id}/`)}>{id}</a>: {t.idea} <span class="first">First seen in Session {t.firstSeen}.</span>
+        </li>
+      ))
+    }
+  </ul>
+</Base>
+
+<style>
+  .threads li {
+    margin-bottom: var(--space-3);
+  }
+  .first {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

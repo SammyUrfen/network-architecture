@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import SourceBadge from '../../components/SourceBadge.astro';
+import Base from '../../layouts/Base.astro';
+import { day, href, moduleHref } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const sessions = await getCollection('sessions');
+  return sessions.map((entry) => ({ params: { session: entry.id }, props: { entry } }));
+}
+
+const { data: s } = Astro.props.entry;
+const modules = (await getCollection('modules', (m) => m.data.session === s.number)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+---
+
+<Base title={`Session ${s.number}: ${s.title}`}>
+  <p class="crumb"><a href={href()}>Map</a></p>
+  <p class="eyebrow">Session {s.number}</p>
+  <h1>{s.title}</h1>
+  {s.subtitle && <p class="subtitle">“{s.subtitle}”</p>}
+  <p class="meta">
+    {s.sourceStatus === 'missing' ? 'Planned for' : 'Taught'}
+    {s.dateApprox ? ' about ' : ' '}
+    {day(s.date)}
+    <SourceBadge status={s.sourceStatus} />
+  </p>
+
+  <h2>Lessons</h2>
+  {
+    modules.length === 0 ? (
+      <p class="empty">No lesson pages yet.</p>
+    ) : (
+      <ol class="modules">
+        {modules.map(({ id, data: m }) => (
+          <li>
+            <a href={moduleHref(id)}>{m.title}</a>
+            <span class="minutes">
+              {m.minutes} min{m.status === 'draft' ? ' · draft' : ''}
+            </span>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</Base>
+
+<style>
+  .crumb,
+  .eyebrow,
+  .meta,
+  .minutes,
+  .empty {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+  .eyebrow {
+    margin-bottom: 0;
+  }
+  .subtitle {
+    font-size: var(--text-lg);
+    color: var(--text-muted);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .modules li {
+    margin-bottom: var(--space-2);
+  }
+  .minutes {
+    margin-left: var(--space-2);
+    white-space: nowrap;
+  }
+</style>

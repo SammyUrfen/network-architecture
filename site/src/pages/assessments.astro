@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import ModuleLink from '../components/lesson/ModuleLink.astro';
+import Base from '../layouts/Base.astro';
+import { day } from '../lib/url';
+
+const assessments = await getCollection('assessments');
+---
+
+<Base title="Graded work">
+  <h1>Graded work</h1>
+  <p>Dates can change. A date appears here when the instructor gives it.</p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Work</th>
+          <th scope="col">Weight</th>
+          <th scope="col">Date</th>
+          <th scope="col">Sessions</th>
+          <th scope="col">Prep</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          assessments.map(({ data: a }) => (
+            <tr>
+              <th scope="row">{a.title}</th>
+              <td>{a.weight}%</td>
+              <td>{a.date ? `${a.dateApprox ? 'about ' : ''}${day(a.date)}` : 'not known'}</td>
+              <td>{a.coversSessions.join(', ')}</td>
+              <td>
+                {a.prepModules.map((id) => (
+                  <ModuleLink id={id} />
+                ))}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</Base>
+
+<style>
+  .scroll {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  th,
+  td {
+    padding: var(--space-2);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+  }
+</style>

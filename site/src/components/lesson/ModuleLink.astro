@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import { moduleHref } from '../../lib/url';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+// A planned module has no page yet. getEntry() would also give undefined for
+// it, but it logs a warning for each one, so search the collection instead.
+const entry = (await getCollection('modules')).find((m) => m.id === id);
+---
+
+{
+  entry ? (
+    <a href={moduleHref(id)}>{entry.data.title}</a>
+  ) : (
+    <span class="planned">
+      <code>{id}</code> (planned)
+    </span>
+  )
+}
+
+<style>
+  .planned {
+    color: var(--text-muted);
+  }
+</style>
