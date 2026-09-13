@@ -513,6 +513,9 @@ which reads stdin when it gets no file.
    covered by at least one module.
 8. No lesson MDX holds a root-relative Markdown link, `](/`. Use
    `ModuleLink`.
+9. In a quiz file with 3 or more `mcq` and `predict` items, the right option
+   is not at the same index in all of them. Both pilot quizzes first put it
+   at option 1 in most items, so a learner could guess by position.
 
 **How the verifier reads the curriculum.** The files in `docs/curriculum/`
 stay the single source of truth. The verifier reads four things, with these
