@@ -1,0 +1,17 @@
+items:
+  - id: s01-m01-alpha-q01
+    use: [practice]
+    type: mcq
+    prompt: What can one read() return?
+    options:
+      - { text: Any split., correct: true, feedback: Right. }
+      - { text: One whole message., correct: false, misconception: S01-M01, feedback: TCP keeps no edges. }
+      # S01-M03 appears only in a reference bullet, so it has no definition.
+      - { text: One packet., correct: false, misconception: S01-M03, feedback: TCP can merge writes. }
+  - id: s01-m01-alpha-q02
+    use: [practice]
+    type: numeric
+    prompt: The largest payload of a 1-byte length prefix?
+    answer: { value: 255, tolerance: 0, unit: bytes }
+    distractors:
+      - { value: 256, misconception: S02-M09, feedback: One byte holds 0 to 255. }

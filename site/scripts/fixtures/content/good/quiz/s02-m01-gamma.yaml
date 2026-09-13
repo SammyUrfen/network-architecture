@@ -1,0 +1,8 @@
+# A quiz pack: a quiz file with no MDX page. Rule 5 skips it.
+items:
+  - id: s02-m01-gamma-q01
+    use: [practice]
+    type: recall
+    prompt: Why does more bandwidth not remove a round trip?
+    model: The round-trip time comes from the path and the handshakes, not the link capacity.
+    covers: [S02-C01]

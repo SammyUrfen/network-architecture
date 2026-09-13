@@ -1,0 +1,2 @@
+items:
+  - { id: s01-m01-alpha-q01, use: [practice], type: recall, prompt: One?, model: One. }

@@ -1,0 +1,7 @@
+items:
+  - id: s02-m01-gamma-q01
+    use: [practice]
+    type: recall
+    prompt: Where is S01-C09?
+    model: In a sentence, not in a claim row.
+    covers: [S01-C09]

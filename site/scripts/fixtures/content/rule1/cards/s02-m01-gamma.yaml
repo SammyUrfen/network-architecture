@@ -1,0 +1,5 @@
+items:
+  - id: s02-m01-gamma-c01
+    front: A card
+    back: with a claim ID that the session 2 table does not hold.
+    covers: [S02-C02]

@@ -1,0 +1,25 @@
+---
+id: s01-m01-alpha
+session: 1
+order: 1
+title: Where does a message end?
+minutes: 20
+bigIdea: TCP delivers bytes with no message edges.
+covers: [S01-C01]
+prereqs: [s02-m01-gamma]
+threads: [T-framing]
+confidence: high
+status: ready
+terms:
+  - { term: byte stream, meaning: bytes in order with no marks between writes }
+---
+import Segment from '../../../components/lesson/Segment.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+
+<Segment title="Two writes, one read">
+A read returns the bytes that wait. The round trips come in <ModuleLink id="s02-m01-gamma" />.
+</Segment>
+
+<Segment title="The length rule">
+A length prefix tells the reader how many bytes to take. See [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293).
+</Segment>

@@ -1,0 +1,24 @@
+items:
+  - id: s01-m01-alpha-q01
+    use: [practice]
+    type: mcq
+    prompt: Two options only.
+    options:
+      - { text: Right., correct: true, feedback: Right. }
+      - { text: Wrong., correct: false, misconception: S01-M01, feedback: No. }
+  - id: s01-m01-alpha-q02
+    use: [practice]
+    type: predict
+    prompt: Two correct options.
+    options:
+      - { text: Right., correct: true, feedback: Right. }
+      - { text: Also right., correct: true, feedback: Right. }
+      - { text: Wrong., correct: false, misconception: S01-M01, feedback: No. }
+  - id: s01-m01-alpha-q03
+    use: [practice]
+    type: mcq
+    prompt: A wrong option with no feedback.
+    options:
+      - { text: Right., correct: true, feedback: Right. }
+      - { text: Wrong., correct: false, misconception: S01-M01, feedback: No. }
+      - { text: Also wrong., correct: false, misconception: S01-M02 }

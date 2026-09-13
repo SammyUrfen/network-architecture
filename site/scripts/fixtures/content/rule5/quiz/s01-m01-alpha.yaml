@@ -1,0 +1,5 @@
+items:
+  - { id: s01-m01-alpha-q01, use: [pretest], type: recall, prompt: One?, model: One. }
+  - { id: s01-m01-alpha-q02, use: [check], segment: 1, type: recall, prompt: Two?, model: Two. }
+  - { id: s01-m01-alpha-q03, use: [check], segment: 1, type: recall, prompt: Three?, model: Three. }
+  - { id: s01-m01-alpha-q04, use: [check], segment: 3, type: recall, prompt: Four?, model: Four. }

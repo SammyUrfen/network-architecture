@@ -1,0 +1,13 @@
+items:
+  - id: s01-m01-alpha-c01
+    front: What does TCP deliver?
+    back: A byte stream with no message edges.
+    covers: [S01-C01]
+  - id: s01-m01-alpha-c02
+    front: Can one read() return parts of two messages?
+    back: Yes.
+    covers: [S01-C02]
+  - id: s01-m01-alpha-c03
+    front: Does more bandwidth remove a round trip?
+    back: No.
+    covers: [S02-C01]

@@ -1,0 +1,65 @@
+items:
+  - id: s01-m01-alpha-q01
+    use: [pretest, exit]
+    type: recall
+    prompt: A sender writes "hello", then "world". Can one read() return "helloworld"?
+    model: Yes.
+    covers: [S01-C02]
+  - id: s01-m01-alpha-q02
+    use: [pretest, exit]
+    type: recall
+    prompt: What does TCP deliver?
+    model: A byte stream with no message edges.
+    covers: [S01-C01]
+  - id: s01-m01-alpha-q03
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: The sender writes "hello", then "world". What can one read() return?
+    options:
+      - text: Always exactly "hello".
+        correct: false
+        misconception: S01-M01
+        feedback: TCP keeps no mark between writes.
+      - text: Any split, such as "helloworld".
+        correct: true
+        feedback: Right. A read returns the bytes that arrived.
+      - text: The two words in two reads, one for each packet.
+        correct: false
+        misconception: S01-M02
+        feedback: TCP can split or merge writes.
+    explanation: A read returns the bytes available. The application finds the message end.
+    covers: [S01-C02]
+  - id: s01-m01-alpha-q04
+    use: [check]
+    segment: 2
+    type: numeric
+    prompt: What is the largest payload that a 1-byte length prefix can describe?
+    answer: { value: 255, tolerance: 0, unit: bytes }
+    distractors:
+      - { value: 256, misconception: S01-M01, feedback: One byte holds the values 0 to 255. }
+    explanation: One byte holds 256 values, and the largest is 255.
+    covers: [S01-C01]
+  - id: s01-m01-alpha-q05
+    use: [check]
+    segment: 2
+    type: predict
+    prompt: The link gets ten times the bandwidth. Predict the round-trip time.
+    options:
+      - text: About the same.
+        correct: true
+        feedback: Right. Bandwidth does not shorten the path.
+      - text: One tenth of the old time.
+        correct: false
+        misconception: S02-M01
+        feedback: Latency is not bandwidth.
+      - text: Zero.
+        correct: false
+        misconception: S02-M01
+        feedback: Every round trip still travels the path.
+      - text: Ten times longer.
+        correct: false
+        misconception: S02-M01
+        feedback: More bandwidth does not add delay.
+    explanation: The round-trip time comes from the path, not from the bandwidth.
+    covers: [S02-C01]
