@@ -1,0 +1,8 @@
+---
+// The props come inline from the MDX. No quiz item has this block.
+import Island, { type Props as IslandProps } from './FadedExample.tsx';
+
+export interface Props extends IslandProps {}
+---
+
+<Island client:load {...Astro.props} />
