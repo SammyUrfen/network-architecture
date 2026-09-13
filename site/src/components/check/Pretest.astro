@@ -1,0 +1,14 @@
+---
+// Finds the pretest items of the module at build time and passes them to the island.
+import Island from './Pretest.tsx';
+import { itemsFor, misconceptionsOf } from './items';
+
+export interface Props {
+  /** A module ID, such as s01-m08-framing. Every item with use: pretest shows, in file order. */
+  module: string;
+}
+
+const items = await itemsFor(Astro.props.module, 'pretest');
+---
+
+<Island client:load module={Astro.props.module} items={items} misconceptions={misconceptionsOf(items)} />

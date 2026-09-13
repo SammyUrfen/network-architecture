@@ -1,0 +1,16 @@
+---
+// Finds the predict item at build time and passes it to the island. The slot
+// holds the observed result, which stays hidden until the learner commits.
+import Island from './Predict.tsx';
+import { itemById, misconceptionsOf } from './items';
+
+export interface Props {
+  /** A quiz item ID of type predict. */
+  id: string;
+}
+
+const item = await itemById(Astro.props.id);
+if (item.type !== 'predict') throw new Error(`${item.id} is a ${item.type} item. Predict needs a predict item.`);
+---
+
+<Island client:load item={item} misconceptions={misconceptionsOf([item])}><slot /></Island>

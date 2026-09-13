@@ -1,0 +1,110 @@
+---
+// Dev page for the Phase 2 check components. Not in the nav. The manager puts
+// the components into the pilot pages at merge.
+import CheckIsland from '../../components/check/Check.tsx';
+import Check from '../../components/check/Check.astro';
+import ExamPrompts from '../../components/check/ExamPrompts.astro';
+import ExitQuiz from '../../components/check/ExitQuiz.astro';
+import ExplainBack from '../../components/check/ExplainBack.astro';
+import FadedExample from '../../components/check/FadedExample.astro';
+import Predict from '../../components/check/Predict.astro';
+import Pretest from '../../components/check/Pretest.astro';
+import type { SupportedItem } from '../../components/check/Question';
+import { misconceptionsOf } from '../../components/check/items';
+import Base from '../../layouts/Base.astro';
+
+// FIXTURE, not in a quiz file: check 1 of s05-m12-assignment-prep, the one
+// spot-bug item of the pilots. Its quiz file comes with the Phase 3 page.
+const spotBug: SupportedItem = {
+  id: 'dev-fixture-spot-bug',
+  use: ['check'],
+  type: 'spot-bug',
+  prompt: 'A server calls recv(4096) one time and treats the bytes as one whole request. What breaks?',
+  options: [
+    { text: 'A read can hold half a request, or two requests.', correct: true, feedback: 'TCP keeps no message edges, so even a small request can arrive split or joined.' },
+    { text: 'Nothing. One read is one request.', correct: false, misconception: 'S05-M44', feedback: 'TCP keeps no message edges. One recv() can return part of a request or parts of two.' },
+    { text: 'Only a request bigger than 4096 bytes breaks.', correct: false, misconception: 'S05-M44', feedback: 'Even a small request can arrive split or joined, because TCP keeps no message edges.' },
+  ],
+  explanation: 'A recv() returns the bytes that wait. The server must find where each request ends.',
+  covers: ['S05-C09'],
+  tags: [],
+};
+---
+
+<Base title="Dev: check components">
+  <h1>Dev: check components</h1>
+  <p>
+    Phase 2 fixtures for the check islands. The items come from <code>src/content/quiz/s01-m08-framing.yaml</code>, unless a block says
+    "fixture". Answers save to the progress in this browser.
+  </p>
+
+  <h2>Pretest</h2>
+  <Pretest module="s01-m08-framing" />
+
+  <h2>Check: mcq</h2>
+  <Check id="s01-m08-q01" />
+
+  <h2>Check: multi</h2>
+  <Check id="s01-m08-q05" />
+
+  <h2>Check: numeric</h2>
+  <Check id="s01-m08-q04" />
+
+  <h2>Check: spot-bug (fixture)</h2>
+  <CheckIsland client:load item={spotBug} misconceptions={misconceptionsOf([spotBug])} />
+
+  <h2>Predict, observe, explain</h2>
+  <Predict id="s01-m08-q10">
+    <p>The server log (strace, loopback, 2026-09-13 run):</p>
+    <pre><code>read(4, "helloworld", 4096) = 10</code></pre>
+  </Predict>
+
+  <h2>Worked example, faded example, your turn</h2>
+  <FadedExample
+    worked={{
+      problem: 'A 1-byte length prefix. The stream `03 61 62 63 02 68 69` arrives in three reads: `03 61`, then `62 63 02 68`, then `69`.',
+      steps: [
+        'Read 1 starts with `03`, so message 1 has 3 bytes. Keep `61`, its first byte.',
+        'Read 2 gives `62 63`. Message 1 is `61 62 63`, the text "abc", across two reads.',
+        'The next byte, `02`, is the length of message 2. Keep `68`.',
+        'Read 3 gives `69`. Message 2 is `68 69`, the text "hi", across two reads.',
+      ],
+    }}
+    faded={{
+      problem: 'The same rule. The stream is `05 68 65 6c 6c 6f 01 21`.',
+      blanks: [
+        { label: 'Message 1 length', answer: '5' },
+        { label: 'Message 1 text', answer: 'hello' },
+        { label: 'Message 2 length', answer: '1' },
+        { label: 'Message 2 text', answer: '!' },
+      ],
+    }}
+    yourTurn={{
+      problem: 'A newline delimiter. The user sends the text `a\\nb` as one message. How many messages does the receiver see?',
+      answer: 'Two, "a" and "b", unless the sender escapes the newline.',
+    }}
+  />
+
+  <h2>Explain it back</h2>
+  <ExplainBack
+    prompt="Slide 39 gives three framing rules. Later decks say there are two: length or delimiter. Why do both statements hold?"
+    model="A fixed length is a length that both sides agreed on before the connection started. It lives in the protocol spec, not in each message. So it is a length rule."
+  />
+
+  <h2>How it shows up in a question (fixture props from s05-m12)</h2>
+  <ExamPrompts
+    prompts={[
+      {
+        prompt: 'Why must a server remove only the bytes that it used from its read buffer?',
+        model: 'The bytes after the request can be the start of the next request.',
+      },
+      {
+        prompt: 'On a kept connection, why can a server not wait for end of file to find the end of a request?',
+        model: 'The client does not close between requests, so no end of file arrives. Only the empty line and the declared length mark the end.',
+      },
+    ]}
+  />
+
+  <h2>Exit quiz</h2>
+  <ExitQuiz module="s01-m08-framing" />
+</Base>
