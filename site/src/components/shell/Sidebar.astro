@@ -148,8 +148,8 @@ const current = (path: string) => (here === path ? 'page' : undefined);
     .sidebar {
       display: flex;
       position: sticky;
-      top: 0;
-      inset: auto;
+      /* inset also resets the inset: 0 of the popover user-agent style */
+      inset: 0 auto auto 0;
       width: auto;
       height: 100dvh;
     }
