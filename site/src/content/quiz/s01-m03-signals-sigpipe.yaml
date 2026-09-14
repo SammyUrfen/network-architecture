@@ -28,7 +28,7 @@ items:
     use: [check, practice]
     segment: 1
     type: predict
-    prompt: 'The demo server gets `hello` from the client. While the server sleeps for 1 second, the client hangs up the hard way. Then the server writes `hello` back two times and checks no result. What happens to the server?'
+    prompt: 'The client of the demo sends `hello` and hangs up the hard way at once. The server reads `hello`, sleeps for 1 second, and then writes `hello` back two times. It checks no result. What happens to the server?'
     options:
       - text: Both writes fail with an error. The server takes no notice and ends normally.
         correct: false
@@ -87,7 +87,7 @@ items:
         feedback: SIGTERM is the polite kill. A handler can catch it, clean up, and then end the program.
     explanation: A program can catch most signals. SIGKILL and SIGSTOP are the two that no handler can catch and no program can ignore.
     covers: [S01-C28]
-    tags: []
+    tags: [beyond]
     taughtIn: sigkill-cannot-be-caught
 
   - id: s01-m03-q05
@@ -168,8 +168,8 @@ items:
     use: [pretest, exit]
     type: recall
     prompt: A server ends with no error message. The shell shows its exit status, the number that a program leaves when it ends, and that number is 141. What do you think the number tells you?
-    model: A signal ended the server. When signal N ends a process, the shell shows 128 + N. 141 - 128 = 13, and signal 13 is SIGPIPE.
-    explanation: An exit status over 128 means that a signal ended the process. Subtract 128 to get the signal number.
+    model: Most likely a signal ended the server. When signal N ends a process, the shell shows 128 + N. 141 - 128 = 13, and signal 13 is SIGPIPE.
+    explanation: An exit status over 128 usually means that a signal ended the process. Subtract 128 to get the signal number. A program can also exit with such a number by itself.
     covers: [S01-C27, S01-C34]
     tags: []
     taughtIn: exit-status-141-means-sigpipe

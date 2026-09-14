@@ -92,17 +92,28 @@ export interface StatusReading {
   says: string;
 }
 
-/** What an exit status from 0 to 255 tells about how a process ended. */
+/** Linux signal numbers stop at 64, SIGRTMAX (`kill -l 65` is an invalid signal). */
+export const MAX_SIGNAL = 64;
+
+/**
+ * What an exit status from 0 to 255 tells about how a process ended. A status
+ * of 128 + N usually means signal N, but a program can also exit with that
+ * number by itself, so the reading says "usually".
+ */
 export function readStatus(status: number): StatusReading | null {
   if (!Number.isInteger(status) || status < 0 || status > 255) return null;
-  if (status <= SIGNAL_STATUS_BASE) {
+  if (status <= SIGNAL_STATUS_BASE || status > SIGNAL_STATUS_BASE + MAX_SIGNAL) {
     const how = status === 0 ? 'The process ended normally, with no error.' : `The process ended by itself and chose the number ${status}.`;
-    return { number: null, signal: null, says: `${how} A status of ${SIGNAL_STATUS_BASE} or less does not come from a signal.` };
+    return { number: null, signal: null, says: `${how} No signal gives this status.` };
   }
   const number = status - SIGNAL_STATUS_BASE;
   const signal = SIGNALS.find((s) => s.number === number) ?? null;
   const name = signal ? `, ${signal.name}` : ', a signal that this board does not show';
-  return { number, signal, says: `${status} - ${SIGNAL_STATUS_BASE} = ${number}. Signal ${number}${name}, ended the process.` };
+  return {
+    number,
+    signal,
+    says: `${status} - ${SIGNAL_STATUS_BASE} = ${number}. Usually this means that signal ${number}${name}, ended the process. A program can also exit with ${status} by itself.`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -152,16 +163,20 @@ const sendTrace = (call: SendCall, result: string) =>
  * The rule of the Linux kernel (net/core/stream.c, sk_stream_error): a send
  * on a connection with an error first returns that stored error. Only an
  * EPIPE brings SIGPIPE, and MSG_NOSIGNAL turns the signal off for that call.
- * A reset on an open connection stores ECONNRESET. A reset that answers
- * bytes sent to a closed client stores EPIPE. After the error, the
- * connection can send no more, so every later send gets EPIPE.
+ * A reset on an open connection stores ECONNRESET. After a FIN from the
+ * client, the connection of the server is in CLOSE_WAIT, and a reset in that
+ * state stores EPIPE (tcp_reset in net/ipv4/tcp_input.c). After the error,
+ * the connection can send no more, so every later send gets EPIPE.
+ *
+ * On loopback, the reset or the FIN usually arrives before the server reads.
+ * The kernel still keeps hello, so the read returns 5 bytes in every setting.
  */
 export function runDemo({ close, sigpipe, call }: DemoSettings): DemoRun {
   const lines: DemoLine[] = [
-    { trace: `read(4, ${BYTES}, 4096) = 5`, says: 'The server gets the 5 bytes of hello.', kind: 'ok' },
     close === 'rst'
-      ? { trace: null, says: 'The server sleeps 1 s. The client closes with linger 0, so its kernel sends RST. The kernel of the server marks the connection as reset.', kind: 'note' }
-      : { trace: null, says: 'The server sleeps 1 s. The client closes normally, so its kernel sends FIN: no more bytes will come from the client.', kind: 'note' },
+      ? { trace: null, says: 'The client sends hello and closes with linger 0, so its kernel sends RST. The kernel of the server marks the connection as reset and keeps hello.', kind: 'note' }
+      : { trace: null, says: 'The client sends hello and closes normally, so its kernel sends FIN: no more bytes will come from the client.', kind: 'note' },
+    { trace: `read(4, ${BYTES}, 4096) = 5`, says: 'The server gets the 5 bytes of hello. Then it sleeps for 1 second.', kind: 'ok' },
   ];
 
   // The first send. A reset is already stored, or the connection can still send.

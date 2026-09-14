@@ -31,12 +31,14 @@ function Group<T extends string>({ legend, name, choices, value, onPick }: { leg
   return (
     <fieldset class="s1m3-group">
       <legend>{legend}</legend>
-      {choices.map((c) => (
-        <label class="s1m3-choice" key={c.value}>
-          <input type="radio" name={name} checked={value === c.value} onChange={() => onPick(c.value)} />
-          <span>{c.label}</span>
-        </label>
-      ))}
+      <div class="s1m3-options">
+        {choices.map((c) => (
+          <label class="s1m3-choice" key={c.value}>
+            <input type="radio" name={name} checked={value === c.value} onChange={() => onPick(c.value)} />
+            <span>{c.label}</span>
+          </label>
+        ))}
+      </div>
     </fieldset>
   );
 }
@@ -64,7 +66,7 @@ export default function KeepAliveIsland() {
       <Group legend="3. How does the server send?" name="s1m3-call" choices={CALLS} value={settings.call} onPick={(call) => change({ call })} />
 
       <section class="s1m3-result" aria-label="The run">
-        <p class="s1m3-sub">The calls of the server, as strace shows them</p>
+        <p class="s1m3-sub">The calls of the server, in a short form of strace output</p>
         <ol class="s1m3-run">
           {run.lines.map((line, i) => (
             <li key={`${key}-${i}`} class={`s1m3-line s1m3-line-${line.kind}`}>
@@ -88,7 +90,7 @@ export default function KeepAliveIsland() {
       </section>
 
       <p class="s1m3-simplifies">
-        What this simplifies: the client and the server run on one computer, so a reset comes back at once. Over a real network a reset takes a round trip, so more writes can work before one fails. The server checks no result, as in the class code.
+        What this simplifies: the client and the server run on one computer, so a reset comes back at once. Over a real network, a reset takes a round trip, so the results can differ. The server checks no result, as in the class code. Real strace writes send() as sendto(), and it also prints a line for an ignored SIGPIPE. This list leaves both out.
       </p>
     </div>
   );

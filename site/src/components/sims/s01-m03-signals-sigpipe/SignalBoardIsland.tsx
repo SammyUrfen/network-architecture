@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { deliver, readStatus, SIGNAL_STATUS_BASE, SIGNALS, signalInfo, type Setting, type SignalName } from '../../../lib/sims/s01-m03-signals-sigpipe';
+import { deliver, MAX_SIGNAL, readStatus, SIGNAL_STATUS_BASE, SIGNALS, signalInfo, type Setting, type SignalName } from '../../../lib/sims/s01-m03-signals-sigpipe';
 import './m03.css';
 
 // The signal board of Part 2. The learner picks a signal and what the
@@ -47,12 +47,14 @@ export default function SignalBoardIsland() {
 
       <fieldset class="s1m3-group">
         <legend>2. What did the program set up for it?</legend>
-        {SETTINGS.map((s) => (
-          <label class="s1m3-choice" key={s.value}>
-            <input type="radio" name="s1m3-setting" checked={setting === s.value} onChange={() => setSetting(s.value)} />
-            <span>{s.label}</span>
-          </label>
-        ))}
+        <div class="s1m3-options">
+          {SETTINGS.map((s) => (
+            <label class="s1m3-choice" key={s.value}>
+              <input type="radio" name="s1m3-setting" checked={setting === s.value} onChange={() => setSetting(s.value)} />
+              <span>{s.label}</span>
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <section class="s1m3-result" aria-label="What happens">
@@ -85,6 +87,9 @@ export default function SignalBoardIsland() {
         </label>
         <p aria-live="polite">
           {reading ? reading.says : `Type a whole number from 0 to 255. A shell shows ${SIGNAL_STATUS_BASE} + N when signal N ends a process.`}
+        </p>
+        <p class="s1m3-simplifies">
+          Linux signal numbers go from 1 to {MAX_SIGNAL}, so no signal gives a status over {SIGNAL_STATUS_BASE + MAX_SIGNAL}.
         </p>
       </section>
 

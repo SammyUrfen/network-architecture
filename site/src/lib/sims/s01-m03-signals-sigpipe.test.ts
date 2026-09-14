@@ -164,6 +164,11 @@ describe('the signal board', () => {
     expect(readStatus(13)).toMatchObject({ number: null, signal: null });
     expect(readStatus(128)).toMatchObject({ number: null });
     expect(readStatus(134)).toMatchObject({ number: 6, signal: null });
+    // Linux signals stop at 64: `kill -l 65` is an invalid signal specification.
+    expect(readStatus(192)).toMatchObject({ number: 64 });
+    for (const status of [193, 200, 255]) expect(readStatus(status)).toMatchObject({ number: null, signal: null });
+    // A program can exit with 141 by itself (`bash -c 'exit 141'`), so the reading says "usually".
+    expect(readStatus(141)?.says).toContain('Usually');
     expect(readStatus(256)).toBeNull();
     expect(readStatus(-1)).toBeNull();
     expect(readStatus(1.5)).toBeNull();

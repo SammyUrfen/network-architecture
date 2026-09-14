@@ -4,16 +4,19 @@ import { useTimeline, type Track } from '../../motion/useTimeline';
 import './m03.css';
 
 // The visual of Part 1: the class demo seen from outside. Two program cards
-// and the terminal that runs them. The server ends, the terminal shows no
-// message, and only `echo $?` shows a number. The SVG is drawn at the end
-// frame of step 1: the server runs and waits, and every later part is hidden.
+// and the bash terminal that runs them. The server ends and prints nothing.
+// Only the shell reports it: a job line "Broken pipe" and the exit status.
+// The terminal lines are a bash run on Linux 7.1.8 over loopback
+// (2026-09-14), with the spaces of the job line shortened to fit. The SVG is
+// drawn at the end frame of step 1: the server runs and waits, and every
+// later part is hidden.
 
 const STEPS = [
-  { caption: 'You start the server in the background. It waits for one client.', ms: 900 },
-  { caption: 'You start the client. It connects and sends hello, and the server gets the 5 bytes.', ms: 1600 },
-  { caption: 'The client hangs up the hard way and ends. The server sleeps for 1 second and notices nothing.', ms: 1400 },
-  { caption: 'The server wakes up and writes hello back two times. Then it is gone, and the terminal shows no message.', ms: 1800 },
-  { caption: 'You ask the shell how the server ended. The shell prints one number: 141.', ms: 900 },
+  { caption: 'You start the server in the background. bash prints its job number and its process ID. The server waits for one client.', ms: 900 },
+  { caption: 'You start the client. It connects, sends hello, hangs up the hard way at once, and ends.', ms: 1800 },
+  { caption: 'The server reads the 5 bytes of hello. Then it sleeps for 1 second.', ms: 1000 },
+  { caption: 'The server wakes up and writes hello back two times. Then it is gone. The server itself prints nothing.', ms: 1800 },
+  { caption: 'You ask the shell how the server ended. bash prints a short job line, Broken pipe, and the exit status 141.', ms: 1200 },
 ];
 const TIMELINE = { durations: STEPS.map((s) => s.ms), hold: 1800 };
 const CAPTIONS = STEPS.map((s) => s.caption);
@@ -46,16 +49,16 @@ export default function VanishIsland() {
           { opacity: 1, transform: move(0) },
           { opacity: 0, transform: move(0) },
         ],
-        from: 400,
-        to: 1300,
+        from: 300,
+        to: 1100,
       },
-      vanish(1, 's-waits', 1200, 1400),
-      appear(1, 's-got', 1200, 1400),
-      appear(2, 'cut', 0, 300),
-      vanish(2, 'client', 400, 900),
-      appear(2, 'c-ended', 400, 900),
-      vanish(2, 's-got', 900, 1100),
-      appear(2, 's-sleeps', 900, 1100),
+      appear(1, 'cut', 1100, 1300),
+      vanish(1, 'client', 1300, 1800),
+      appear(1, 'c-ended', 1300, 1800),
+      vanish(2, 's-waits', 0, 200),
+      appear(2, 's-got', 0, 200),
+      vanish(2, 's-got', 700, 900),
+      appear(2, 's-sleeps', 700, 900),
       vanish(3, 's-sleeps', 0, 200),
       appear(3, 's-writes', 0, 200),
       {
@@ -75,7 +78,8 @@ export default function VanishIsland() {
       appear(3, 'gone', 1000, 1500),
       appear(3, 'no-output', 1400, 1800),
       appear(4, 'cmd-wait', 0, 300),
-      appear(4, 'status', 400, 900),
+      appear(4, 'job', 400, 700),
+      appear(4, 'status', 800, 1200),
     ];
   });
 
@@ -84,9 +88,9 @@ export default function VanishIsland() {
     <AnimationControls title="The server that vanished" captions={CAPTIONS} {...player}>
       <svg
         ref={svg}
-        viewBox="0 0 360 250"
+        viewBox="0 0 360 272"
         role="img"
-        aria-label="Two program cards, the server and the client, above a terminal. The client sends hello and hangs up. The server writes back and disappears. The terminal prints 141."
+        aria-label="Two program cards, the server and the client, above a terminal. The client sends hello and hangs up. The server writes back and disappears with no message. The shell prints Broken pipe and 141."
       >
         {/* The two programs */}
         <g data-part="server">
@@ -108,7 +112,7 @@ export default function VanishIsland() {
           waits for a client
         </text>
         <text data-part="s-got" class="s1m3-status" x="90" y="80" {...hidden}>
-          got hello, 5 bytes
+          reads hello, 5 bytes
         </text>
         <text data-part="s-sleeps" class="s1m3-status" x="90" y="80" {...hidden}>
           sleeps 1 second
@@ -154,29 +158,35 @@ export default function VanishIsland() {
           </text>
         </g>
         <g data-part="cut" {...hidden}>
-          <path class="s1m3-cut" d={`M ${CLIENT_EDGE - 22} ${LINE_Y - 12} l 8 24 m 6 -24 l 8 24`} />
+          <path class="s1m3-cut" d={`M ${CLIENT_EDGE - 40} ${LINE_Y - 12} l 8 24 m 6 -24 l 8 24`} />
         </g>
 
         {/* The terminal */}
-        <rect class="s1m3-term" x="8" y="126" width="344" height="116" rx="6" />
+        <rect class="s1m3-term" x="8" y="126" width="344" height="138" rx="6" />
         <text class="s1m3-term-title" x="18" y="144">
-          Terminal
+          Terminal (bash)
         </text>
-        <text class="s1m3-cmd" x="18" y="166">
+        <text class="s1m3-cmd" x="18" y="164">
           {'$ ./04_sigpipe_server & pid=$!'}
         </text>
-        <text data-part="cmd-client" class="s1m3-cmd" x="18" y="186" {...hidden}>
+        <text class="s1m3-cmd s1m3-out" x="18" y="180">
+          [1] 1137228
+        </text>
+        <text data-part="cmd-client" class="s1m3-cmd" x="18" y="198" {...hidden}>
           {'$ ./05_sigpipe_client'}
         </text>
-        <text data-part="no-output" class="s1m3-note" x="176" y="186" {...hidden}>
-          (no message at all)
+        <text data-part="no-output" class="s1m3-note" x="176" y="198" {...hidden}>
+          (the server prints nothing)
         </text>
-        <text data-part="cmd-wait" class="s1m3-cmd" x="18" y="206" {...hidden}>
+        <text data-part="cmd-wait" class="s1m3-cmd" x="18" y="216" {...hidden}>
           {'$ wait $pid; echo $?'}
         </text>
+        <text data-part="job" class="s1m3-cmd s1m3-out" x="18" y="234" {...hidden}>
+          [1]+  Broken pipe  ./04_sigpipe_server
+        </text>
         <g data-part="status" {...hidden}>
-          <rect class="s1m3-hit" x="14" y="213" width="38" height="20" rx="3" />
-          <text class="s1m3-cmd s1m3-strong" x="18" y="228">
+          <rect class="s1m3-hit" x="14" y="239" width="38" height="20" rx="3" />
+          <text class="s1m3-cmd s1m3-strong" x="18" y="254">
             141
           </text>
         </g>
