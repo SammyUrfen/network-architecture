@@ -4,7 +4,7 @@ session: 1
 order: 1
 title: "Seven system calls: the whole of a TCP server"
 minutes: 20
-bigIdea: "Every TCP server, from a 20-line echo to Express, runs the same seven calls, and the kernel does the network work between them."
+bigIdea: "Every TCP server, from a 20-line class demo to Express, makes the same seven requests to the operating system, and the operating system does the network work between them."
 covers: [S01-C01, S01-C02, S01-C03, S01-C04, S01-C05, S01-C06, S01-C07, S01-C08, S01-C19, S01-C126, S01-C127]
 prereqs: []
 threads: [T-framing]
@@ -14,7 +14,7 @@ terms:
   - term: server
     meaning: a program that waits for other programs to connect, and then answers them. A program that connects to it is a client.
   - term: kernel
-    meaning: the core of the operating system. It is the only part of the computer that uses the network card.
+    meaning: the core of the operating system. It is the only part that uses the network card, the part of the computer that sends and gets data over a cable or Wi-Fi.
   - term: system call
     meaning: a request from a program to the kernel, such as "make me a socket"
   - term: socket
@@ -22,7 +22,7 @@ terms:
   - term: file descriptor
     meaning: a small number, such as 3, that a program uses to name one of its sockets
   - term: port
-    meaning: a number that picks one server program on a computer. The class servers use port 2026.
+    meaning: a number that picks one program on a computer. A server takes a known port, such as 2026, and the kernel gives each client a free port of its own.
 ---
 
 import Terminal from '../../../components/diagram/Terminal.astro';
@@ -50,9 +50,11 @@ import SyscallTheater from '../../../components/sims/s01-m01-seven-syscalls/Sysc
 
 You open a web page, and your browser talks to a program on another computer. That program is a server. It waits for other programs to connect, and then it answers them. So how does a server really talk over the network? This lesson answers that question.
 
-The answer is short. A server makes seven requests to the operating system, in the same order every time. The 20-line echo server of the first class makes them, and Express, Flask and Go's net/http make the same seven. When a server hangs, dies with no message, or cuts a message in half, the cause is often in these calls. Much of the course stands on them: many clients at once, nginx and HTTP. So do the calculator assignment and the binary HTTP project that the course announces.
+The answer is short. A server makes seven requests to the kernel, the core of the operating system, in the same order every time. The first class used an echo server of 20 lines, a tiny server that sends back what it gets. It makes the seven requests. Express, Flask and Go's net/http, three toolkits that people use to build web servers, make the same seven. When a server hangs, dies with no message, or cuts a message in half, the cause is often in these calls.
 
-This is the first lesson, so you need nothing before it. The servers here use TCP, the set of rules that carries the bytes of most of the internet, in order. The last part leads to the question of the lesson <ModuleLink id="s01-m08-framing" />.
+Much of the course stands on them: many clients at once, the web server nginx, and HTTP, the rules of the web. So do the two graded builds that the course announces: a calculator assignment, and a project that sends HTTP as raw bytes instead of text.
+
+This is the first lesson, so you need nothing before it. A byte is the smallest piece of data that a program sends, such as one letter. The servers here use TCP, the set of rules that carries the bytes of most of the internet, in order. The top of the page names one thread, Framing. A thread is a big idea that comes back in many lessons. This one starts in Part 4 and continues in the lesson <ModuleLink id="s01-m08-framing" />.
 
 **The path through this lesson.** Part 1 shows why a program must ask the kernel for all network work, and it names the seven requests. Part 2 follows the first three calls, which set up the server before any client comes. Part 3 follows the other four calls, which serve one client, in the echo server of the first class. Part 4 shows why one read is not a whole conversation, and how the second server of the class fixes that.
 
@@ -66,7 +68,7 @@ This is the first lesson, so you need nothing before it. The servers here use TC
 
 <SevenCalls slot="visual" />
 
-<Picture breaks="a shopkeeper can walk out and fix a door. A program can never touch the network card. Every byte that it sends or gets goes through the kernel.">
+<Picture breaks="the shopkeeper talks with each customer face to face. A program never touches the network itself. Every byte that it sends to a client or gets from a client goes through the kernel.">
 
 Think of a small shop inside a big mall. The shopkeeper sells things, but does not build walls, fit doors or let people into the mall. The mall office does all of that. So the shopkeeper asks the office for each thing: a shop, a number on its door, and a line of customers at the door. Then the shopkeeper calls one customer at a time to the counter, talks, and says goodbye.
 
@@ -134,25 +136,25 @@ A client makes a shorter list. It calls `socket()` too, then `connect()`, which 
 
 ### The real thing
 
-The first class opened with this list. Its title slide promised 7 system calls and one port for the whole class, 2026 <SlideLink session={1} page={1} />. A later slide shows the seven calls in a row <SlideLink session={1} page={5} />. It says that Express, Flask and net/http are each "a wrapper around this sequence".
+The first class opened with this list. A link marked "slide" on this page opens the slides of the first class, the Session 1 deck, at that page. The title slide promised 7 system calls and one port for the whole class, 2026 <SlideLink session={1} page={1} />. A later slide shows the seven calls in a row <SlideLink session={1} page={5} />. It says that Express, Flask and net/http are each "a wrapper around this sequence".
 
-A framework such as Flask saves you from writing these calls, but it still makes them. The kernel gives the framework plain bytes. The framework then reads the web request out of those bytes by itself, because the kernel knows nothing about web pages.
+A framework such as Flask is a toolkit that does the common work of a server for you. It saves you from writing these calls, but it still makes them. The kernel gives the framework plain bytes. The framework then reads the web request out of those bytes by itself, because the kernel knows nothing about web pages.
 
 <details>
 <summary>The story: how the first class started</summary>
 
-The class runs for eight weeks, from network programming in week 1 to building for failures in week 8 <SlideLink session={1} page={2} />. The first session lasted 2.5 hours and went bottom-up. It started with the smallest program that can take a TCP connection. It ended with the design of a binary protocol of your own <SlideLink session={1} page={3} />. The last slide ends with one line to take home: go and find the `accept()` inside the framework that you use <SlideLink session={1} page={48} />.
+The class runs for eight weeks, from network programming in week 1 to building for failures in week 8 <SlideLink session={1} page={2} />. The first session lasted 2.5 hours and went bottom-up. It started with the smallest program that can take a TCP connection. It ended with the design of your own protocol, a set of rules for messages, in raw bytes <SlideLink session={1} page={3} />. The last slide ends with one line to take home: go and find the `accept()` inside the framework that you use <SlideLink session={1} page={48} />.
 
 </details>
 
 <ExamDepth>
 
-- **Which calls belong to whom?** The slide marks the first four calls as "the four that only a server makes". Read that as the setup that a server does, because a client calls `socket()` too. Only a server calls `listen()` and `accept()`. A server always calls `bind()`, and a client usually skips it and lets `connect()` pick a port. Both sides call `socket()`, `read()`, `write()` and `close()`.
+- **Which calls belong to whom?** The slide marks the first four calls as "the four that only a server makes". Read that as the setup that a server does, because a client calls `socket()` too. Only a server calls `listen()` and `accept()`. A server always calls `bind()`. A client usually skips it, and at `connect()` the kernel gives the client a free port of its own. Both sides call `socket()`, `read()`, `write()` and `close()`.
 - **Where is `accept()` inside a framework?** Inside the code under the framework, which calls the kernel for it. The last slide of the class asks you to find it.
 
 <Beyond source="accept4(2), Linux man page" url="https://man7.org/linux/man-pages/man2/accept4.2.html">
 
-On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection (Linux 7.1.8, loopback, 2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more argument for flags. To move the bytes, that server calls `recvfrom()` and `sendto()`, two close relatives of `read()` and `write()` for sockets.
+Linux is an operating system, like Windows. On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection. The runs used Linux 7.1.8 over loopback, with the client and the server on the same computer (2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more argument for flags. To move the bytes, that server calls `recvfrom()` and `sendto()`, two close relatives of `read()` and `write()` for sockets.
 
 </Beyond>
 
@@ -174,7 +176,7 @@ On Linux, the tool `strace` prints each system call that a program makes. A run 
 
 Back in the mall, the shopkeeper asks the office for a shop. The office hands over a key with a tag on it: key 3. Next, the shopkeeper asks for a number on the door, shop 2026, so that customers can find the shop. Last, the shopkeeper tells the office: I am open. From that moment, a guard lets customers in and lines them up at the door, even while the shopkeeper still unpacks boxes.
 
-The key tag is the number that `socket()` returns, the **file descriptor**. The number on the door is the **port** that `bind()` gives. Telling the office "I am open" is `listen()`. The guard is the kernel, and the line at the door is the line of clients that wait for the program.
+The shop is the socket that `socket()` makes, and the number on its key tag is the **file descriptor**. The number on the door is the **port** that `bind()` gives. Telling the office "I am open" is `listen()`. The guard works for the mall office, so the guard is the kernel too. The line at the door is the line of clients that wait for the program.
 
 </Picture>
 
@@ -188,7 +190,7 @@ The key tag is the number that `socket()` returns, the **file descriptor**. The 
 
 <ScrollStep step={2}>
 
-`bind()` gives socket 3 a port. A port lets one computer run many servers, because each server takes a different port. The class server takes port 2026 on every network address of the computer.
+`bind()` gives socket 3 a port. A port lets one computer run many servers, because each server takes a different port. The class server takes port 2026. `bind()` returns 0, which means that the call worked.
 
 </ScrollStep>
 
@@ -218,9 +220,9 @@ After `listen()`, the kernel finishes the handshake with each client by itself a
 
 ### The real thing
 
-The instructor keeps the class code in a public repo on GitHub, `cn-at-scaler`. The lab near the end of this page copies it to your computer. Its folder `lesson1` holds `01_echo_server.c`, the first server of the class. The slide shows the same code under the name `echo_server.c` <SlideLink session={1} page={6} />.
+The instructor keeps the class code in a public repo, a shared folder of code, on GitHub, a website for sharing code. The repo is named `cn-at-scaler`, and the lab near the end of this page copies it to your computer. Its folder `lesson1` holds `01_echo_server.c`, the first server of the class. The slide shows the same code under the name `echo_server.c` <SlideLink session={1} page={6} />.
 
-The setup is three lines of that file. Line 6 calls `socket()`, line 11 calls `bind()` with port 2026, and line 12 calls `listen(server_fd, 1)`. The code checks no return value, on purpose, so that the demo stays short. The README of the repo says so. A real server checks the result of every call, because any call can fail.
+The setup is three lines of that file, and the slide shows them. Line 6 calls `socket()`, line 11 calls `bind()` with port 2026, and line 12 calls `listen(server_fd, 1)`. In the code, `server_fd` is the name that holds the number 3. The code checks no return value, on purpose, so that the demo stays short. The notes file of the repo, its README, says so. A real server checks the result of every call, because any call can fail.
 
 What the `1` in `listen()` means, and what a client sees when the line is full, is the subject of the next lesson, <ModuleLink id="s01-m02-ports-and-queue" />.
 
@@ -243,15 +245,15 @@ What the `1` in `listen()` means, and what a client sees when the line is full, 
 
 <Segment title="Serve one client">
 
-**In this part.** Part 2 left one client in the line, and nobody served it yet. This part follows the other four calls, `accept()`, `read()`, `write()` and `close()`, which serve that client. Together they make the echo server of the first class, which sends back every byte that it gets, like an echo.
+**In this part.** Part 2 left one client in the line, and nobody served it yet. This part follows the other four calls, `accept()`, `read()`, `write()` and `close()`, which serve that client. Together they make the echo server of the first class, which sends back every byte that it gets, like an echo. These four calls decide what a client gets back, and the last check of this part shows how a line can get lost.
 
 <SyscallTheater slot="visual" title="Syscall theater: the first echo server" kind="one-read" />
 
 <Picture breaks="a customer speaks in whole words, and the shopkeeper hears each one. A read() gets the bytes that wait at that moment, which can be part of a word or two words at once. Part 4 shows this.">
 
-The shopkeeper finishes the boxes and calls: next, please! One customer steps from the line to the counter. The customer says a word, and this shopkeeper is a copycat, so the shopkeeper says the same word back. Then the shopkeeper says goodbye, the customer leaves, and the shopkeeper calls the next customer. The door stays open all the time, so new customers join the line.
+The shopkeeper finishes the boxes and calls: next, please! One customer steps from the line to the counter, and the shopkeeper hands the customer a ticket with the number 4. The customer says a word, and this shopkeeper is a copycat, so the shopkeeper says the same word back. Then the shopkeeper says goodbye, the customer leaves, and the shopkeeper calls the next customer. The shop stays open all the time, so new customers join the line.
 
-"Next, please" is `accept()`. It gives the program a new file descriptor, 4, for the customer at the counter, while the door, socket 3, stays open. Hearing the word is `read()`, and saying it back is `write()`. The goodbye is `close()`, and the call for the next customer is the loop back to `accept()`.
+"Next, please" is `accept()`. The ticket is the new file descriptor, 4, that names this one client. The shop itself, socket 3, stays open for the next customers. Hearing the word is `read()`, and saying it back is `write()`. The goodbye is `close()`, and the call for the next customer is the loop back to `accept()`.
 
 </Picture>
 
@@ -277,7 +279,7 @@ Try it in the theater next to this text. Press "Next call" to step the server, a
 
 The rest of `01_echo_server.c` is one loop <SlideLink session={1} page={6} />. Line 15 calls `accept()`, line 17 calls `read()` one time, line 18 writes the same bytes back, and line 19 calls `close()`. The class ran it with two commands <SlideLink session={1} page={7} />. The command `gcc` turns the C file into a program. The tool `nc` connects to port 2026, sends what you type, and prints what comes back.
 
-On Linux, the tool `strace` prints each system call of a program, one on each line. A line gives the name of the call, its arguments in brackets, and its result after the equals sign. In a string, `\n` is the newline byte at the end of a line. Here the first server served one client that sent `one` and a newline (Linux 7.1.8, loopback, 2026-09-14):
+On Linux, an operating system like Windows, the tool `strace` prints each system call of a program, one on each line. A line gives the name of the call, its arguments in brackets, and its result after the equals sign. In a string, `\n` is the newline byte at the end of a line. Here the first server served one client that sent `one` and a newline. The run used Linux 7.1.8 over loopback, which means with the client and the server on the same computer (2026-09-14):
 
 ```
 accept(3, NULL, NULL)                   = 4
@@ -286,11 +288,11 @@ write(4, "one\n", 4)                    = 4
 close(4)                                = 0
 ```
 
-`accept()` on socket 3 returns 4. `read()` on 4 gets 4 bytes, the three letters and the newline, and `write()` sends the same 4 bytes back. `close()` returns 0, which means that it worked.
+`accept()` on socket 3 returns 4. Its two `NULL` arguments mean that the server does not ask who the client is. `read()` on 4 gets 4 bytes, the three letters and the newline, and `write()` sends the same 4 bytes back. `close()` returns 0, which means that it worked.
 
 <ExamDepth>
 
-- **A client sends 10,000 bytes at once.** One `read()` takes at most 4,096 bytes, the size of the room that the server gives it. The server writes those bytes back and closes while more bytes still wait. A run on Linux over loopback gave 4,096 bytes back to the client, then the error "Connection reset by peer" (2026-09-14).
+- **A client sends 10,000 bytes at once.** One `read()` takes at most 4,096 bytes, the size of the room that the server gives it. The server writes those bytes back and closes while more bytes still wait. A run on Linux over loopback gave 4,096 bytes back to the client, then the error "Connection reset by peer" (2026-09-14). The peer is the other end of the connection, and a reset is a message that ends the connection at once.
 - **Why no error checks?** The class code checks nothing, to stay short. A real server checks each result, because any call can fail.
 
 <Beyond source="RFC 9293 §3.6.1, Half-Closed Connections" url="https://www.rfc-editor.org/rfc/rfc9293#section-3.6.1">
@@ -317,7 +319,7 @@ Received bytes can still wait unread when a program closes a connection. The TCP
 
 Your friend puts notes in your mailbox. Each time you open the box, you take out every note inside: one note, or two if two arrived. If the box is empty, you wait next to it until a note comes. You stop for good only when your friend hangs a sign on the box: no more notes.
 
-Opening the box is `read()`, which takes every byte that waits. Waiting next to the empty box is a `read()` that waits for bytes. The sign "no more notes" is the client closing its side, and then `read()` returns 0. The first echo server opens the box one time and walks away. The second server opens it again and again, until it sees the sign.
+Your friend is the client, you are the server, and each note is a line that the client sends. Your answer goes back the other way, into the mailbox of your friend, and that is `write()`. Opening your box is `read()`, which takes every byte that waits. Waiting next to the empty box is a `read()` that waits for bytes. The sign "no more notes" is the client closing its side, and then `read()` returns 0. The first echo server opens the box one time and walks away. The second server opens it again and again, until it sees the sign.
 
 </Picture>
 
@@ -384,7 +386,7 @@ Now you know how a server gets bytes. The next big question is where one message
 
 <Lab title="Run both echo servers and watch their calls" folder="lesson1">
 
-The folder `lesson1` holds the servers of this lesson as C files. You need a Linux computer with `gcc`, the C compiler, and `nc`. `strace` is for the last step only. Port 2026 must be free.
+The two commands above copy the repo to your computer with `git clone`, then move into its folder `lesson1` with `cd`. That folder holds the servers of this lesson as C files. You need a Linux computer with `gcc`, the C compiler, and `nc`. `strace` is for the last step only. Port 2026 must be free.
 
 <Terminal
   title="Terminal 1: build and start the first server"
@@ -394,7 +396,7 @@ The folder `lesson1` holds the servers of this lesson as C files. You need a Lin
   ]}
 />
 
-In a second terminal, connect with `nc` and type one line. The server sends the line back one time and closes the connection. On Fedora, `nc` still waits for your typing after that, so press Control-C to end it. Each new `nc` gets one echo.
+In a second terminal, connect with `nc` and type one line. `localhost` is the name that a computer uses for itself. The server sends the line back one time and closes the connection. On Fedora, one kind of Linux, `nc` still waits for your typing after that, so press Control-C to end it. Each new `nc` gets one echo.
 
 <Terminal
   title="Terminal 2: you type hello, and the server sends it back"

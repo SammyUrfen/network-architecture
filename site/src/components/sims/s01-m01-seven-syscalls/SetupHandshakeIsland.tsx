@@ -10,8 +10,8 @@ import './sims.css';
 
 const STEPS = [
   { caption: 'socket(): the kernel makes a socket and gives the program the number 3.', ms: 900 },
-  { caption: 'bind(): the kernel gives socket 3 the port 2026.', ms: 900 },
-  { caption: 'listen(): socket 3 now listens, with a line for clients that wait.', ms: 900 },
+  { caption: 'bind(): the kernel gives socket 3 the port 2026. The result 0 means that the call worked.', ms: 900 },
+  { caption: 'listen(): socket 3 now listens, with a line for clients that wait. It also returns 0.', ms: 900 },
   {
     caption: 'A client calls connect(). The two kernels trade a few short messages: the handshake. The server program makes no call during it.',
     ms: 2600,

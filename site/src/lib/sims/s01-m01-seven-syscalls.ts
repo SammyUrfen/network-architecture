@@ -206,7 +206,7 @@ function close(s: Theater): Theater {
   const back = 'The server goes back to accept() for the next client.';
   // RFC 9293 §3.6.1: a close while received bytes wait unread sends a reset, to show that data was lost.
   if (conn.waiting) {
-    s.caption = `close() ends the connection while ${quoted(conn.waiting)} still waits unread. So the kernel throws those bytes away and sends a reset. ${back}`;
+    s.caption = `close() ends the connection while ${quoted(conn.waiting)} still waits unread. So the kernel throws those bytes away and sends a reset, a message that ends the connection at once. ${back}`;
     conn.waiting = '';
     conn.reset = true;
     return s;
@@ -233,7 +233,7 @@ function send(s: Theater): Theater {
   conn.sent += 1;
   if (conn.serverClosed) {
     // Linux answers bytes for a socket that the program closed with a reset.
-    s.caption = `The client sends ${quoted(line)}, but the server closed this connection. No echo comes back: the kernel of the server answers with a reset.`;
+    s.caption = `The client sends ${quoted(line)}, but the server closed this connection. No echo comes back. The kernel of the server answers with a reset, a message that ends the connection at once.`;
     conn.reset = true;
     return s;
   }

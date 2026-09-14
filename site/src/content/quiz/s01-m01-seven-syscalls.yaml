@@ -147,7 +147,7 @@ items:
       - text: The operating system finishes the connection, and the client waits in a line.
         correct: true
         feedback: The kernel does the handshake by itself and keeps the connection in a line until the program calls accept().
-      - text: The client connects, but the kernel drops its bytes until the program reads.
+      - text: The client connects, but the operating system throws away what the client sends until the program asks for it.
         correct: false
         misconception: S01-M47
         feedback: The kernel keeps the bytes of the client until a read takes them.

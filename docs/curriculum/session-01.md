@@ -230,7 +230,7 @@ Site order: m01, m02, m03, m04, m05, m06, m07, m08, m09, m11, m10. Module m11 is
 
 - **Title:** Seven system calls: the whole of a TCP server.
 - **Minutes:** 20.
-- **Big idea:** Every TCP server, from a 20-line echo to Express, runs the same seven calls, and the kernel does the network work between them.
+- **Big idea:** Every TCP server, from a 20-line class demo to Express, makes the same seven requests to the operating system, and the operating system does the network work between them.
 - **Covers:** S01-C01, S01-C02, S01-C03, S01-C04, S01-C05, S01-C06, S01-C07, S01-C08, S01-C19, S01-C126, S01-C127.
 - **Prereqs:** none.
 - **Threads:** T-framing.
@@ -242,8 +242,8 @@ Site order: m01, m02, m03, m04, m05, m06, m07, m08, m09, m11, m10. Module m11 is
 
 **Rung 1, the picture.** A story paragraph for each part, in one scene (lesson contract v2). The phone table failed the 10-year-old test: callers do not sit on a bench.
 
-- *Parts 1 to 3, a shop in a mall.* A shopkeeper cannot build walls or doors, so the mall office does that work. The shopkeeper asks the office for a shop (socket, key tag 3 is the fd), a number on the door (bind, port 2026), and a line of customers that a guard keeps (listen, the kernel keeps the queue). The shopkeeper calls "next, please" (accept, fd 4 for the customer at the counter while the door, fd 3, stays open), hears a word and says it back (read, write), says goodbye (close) and calls the next customer (the loop). Where this breaks: the guard only lines customers up, but the kernel finishes the whole handshake before the program knows about the client. A customer speaks whole words, but a read gets whatever bytes wait.
-- *Part 4, a mailbox.* You take out every note that waits. An empty box means you wait. A sign "no more notes" means stop (read returns 0). Where this breaks: notes are separate papers, but two lines that wait together come out as one run of bytes (s01-m08-framing).
+- *Parts 1 to 3, a shop in a mall.* A shopkeeper cannot build walls or doors, so the mall office does that work. The shopkeeper asks the office for a shop (socket, and key tag 3 is the fd), a number on the door (bind, port 2026), and a line of customers that a guard of the office keeps (listen, the kernel keeps the queue). The shopkeeper calls "next, please" and hands the customer at the counter a ticket with the number 4 (accept, fd 4, while the shop, fd 3, stays open), hears a word and says it back (read, write), says goodbye (close) and calls the next customer (the loop). Where this breaks: the shopkeeper talks face to face, but every byte of a program goes through the kernel. The guard only lines customers up, but the kernel finishes the whole handshake before the program knows about the client. A customer speaks whole words, but a read gets whatever bytes wait.
+- *Part 4, a mailbox.* Your friend is the client, you are the server, and each note is a line. Your answer goes into the mailbox of your friend (write). You take out every note that waits (read). An empty box means you wait. A sign "no more notes" means stop (read returns 0). Where this breaks: notes are separate papers, but two lines that wait together come out as one run of bytes (s01-m08-framing).
 
 **Rung 2, how it works.**
 1. socket() makes an endpoint and returns fd 3.
