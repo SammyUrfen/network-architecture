@@ -25,7 +25,7 @@ export interface Props {
   rule: Rule;
   /** N for fixed length, in bytes. Default 8. */
   n?: number;
-  /** one: every byte in one read, as in the loopback run. random: reads of 1 to 8 bytes. Default random. */
+  /** one: every byte in one read, as on one computer. random: reads of 1 to 8 bytes. Default random. */
   split?: 'one' | 'random';
 }
 
@@ -73,7 +73,9 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
         <textarea rows={3} spellcheck={false} value={text} onInput={(e) => change(setText)(e.currentTarget.value)} />
       </label>
       <p class="hint">
-        Write <code>\n</code> for a newline byte inside a message, and <code>\xNN</code> for any byte.
+        Each box shows one byte as a hex number from 00 to FF, with its letter under it, or a dot for a byte that is not a
+        letter. Hex counts in 16s, so FF is 255. Write <code>\n</code> for a newline byte inside a message, and{' '}
+        <code>\xNN</code> for any byte in hex.
       </p>
       <fieldset>
         <legend>The rule that the sender and the reader share</legend>
@@ -94,7 +96,7 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
         <legend>How TCP cuts the bytes into reads</legend>
         <label class="choice">
           <input type="radio" name={`${title} split`} checked={split === 'one'} onChange={() => change(setSplit)('one')} />
-          All bytes in one read, as in the loopback run
+          All bytes in one read, as on one computer
         </label>
         <label class="choice">
           <input type="radio" name={`${title} split`} checked={split === 'random'} onChange={() => change(setSplit)('random')} />
@@ -112,8 +114,8 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
   const simplifies = (
     <p class="simplifies">
       <strong>What this simplifies:</strong> a random number picks the read sizes here. Real TCP sizes come from segments,
-      timing and buffer space. Each message leaves in one write(), and fixed length pads with zero bytes. Like real TCP,
-      the model never loses, reorders or changes a byte.
+      timing and buffer space. Each message leaves in one write(), and fixed length pads with zero bytes. The model
+      never loses, reorders or changes a byte. Real TCP makes the same promise, or the connection fails with an error.
     </p>
   );
 

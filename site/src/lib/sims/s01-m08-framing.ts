@@ -148,6 +148,27 @@ export function readAll(rule: Rule, n: number, wire: number[], sizes: number[]):
   });
 }
 
+/** The offset after each message that the reader finds when every byte is in hand: the places where it cuts. */
+export function messageEnds(rule: Exclude<Rule, 'none'>, n: number, wire: number[]): number[] {
+  const ends: number[] = [];
+  let rest = wire;
+  for (let got = take(rule, n, rest); got; got = take(rule, n, rest)) {
+    rest = got.rest;
+    ends.push(wire.length - rest.length);
+  }
+  return ends;
+}
+
+/** The slot of byte i in a row of groups of the given sizes, with one empty slot between two groups. */
+export function groupSlot(i: number, sizes: number[]): number {
+  let end = 0;
+  for (const [group, size] of sizes.entries()) {
+    end += size;
+    if (i < end) return i + group;
+  }
+  throw new Error(`Byte ${i} is not in the groups ${sizes.join(', ')}.`);
+}
+
 /** Compares the messages that the reader found with the frames that the sender wrote, in order. */
 export function verdict(frames: Frame[], found: number[][]) {
   const matches = found.map((message, i) => {

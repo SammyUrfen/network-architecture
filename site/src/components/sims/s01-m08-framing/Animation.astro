@@ -1,0 +1,32 @@
+---
+import StreamDemo from './StreamDemo.tsx';
+import TwoRulesDemo from './TwoRulesDemo.tsx';
+
+// The wrapper of the two animations of this lesson, because the MDX writes no
+// client directive. stream is the visual of Part 1, rules the visual of Part 2.
+export interface Props {
+  name: 'stream' | 'rules';
+  /** The caption, and the accessible name of the controls */
+  title: string;
+}
+const { name, title } = Astro.props;
+---
+
+<figure class="m08-figure">
+  <figcaption>{title}</figcaption>
+  {name === 'stream' ? <StreamDemo client:visible title={title} /> : <TwoRulesDemo client:visible title={title} />}
+</figure>
+
+<style>
+  .m08-figure {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+</style>
