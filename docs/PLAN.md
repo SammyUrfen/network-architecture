@@ -93,6 +93,8 @@ site/
       check/                   Pretest, Check, ExitQuiz, Predict, ExplainBack, FadedExample, Generator, ExamPrompts
       diagram/                 Stepper, SequenceDiagram, LayerStack, ByteView, Terminal, Timeline
       sims/<module-id>/        one folder per simulator
+      slides/                  SlideLink, SlideViewer, decks.ts
+      motion/                  AnimationControls, ScrollStep, the timeline
     lib/
       progress.ts              localStorage store, schema version, export, import
       schedule.ts              review boxes and due dates
@@ -191,6 +193,8 @@ and `ModuleLink` handles that case.
 | `/progress/` | Export, import, reset |
 | `/dev/gallery/` | Phase 4. Fixture data only for a component that no real page uses yet. Not in the nav. |
 | `/glossary/` | Phase 8. Built from module word cards. |
+| `/slides/` | The five session decks, with a viewer and a download for each. |
+| `/about/` | What the site is, for classmates: unofficial, built by a student, and the content rules. |
 
 ### Content schemas
 

@@ -23,6 +23,7 @@
     "@nanostores/preact": "^1.1.0",
     "astro": "^7.3.2",
     "nanostores": "^1.5.3",
+    "pdfjs-dist": "^6.3.289",
     "preact": "^10.29.8",
     "typescript": "^6.0.3",
     "yaml": "^2.9.1"
