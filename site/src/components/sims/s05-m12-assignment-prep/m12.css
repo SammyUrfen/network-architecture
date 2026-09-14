@@ -1,0 +1,197 @@
+/* The visuals of s05-m12. An island cannot use scoped Astro styles, so every class has the m12- prefix. */
+
+.m12-figure {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius-m);
+}
+.m12-figure > figcaption {
+  margin-bottom: var(--space-3);
+  font-weight: 600;
+}
+.m12-simplifies {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+/* Part 1: the reading animation */
+.m12-later {
+  opacity: 0;
+}
+.m12-byte {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.m12-byte.m12-control {
+  font-size: 10.5px;
+  fill: var(--text-2);
+}
+.m12-offset {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-anchor: end;
+  fill: var(--text-2);
+}
+.m12-note {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-style: italic;
+  fill: var(--text-2);
+}
+.m12-hit {
+  fill: var(--key-bg);
+  stroke: var(--key);
+  stroke-width: 1.5;
+}
+.m12-body {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.m12-cut {
+  stroke: var(--accent-2);
+  stroke-width: 2;
+}
+.m12-counter {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 2;
+}
+.m12-digit {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--accent-2);
+}
+.m12-marker {
+  fill: var(--accent);
+}
+
+/* Part 3: the status picker */
+.m12-picker {
+  display: grid;
+  gap: var(--space-3);
+}
+.m12-help,
+.m12-holding {
+  margin: 0;
+}
+.m12-holding {
+  min-height: 1.65em;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+.m12-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.m12-card,
+.m12-bin,
+.m12-restart {
+  min-height: 2.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+.m12-card {
+  display: grid;
+  justify-items: start;
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+}
+.m12-card-line {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.m12-card-note {
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--text-2);
+}
+.m12-card:hover:not(:disabled),
+.m12-bin:hover:not([aria-disabled='true']),
+.m12-restart:hover {
+  background: var(--accent-soft);
+}
+/* A held card has a thick accent edge and a raised look, and the text "You hold" says it too. */
+.m12-card[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px var(--accent-2), var(--shadow-1);
+}
+.m12-card:disabled {
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-style: dashed;
+  cursor: default;
+}
+.m12-card-done {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--correct);
+}
+.m12-bins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--space-2);
+}
+.m12-bin {
+  display: grid;
+  padding: var(--space-2);
+  text-align: left;
+}
+.m12-bin-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--accent-2);
+}
+.m12-bin-name {
+  font-size: var(--text-sm);
+}
+.m12-bin[aria-disabled='true'] {
+  cursor: default;
+}
+.m12-bin[aria-disabled='true'] .m12-bin-code {
+  color: var(--text-2);
+}
+.m12-feedback p {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+}
+.m12-right {
+  background: var(--correct-bg);
+  border-left: 4px solid var(--correct);
+}
+.m12-wrong {
+  background: var(--wrong-bg);
+  border-left: 4px solid var(--wrong);
+}
+.m12-picker-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+.m12-restart {
+  padding: var(--space-1) var(--space-3);
+  font-weight: 600;
+  color: var(--interactive);
+}

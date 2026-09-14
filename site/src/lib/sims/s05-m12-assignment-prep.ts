@@ -1,10 +1,13 @@
-// The request boundary finder of s05-m12: where the reads cut a byte stream,
-// and where the requests in it really end.
+// The visuals of s05-m12: the reading animation of part 1 (layoutCells), the
+// request boundary finder of part 2 (buildStream to viewAfterRead), and the
+// status picker of part 3 (CARDS, judge).
 //
 // Graded-work guard (CLAUDE.md rule 4). This model does not read or parse
 // bytes. It builds the stream from requests that it already knows, so it
 // knows every boundary before the first read. A server knows none of them.
-// The model gives no reading loop and no piece of a server.
+// The model gives no reading loop and no piece of a server. The status picker
+// holds a hand-written answer for each request of the assignment slide, and no
+// rule that finds a status.
 
 export interface RequestSpec {
   /** The request line and the header lines, with no CRLF. */
@@ -118,3 +121,80 @@ export const PRESETS: Preset[] = [
     sizes: '4096',
   },
 ];
+
+/** One byte of the stream, placed on a row of the reading animation. */
+export interface Cell {
+  byte: number;
+  row: number;
+  /** The left edge, in SVG units. */
+  x: number;
+  width: number;
+  /** The text of the cell: the character, or \r and \n for CR and LF. */
+  label: string;
+}
+
+/** Cell widths in SVG units. CR and LF show as two characters, so they get a wider cell. */
+export const CELL = { char: 10, control: 14 } as const;
+
+/** Places each byte on a row. A row ends after LF only, so a body with no LF runs into the next request, as on the wire. */
+export function layoutCells(text: string, x0 = 0): Cell[] {
+  let row = 0;
+  let x = x0;
+  return [...text].map((ch, byte) => {
+    const control = ch === '\r' || ch === '\n';
+    const cell = { byte, row, x, width: control ? CELL.control : CELL.char, label: control ? (ch === '\r' ? '\\r' : '\\n') : ch };
+    x += cell.width;
+    if (ch === '\n') {
+      row++;
+      x = x0;
+    }
+    return cell;
+  });
+}
+
+export type Status = 200 | 400 | 404 | 405 | 500 | 501;
+
+/** The statuses of the picker. `means` follows RFC 9110 §15.3.1, §15.5.1, §15.5.5, §15.5.6, §15.6.1 and §15.6.2. */
+export const STATUSES: { code: Status; name: string; means: string }[] = [
+  { code: 200, name: 'OK', means: '200 says that the request worked.' },
+  { code: 400, name: 'Bad Request', means: '400 says that the client sent something wrong, so the server does not do the request.' },
+  { code: 404, name: 'Not Found', means: '404 says that the server has no such path.' },
+  { code: 405, name: 'Method Not Allowed', means: '405 says that the path exists, but it does not allow this method.' },
+  { code: 500, name: 'Internal Server Error', means: '500 says that something unexpected broke inside the server.' },
+  { code: 501, name: 'Not Implemented', means: '501 says that the server does not know this method for any path.' },
+];
+
+export interface RequestCard {
+  id: string;
+  /** The request of a slide row. A second line says what the request leaves out. */
+  lines: string[];
+  status: Status;
+  /** What is wrong with the request, or why nothing is. It never names a status code. */
+  problem: string;
+  /** Said only after a right drop. */
+  extra?: string;
+}
+
+/**
+ * The requests and statuses of the assignment slide (session 5 deck, PDF page 3).
+ * Each card has one problem or none. The slide writes the no-Host row as
+ * "GET /add". The card adds the values of row 1, so a missing value is not a
+ * second problem.
+ */
+export const CARDS: RequestCard[] = [
+  { id: 'add', lines: ['GET /add?a=2&b=3'], status: 200, problem: 'Nothing is wrong: /add exists, it allows GET, and both values are numbers.', extra: 'The body is 5.' },
+  { id: 'div-zero', lines: ['GET /div?a=1&b=0'], status: 400, problem: 'The input is wrong: b is 0, and nobody can divide by zero.' },
+  { id: 'not-number', lines: ['GET /add?a=x&b=3'], status: 400, problem: 'The input is wrong: x is not a number.' },
+  { id: 'pow', lines: ['GET /pow?a=2&b=8'], status: 404, problem: 'The path is wrong: the calculator has no /pow.' },
+  { id: 'post', lines: ['POST /add'], status: 405, problem: 'The method is wrong for this path: /add exists, but it takes GET only.', extra: 'The answer also carries an Allow line that lists GET.' },
+  { id: 'no-host', lines: ['GET /add?a=2&b=3', 'with no Host line'], status: 400, problem: 'The request is not complete: every HTTP/1.1 request must carry a Host line.' },
+  { id: 'div', lines: ['GET /div?a=9&b=3'], status: 200, problem: 'Nothing is wrong: /div exists, it allows GET, and 9 divided by 3 is 3.', extra: 'The body is 3.' },
+];
+
+/** The feedback for one drop. A wrong drop says what that status means and what is wrong, but not the right status. */
+export function judge(card: RequestCard, code: Status): { correct: boolean; feedback: string } {
+  const picked = STATUSES.find((s) => s.code === code);
+  if (!picked) throw new Error(`The picker has no status ${code}.`);
+  if (code !== card.status) return { correct: false, feedback: `Not ${code}. ${picked.means} ${card.problem}` };
+  return { correct: true, feedback: [`${card.problem} So it earns ${code} ${picked.name}.`, card.extra].filter(Boolean).join(' ') };
+}
