@@ -233,7 +233,7 @@
   accent-color: var(--accent-2);
 }
 
-/* KnockDemo: the SVG. 13 px in a 400-unit view box stays readable when a phone draws it about 320 px wide. */
+/* KnockDemo: the SVG. 14 to 15 px in a 400-unit view box stays readable when a phone draws it about 320 px wide. */
 .m02-knock {
   max-height: 64dvh;
 }
@@ -243,7 +243,7 @@
   stroke: var(--border-strong);
 }
 .m02-head {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   text-anchor: middle;
   fill: var(--text);
@@ -265,18 +265,18 @@
   stroke-linejoin: round;
 }
 .m02-section {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   fill: var(--accent-2);
 }
 .m02-muted {
-  font-size: 12px;
+  font-size: 14px;
   fill: var(--text-2);
 }
 .m02-note.ok,
 .m02-note.bad,
 .m02-note.wait {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 text.m02-note.ok {
@@ -297,7 +297,7 @@ text.m02-note.wait {
 }
 .m02-msg text {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
   text-anchor: middle;
   fill: var(--text);
 }
@@ -316,6 +316,6 @@ text.m02-note.wait {
   stroke-width: 1.5;
 }
 .m02-queue text {
-  font-size: 12px;
+  font-size: 14px;
   fill: var(--text);
 }

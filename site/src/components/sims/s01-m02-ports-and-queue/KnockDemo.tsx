@@ -111,16 +111,21 @@ export default function KnockDemo({ title }: { title: string }) {
       <svg
         ref={svg}
         class="m02-knock"
-        viewBox="0 0 400 410"
+        viewBox="0 0 400 436"
         role="img"
-        aria-label="Three lifelines: the client, the kernel of the server, and the server program. The client connects two times."
+        aria-label="Three lifelines: the client, the kernel of the server computer, and the server program. The client connects two times."
       >
-        <rect class="m02-machine" x="148" y="2" width="250" height="406" rx="6" />
+        <text class="m02-muted" x="273" y="16" text-anchor="middle">
+          The server computer
+        </text>
+        <rect class="m02-machine" x="148" y="24" width="250" height="408" rx="6" />
+        {/* The body sits under the label of the server computer. The motions move the elements inside, not this group. */}
+        <g transform="translate(0 26)">
         <text class="m02-head" x={CX} y="18">
           Client
         </text>
         <text class="m02-head" x={KX} y="18">
-          Kernel of the server
+          Kernel
         </text>
         <text class="m02-head" x={PX} y="18">
           Server program
@@ -178,6 +183,7 @@ export default function KnockDemo({ title }: { title: string }) {
         {MSGS.map((m) => (
           <Arrow m={m} key={m.key} />
         ))}
+        </g>
       </svg>
     </AnimationControls>
   );
