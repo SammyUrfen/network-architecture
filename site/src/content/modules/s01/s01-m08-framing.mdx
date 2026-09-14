@@ -79,7 +79,7 @@ Three rules work. Part 2 of this page shows that the first rule is a length rule
 4. Nothing in TCP marks the edge between the two writes.
 5. So the protocol adds the edge: a length that it knows, a delimiter that it scans for, or a length prefix that it reads first.
 
-<Stepper
+<Stepper slot="visual"
   title="Two writes, three segments, two reads"
   steps={[
     {
@@ -190,7 +190,7 @@ The man page says that a short count is not an error. `read()` can return fewer 
 2. The sender writes the message, then the end byte.
 3. The reader scans for the end byte. The bytes before it are one message.
 
-<ByteView
+<ByteView slot="visual"
   caption="Fixed length, N = 5. The reader counts 5 bytes. The pad fills a short message."
   messages={[
     { name: 'Message 1', fields: [{ text: 'hi' }, { hex: '00 00 00', kind: 'pad', label: 'pad' }] },
@@ -199,7 +199,7 @@ The man page says that a short count is not an error. `read()` can return fewer 
   ]}
 />
 
-<ByteView
+<ByteView slot="visual"
   caption="Delimiter: a newline ends each message"
   messages={[
     { name: 'Message 1', fields: [{ text: 'hi' }, { text: '\n', kind: 'delimiter', label: 'end' }] },
@@ -212,7 +212,7 @@ The man page says that a short count is not an error. `read()` can return fewer 
 
 HTTP uses a delimiter for its head. CR LF ends each header line, and an empty line ends the head. This is the end of the head of the 301 response from Google on slide 17. Offsets count from the first byte shown.
 
-<ByteView
+<ByteView slot="visual"
   caption="The last two header lines and the empty line of the 301 on slide 17"
   view="text"
   messages={[
@@ -266,7 +266,7 @@ The IPv4 header and the TCP header each have a fixed part of 20 bytes. Options c
 2. It writes the count in a field of fixed width, such as 1 byte. Then it writes the bytes.
 3. The reader reads the count first. Then it takes exactly that many bytes as one message.
 
-<ByteView
+<ByteView slot="visual"
   caption="Length prefix: 1 byte of length before each message"
   messages={[
     { name: 'Message 1', fields: [{ hex: '02', kind: 'length', label: 'length: 2' }, { text: 'hi' }] },
@@ -283,7 +283,7 @@ Use the sandbox below. Predict each result before you press Next.
 2. Pick "Delimiter", and type `a\nb` as the only message. How many messages does the reader find?
 3. Pick "Length prefix". Press "New random cut" a few times. Can any cut break the messages?
 
-<FramingSandbox title="Framing sandbox" messages={['hello', 'world']} rule="length" />
+<FramingSandbox slot="visual" title="Framing sandbox" messages={['hello', 'world']} rule="length" />
 
 ### The real thing
 
@@ -291,7 +291,7 @@ The same 301 response on slide 17 carries `Content-Length: 219`. After the empty
 
 A binary protocol puts the length in bytes, not in text. Here a 2-byte length, big-endian, says 5, and then `hello` follows.
 
-<ByteView
+<ByteView slot="visual"
   caption="A 2-byte big-endian length, 5, then hello"
   messages={[
     {

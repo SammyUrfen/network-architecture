@@ -40,12 +40,16 @@
     font-size: var(--text-sm);
     color: var(--text);
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: var(--bw) solid var(--border-strong);
+    border-radius: var(--radius-m);
     cursor: pointer;
+    transition:
+      color 0.15s var(--ease),
+      border-color 0.15s var(--ease);
   }
   .theme-toggle:hover {
-    background: var(--surface-2);
+    color: var(--accent-2);
+    border-color: var(--accent);
   }
   /* A half-filled circle: the sun side and the dark side of the switch */
   .icon {

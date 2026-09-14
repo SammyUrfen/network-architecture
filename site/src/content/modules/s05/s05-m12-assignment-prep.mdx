@@ -64,7 +64,7 @@ These are concepts, not code.
 
 Use the finder below. Step through the reads, and watch where each read ends. Then change the sizes, and try to make every read end exactly where a request ends.
 
-<BoundaryFinder />
+<BoundaryFinder slot="visual" />
 
 ### The real thing
 
@@ -109,7 +109,7 @@ The steps go on from part 1.
 
 The stepper uses the stream and the reads of the finder: 30 bytes, then 50, then 34.
 
-<Stepper
+<Stepper slot="visual"
   title="The persistent loop on one connection"
   steps={[
     {
@@ -169,7 +169,7 @@ The stepper uses the stream and the reads of the finder: 30 bytes, then 50, then
 
 Slide 3 says it plainly: consume exactly Content-Length bytes, "and not one more". Byte n+1 belongs to the next request.
 
-<ByteView
+<ByteView slot="visual"
   caption="Two requests back to back on one connection. Request 2 starts at byte 67."
   view="text"
   messages={[

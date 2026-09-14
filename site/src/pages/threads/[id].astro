@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import ModuleLink from '../../components/lesson/ModuleLink.astro';
 import Base from '../../layouts/Base.astro';
+import { threadTitle } from '../../components/shell/lessons';
 import { href } from '../../lib/url';
 
 export async function getStaticPaths() {
@@ -15,9 +16,9 @@ const modules = (await getCollection('modules', (m) => m.data.threads.includes(e
 );
 ---
 
-<Base title={entry.id}>
+<Base title={threadTitle(entry.id)}>
   <p class="crumb"><a href={href('threads/')}>Threads</a></p>
-  <h1>{entry.id}</h1>
+  <h1>{threadTitle(entry.id)}</h1>
   <p>{entry.data.idea}</p>
   <p class="crumb">First seen in Session {entry.data.firstSeen}. Design questions come in Phase 8.</p>
   <h2>Lessons that use it</h2>

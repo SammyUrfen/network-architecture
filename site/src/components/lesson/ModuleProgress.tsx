@@ -9,6 +9,7 @@ export interface Props {
 
 // The bar shows only what the store can prove for one module. Its only prop is
 // the module ID, so it knows no totals: it counts answers, not answers left.
+// It sits at the bottom of the sidebar, so the steps stack in one narrow column.
 // Styles are inline, because this island has no .astro wrapper for a <style>.
 export default function ModuleProgress({ id }: Props) {
   const progress = useStore($progress);
@@ -27,24 +28,35 @@ export default function ModuleProgress({ id }: Props) {
     { label: 'Review cards', done: cards > 0, state: `${cards} added` },
     { label: 'Done', done: Boolean(completedAt), state: completedAt ? `on ${localDay(new Date(completedAt))}` : '' },
   ];
+  const done = steps.filter((step) => step.done).length;
 
   return (
-    <div style={{ margin: 'var(--space-3) 0', fontSize: 'var(--text-sm)' }}>
-      <p style={{ margin: '0 0 var(--space-1)', color: 'var(--text-muted)' }}>
-        Your progress: {steps.filter((step) => step.done).length} of {steps.length} steps
+    <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.4 }}>
+      <p style={{ margin: '0 0 var(--space-2)', fontWeight: 600 }}>
+        Your progress: {done} of {steps.length} steps
       </p>
-      {/* 9rem steps: four in a row on a wide screen, two in a row on a phone. */}
-      <ol style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', margin: 0, padding: 0, listStyle: 'none' }}>
+      {/* One bar per step. The words below carry the meaning, the bar only repeats it. */}
+      <div aria-hidden="true" style={{ display: 'flex', gap: '3px', marginBottom: 'var(--space-2)' }}>
         {steps.map((step) => (
-          <li
+          <span
             style={{
-              flex: '1 1 9rem',
-              paddingTop: 'var(--space-1)',
-              borderTop: `6px solid ${step.done ? 'var(--correct)' : 'var(--rule)'}`,
+              flex: 1,
+              height: '6px',
+              borderRadius: 'var(--radius-s)',
+              background: step.done ? 'var(--correct)' : 'var(--border)',
             }}
-          >
-            <span aria-hidden="true">{step.done ? '✓ ' : ''}</span>
-            {step.label}: {step.done ? step.state : 'not yet'}
+          />
+        ))}
+      </div>
+      <ol style={{ display: 'grid', gap: '2px', margin: 0, padding: 0, listStyle: 'none', color: 'var(--text-muted)' }}>
+        {steps.map((step) => (
+          <li style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <span aria-hidden="true" style={{ width: '1em', color: step.done ? 'var(--correct)' : 'var(--text-3)' }}>
+              {step.done ? '✓' : '○'}
+            </span>
+            <span>
+              {step.label}: {step.done ? step.state : 'not yet'}
+            </span>
           </li>
         ))}
       </ol>

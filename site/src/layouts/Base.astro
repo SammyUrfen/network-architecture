@@ -1,22 +1,16 @@
 ---
 import '../styles/tokens.css';
-import ThemeToggle from '../components/ThemeToggle.astro';
+import Sidebar from '../components/shell/Sidebar.astro';
 import { href } from '../lib/url';
 
 interface Props {
   title: string;
+  /** A page of cards and lists, such as the home page, uses a wider column than a page of prose. */
+  wide?: boolean;
+  /** On a module page: the module ID and the titles of its parts, for the sidebar. */
+  lesson?: { id: string; parts: string[] };
 }
-const { title } = Astro.props;
-
-const nav = [
-  ['', 'Map'],
-  ['review/', 'Review'],
-  ['practice/', 'Practice'],
-  ['threads/', 'Threads'],
-  ['assessments/', 'Graded work'],
-  ['progress/', 'Progress'],
-];
-const here = Astro.url.pathname;
+const { title, wide = false, lesson } = Astro.props;
 ---
 
 <!doctype html>
@@ -41,26 +35,27 @@ const here = Astro.url.pathname;
   </head>
   <body>
     <a class="skip" href="#main">Skip to the content</a>
-    <header class="site-header">
-      <a class="brand" href={href()}>Network Architecture</a>
-      <nav aria-label="Site">
-        <ul>
-          {
-            nav.map(([path, label]) => (
-              <li>
-                <a href={href(path)} aria-current={here === href(path) ? 'page' : undefined}>
-                  {label}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
-      <ThemeToggle />
-    </header>
-    <main id="main">
-      <slot />
-    </main>
+    <div class="shell">
+      <header class="topbar">
+        <button type="button" class="btn menu" popovertarget="sidebar">
+          <span class="bars" aria-hidden="true"></span>
+          Menu
+        </button>
+        <a class="brand" href={href()}>Network Architecture</a>
+      </header>
+      <Sidebar lesson={lesson} />
+      <main id="main" tabindex="-1">
+        {
+          lesson ? (
+            <slot />
+          ) : (
+            <div class:list={['page', { wide }]}>
+              <slot />
+            </div>
+          )
+        }
+      </main>
+    </div>
   </body>
 </html>
 
@@ -72,22 +67,31 @@ const here = Astro.url.pathname;
   }
   body {
     margin: 0;
-    font-family: var(--font-prose);
+    font-family: var(--font-body);
     font-size: var(--text-base);
     line-height: var(--leading);
     color: var(--text);
     background: var(--bg);
     -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* A larger body size on a wide screen, where the reader sits further back */
+  @media (width >= 90rem) {
+    body {
+      font-size: 1.125rem;
+    }
   }
   h1,
   h2,
-  h3 {
-    line-height: 1.25;
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.2;
     text-wrap: balance;
   }
   h1 {
     font-size: var(--text-2xl);
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--space-4);
   }
   h2 {
     font-size: var(--text-xl);
@@ -98,25 +102,57 @@ const here = Astro.url.pathname;
   }
   a {
     color: var(--interactive);
-    text-underline-offset: 0.15em;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  a:hover {
+    color: var(--text);
+    text-decoration-color: var(--accent);
   }
   code,
   kbd,
   pre {
     font-family: var(--font-mono);
-    font-size: 0.9em;
+    font-size: 0.88em;
   }
   code {
-    padding: 0.1em 0.3em;
+    padding: 0.1em 0.35em;
     background: var(--surface-2);
-    border-radius: 4px;
+    border-radius: var(--radius-s);
+  }
+  pre code {
+    padding: 0;
+    background: none;
+  }
+  ::selection {
+    color: var(--on-accent);
+    background: var(--accent);
   }
   :focus-visible {
-    outline: 3px solid var(--focus);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
   details > summary {
     cursor: pointer;
+  }
+  /* A plain Markdown table, in the look of the theme kit. A component with
+     its own table styles wins over these element rules. */
+  table {
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: var(--bw) solid var(--border);
+  }
+  th {
+    font-family: var(--font-display);
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    color: var(--text-2);
+    border-bottom-color: var(--border-strong);
   }
   /* Text for screen readers only. Islands and components use this one class. */
   .sr-only {
@@ -128,23 +164,33 @@ const here = Astro.url.pathname;
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  /* The plain button of pages and progress islands. The check islands and the
-     Stepper keep their own button looks in check.css and Stepper.astro. The
-     min-height gives a 44 px touch target. */
+  /* The plain button of pages and progress islands, in the look of the theme
+     kit. The check islands and the Stepper keep their own button looks in
+     check.css and Stepper.astro. The min-height gives a 44 px touch target. */
   .btn,
   input[type='file']::file-selector-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     min-height: 2.75rem;
     padding: var(--space-2) var(--space-4);
     font: inherit;
+    font-weight: 600;
     color: var(--text);
-    background: var(--interactive-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    background: var(--surface);
+    border: var(--bw) solid var(--border-strong);
+    border-radius: var(--radius-m);
     cursor: pointer;
+    transition:
+      color 0.15s var(--ease),
+      border-color 0.15s var(--ease),
+      background 0.15s var(--ease);
   }
   .btn:hover,
   input[type='file']::file-selector-button:hover {
-    border-color: var(--interactive);
+    color: var(--accent-2);
+    border-color: var(--accent);
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -160,70 +206,89 @@ const here = Astro.url.pathname;
 <style>
   .skip {
     position: absolute;
+    z-index: 10;
     left: var(--space-2);
     top: -3rem;
     padding: var(--space-2) var(--space-3);
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: var(--bw) solid var(--border-strong);
   }
   .skip:focus {
     top: var(--space-2);
   }
-  .site-header {
+
+  /* Narrower screens: a top bar with the menu button that opens the drawer. */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-6);
-    padding: var(--space-3) var(--space-4);
-    background: var(--surface);
-    border-bottom: 1px solid var(--rule);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: var(--bw) solid var(--border);
   }
-  .brand {
+  .topbar .brand {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text);
     text-decoration: none;
   }
-  nav {
-    flex: 1 1 auto;
+  /* Three bars: one background and two shadows */
+  .bars {
+    width: 1.1rem;
+    height: 2px;
+    background: currentColor;
+    box-shadow:
+      0 -5px 0 currentColor,
+      0 5px 0 currentColor;
   }
-  nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  nav a {
-    display: inline-block;
-    padding: var(--space-1) 0;
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-decoration: none;
-  }
-  nav a:hover,
-  nav a[aria-current='page'] {
-    color: var(--text);
-    text-decoration: underline;
-    text-decoration-color: var(--key);
-    text-decoration-thickness: 2px;
-  }
-  /* On a phone the site name takes the first row. The nav is a grid of two
-     columns, so no link sits alone on a row, and the toggle sits to its
-     right. The screen order then matches the Tab order: name, nav, toggle. */
-  @media (max-width: 40rem) {
-    .brand {
-      flex-basis: 100%;
+  /* Phones: a slim bar */
+  @media (width < 40rem) {
+    .topbar {
+      padding: var(--space-1) var(--space-3);
     }
-    nav ul {
+    .topbar .menu {
+      min-height: 2.5rem;
+      padding: var(--space-1) var(--space-3);
+    }
+    .topbar .brand {
+      font-size: 1rem;
+    }
+  }
+
+  /* Wide screens: the sidebar and the page side by side. The module page
+     sizes its columns in container units of main. */
+  @media (width >= 75rem) {
+    .shell {
       display: grid;
-      grid-template-columns: repeat(2, max-content);
-      column-gap: var(--space-6);
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+    }
+    .topbar {
+      display: none;
+    }
+    main {
+      container-type: inline-size;
     }
   }
+
   main {
-    max-width: var(--measure);
-    margin: 0 auto;
     padding: var(--space-6) var(--space-4) var(--space-8);
+    outline: none;
+  }
+  @media (width >= 40rem) {
+    main {
+      padding: var(--space-8) clamp(var(--space-6), 4vw, 3.5rem) calc(2 * var(--space-8));
+    }
+  }
+  .page {
+    max-width: var(--measure);
+    margin-inline: auto;
+  }
+  .page.wide {
+    max-width: 72rem;
   }
 </style>

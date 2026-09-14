@@ -1,0 +1,103 @@
+---
+import { segmentAnchor } from '../lesson/segments';
+
+// The parts of the lesson, in the sidebar. The script marks the part in view
+// with aria-current, so the mark and the screen reader agree.
+export interface Props {
+  /** Segment titles in page order, from segmentTitles(entry.body). */
+  parts: string[];
+}
+const { parts } = Astro.props;
+---
+
+<nav class="outline" aria-labelledby="outline-label" data-outline>
+  <p class="label" id="outline-label">Parts of this lesson</p>
+  <ol>
+    {
+      parts.map((part, i) => (
+        <li>
+          <a href={`#${segmentAnchor(part)}`}>
+            <span class="n" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span>
+              <span class="sr-only">Part {i + 1}: </span>
+              {part}
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<script>
+  // A part is in view when it crosses a line at about 30% of the window
+  // height, where the eye rests when a reader scrolls. Between two parts no
+  // link has the mark.
+  for (const nav of document.querySelectorAll<HTMLElement>('[data-outline]')) {
+    const pairs = [...nav.querySelectorAll('a')].flatMap((link) => {
+      const part = document.getElementById(decodeURIComponent(link.hash.slice(1)))?.closest('section');
+      return part ? [{ link, part }] : [];
+    });
+    const inView = new Set<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) inView.add(entry.target);
+          else inView.delete(entry.target);
+        }
+        const current = pairs.find(({ part }) => inView.has(part));
+        for (const { link, part } of pairs) {
+          if (part === current?.part) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+        }
+      },
+      { rootMargin: '-30% 0px -69% 0px' },
+    );
+    for (const { part } of pairs) observer.observe(part);
+  }
+</script>
+
+<style>
+  .label {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-variant: small-caps;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+  ol {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  a {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--text);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  }
+  a:hover {
+    background: var(--surface-2);
+  }
+  .n {
+    flex: none;
+    min-width: 1.2em;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+  }
+  /* The part in view: a bar, a tint and bold text, so the mark is not color alone */
+  a[aria-current='location'] {
+    font-weight: 700;
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+</style>

@@ -22,31 +22,33 @@ const assessments = (await getCollection('assessments')).sort(
 const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
 ---
 
-<Base title="Map">
+<Base title="Map" wide>
   <h1>Network Architecture</h1>
   <p class="lead">The course, one idea at a time. Pick a session, or review what is due.</p>
 
-  <section aria-labelledby="today">
-    <h2 id="today">Today</h2>
-    <Today client:only="preact" reviewIds={reviewIds} reviewHref={href('review/')} modules={lessons}>
-      <p slot="fallback">Loading the cards that are due today.</p>
-    </Today>
-  </section>
+  <div class="columns">
+    <section aria-labelledby="today">
+      <h2 id="today">Today</h2>
+      <Today client:only="preact" reviewIds={reviewIds} reviewHref={href('review/')} modules={lessons}>
+        <p slot="fallback">Loading the cards that are due today.</p>
+      </Today>
+    </section>
 
-  <section aria-labelledby="graded">
-    <h2 id="graded">Graded work</h2>
-    <ul class="plain">
-      {
-        assessments.map((a) => (
-          <li>
-            <strong>{a.data.title}</strong>, {a.data.weight}% of the grade:{' '}
-            {a.data.date ? `${a.data.dateApprox ? 'about ' : ''}${day(a.data.date)}` : 'date not known'}
-          </li>
-        ))
-      }
-    </ul>
-    <p><a href={href('assessments/')}>All graded work</a></p>
-  </section>
+    <section aria-labelledby="graded">
+      <h2 id="graded">Graded work</h2>
+      <ul class="plain">
+        {
+          assessments.map((a) => (
+            <li>
+              <strong>{a.data.title}</strong>, {a.data.weight}% of the grade:{' '}
+              {a.data.date ? `${a.data.dateApprox ? 'about ' : ''}${day(a.data.date)}` : 'date not known'}
+            </li>
+          ))
+        }
+      </ul>
+      <p><a href={href('assessments/')}>All graded work</a></p>
+    </section>
+  </div>
 
   <section aria-labelledby="map">
     <h2 id="map">Sessions</h2>
@@ -72,8 +74,15 @@ const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
 
 <style>
   .lead {
+    max-width: var(--measure);
     font-size: var(--text-lg);
     color: var(--text-muted);
+  }
+  /* Today and the graded work side by side, when the column is wide enough */
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    column-gap: var(--space-8);
   }
   .plain {
     padding-left: var(--space-6);
