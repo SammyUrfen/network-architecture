@@ -13,7 +13,7 @@ import './m12.css';
 export interface Props {}
 
 const STEPS = [
-  { caption: 'One connection brings these 114 bytes: two requests, back to back. No mark in the bytes shows where request 1 stops.', ms: 1500 },
+  { caption: 'One connection brings these 114 bytes: two requests, back to back. The bytes count from 0, so the last one is byte 113. No mark shows where request 1 stops.', ms: 1500 },
   { caption: 'Read down the head, one line at a time. Every line ends in \\r\\n. A line that holds only \\r\\n is the empty line. The head ends there, at byte 61.', ms: 2400 },
   { caption: 'The head holds Content-Length: 5. So exactly 5 body bytes come after the empty line, and not one more.', ms: 900 },
   { caption: 'Count 5 bytes: h, e, l, l, o, bytes 62 to 66. Request 1 ends there. Byte 67, the G, starts request 2.', ms: 2400 },

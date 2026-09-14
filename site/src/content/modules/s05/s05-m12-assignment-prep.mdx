@@ -4,7 +4,7 @@ session: 5
 order: 12
 title: "Assignment prep: a calculator that stays on the line"
 minutes: 20
-bigIdea: "The math is easy. The real skill is to take exactly one request at a time off a connection that stays open, and to answer each one with the right status code."
+bigIdea: "The math is easy. The real skill is to take exactly one request at a time off a connection that stays open, and to give each one the right number at the start of its answer, its status code."
 covers: [S05-C04, S05-C05, S05-C06, S05-C07, S05-C08, S05-C09, S05-C10, S05-C11]
 prereqs: [s05-m02-keepalive-host, s05-m04-range-chunked-extras, s01-m08-framing, s01-m04-clients]
 threads: [T-framing, T-setup-off-path]
@@ -51,7 +51,7 @@ The question matters because of how the marker tests your server. The marker is 
 
 You already know two things that this lesson uses. From <ModuleLink id="s01-m08-framing" />, you know that TCP keeps every byte in order but keeps no mark where one message stops. From <ModuleLink id="s05-m02-keepalive-host" />, you know that an HTTP/1.1 connection stays open for many requests. The top of this page also names two threads. A thread is an idea that comes back in many lessons. Framing asks where a message ends. Setup off path means that you pay a costly setup, such as a new connection, one time and not for each request.
 
-**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the data bytes, the body, that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, the chunks of bytes that it takes from the connection one at a time. It also shows what the server does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why the error answers of the marking run must leave the connection open.
+**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the data bytes, the body, that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, the pieces of bytes that it takes from the connection one at a time. It also shows what the server does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why the error answers of the marking run must leave the connection open.
 
 <Pretest module="s05-m12-assignment-prep" />
 
@@ -162,11 +162,11 @@ RFCs are the official documents that define internet protocols, and RFC 9112 def
 
 <Segment title="A read is not a request">
 
-**In this part.** Part 1 found the ends of two requests with all 114 bytes in view. A real server never sees the bytes that way. It gets them in reads, and a read can stop anywhere. This part shows what a server does with a read that holds half a request, or parts of two.
+**In this part.** Part 1 found the ends of two requests with all 114 bytes in view. A real server never sees the bytes that way. It gets them in reads, and a read can stop anywhere. This part shows what a server does with a read that holds half a request, or parts of two. The server keeps those extra bytes in a buffer, the bytes that it read but did not use yet.
 
 <BoundaryFinder slot="visual" />
 
-<Picture breaks="the cook chooses where to tear. A read cannot choose where it stops: it gets the bytes that already arrived. It can stop in the middle of a line, even between the CR and the LF of the empty line.">
+<Picture breaks="the cook can see that the printer still prints. A server cannot see whether more bytes are on the way. Its read can also stop in the middle of a line, even between the CR and the LF of the empty line.">
 
 Now the strip comes out of the printer slowly. The cook does not wait for the whole strip. Every so often, the cook tears off the piece that has come out so far. One piece can hold half of an order. The next piece can hold the rest of that order and the start of the next one. So the cook never treats a piece as one order. The cook pins the unfinished part on a board and joins it to the next piece.
 
@@ -248,7 +248,7 @@ Now try the picker. It holds the requests of <SlideLink session={5} page={3}>the
 
 ### The real thing
 
-The assignment slide gives the whole feature set. Build the server on a plain socket, the end of a connection that the operating system gives your program. Use any language, but no framework, a ready-made web server library. Use this table as your checklist.
+The assignment slide gives the whole feature set. Build the server on a plain socket, the end of a connection that the operating system gives your program. Use any language, but no framework, a ready-made web server library. The marker reaches your server through a port, the number that picks one program on a machine. Use this table as your checklist.
 
 | # | Request | Expected answer |
 |---|---|---|
@@ -268,9 +268,9 @@ The marker connects to port 8080 on your machine. It sends six requests on one c
 
 </KeyIdea>
 
-A port is the number that picks one program on a machine. The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". HTTP/1.0 is from 1996, and it closes after each answer. So the 400, the 404 and the 405 of the marking run are normal answers. The server sends each one and waits for the next request on the same connection.
+The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". HTTP/1.0 is from 1996, and it closes after each answer. So the 400, the 404 and the 405 of the marking run are normal answers. The server sends each one and waits for the next request on the same connection.
 
-The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend: how long the server waits for the next request before it closes the connection. Support chunked encoding. <SlideLink session={5} page={16}>In chunked encoding</SlideLink>, each chunk starts with its size in hex, and a chunk of size 0 ends the body. The assignment slide does not say whether it means requests, answers or both. Answer six requests that arrive at once, in order.
+The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend: how long the server waits for the next request before it closes the connection. Support chunked encoding. <SlideLink session={5} page={16}>In chunked encoding</SlideLink>, each chunk starts with its size in hex (base 16, with the digits 0 to 9 and a to f), and a chunk of size 0 ends the body. The assignment slide does not say whether it means requests, answers or both. Answer six requests that arrive at once, in order.
 
 <Beyond source="RFC 9110 §15.5.6, RFC 9112 §3.2" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6">
 
