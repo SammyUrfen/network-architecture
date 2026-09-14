@@ -118,9 +118,7 @@ const ruler: ByteMessage[] = [
   </p>
 
   <article>
-    <ModuleHeader {...m08} segments={m08Segments}>
-      <p slot="progress" class="dev-note">The progress bar goes in this slot.</p>
-    </ModuleHeader>
+    <ModuleHeader {...m08} />
 
     <WordCard terms={terms} />
 
@@ -198,10 +196,10 @@ const ruler: ByteMessage[] = [
       title="Assignment prep: a calculator that stays on the line"
       minutes={20}
       bigIdea="The arithmetic is trivial, and the real skill is to take exactly one request off a persistent byte stream and pick the right status."
+      session={5}
       status="draft"
       prereqs={['s05-m02-keepalive-host', 's05-m04-range-chunked-extras', 's01-m08-framing', 's01-m04-clients']}
       threads={['T-framing', 'T-setup-off-path']}
-      segments={['Where one request ends']}
     />
 
     <Segment title="Where one request ends">

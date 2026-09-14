@@ -12,3 +12,14 @@ export const segmentAnchor = (title: string) =>
 export function segmentTitles(mdxBody: string) {
   return [...mdxBody.matchAll(/<Segment\b[^>]*?\btitle="([^"]*)"/g)].map((match) => match[1]);
 }
+
+/**
+ * Splits the rendered HTML of a segment after its first paragraph, the place
+ * of the visual on a narrow screen. Astro puts hydration scripts before the
+ * first island of a slot, so the split skips them. A segment that does not
+ * start with a paragraph gives an empty lead, and the visual goes first.
+ */
+export function splitLead(html: string): [string, string] {
+  const lead = html.match(/^(?:\s*<script\b[^>]*>[\s\S]*?<\/script>)*\s*<p>[\s\S]*?<\/p>/)?.[0] ?? '';
+  return [lead, html.slice(lead.length)];
+}

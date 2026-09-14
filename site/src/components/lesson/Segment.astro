@@ -1,34 +1,92 @@
 ---
-import { segmentAnchor } from './segments';
+import { segmentAnchor, splitLead } from './segments';
 
 // About 5 minutes of reading and doing. npm run verify numbers segments by
 // their order in the MDX, so this component takes no number. The CSS counter
 // shows the same number.
+//
+// The named slot "visual" holds the diagram, animation or simulation of the
+// part. On a wide screen it sits in the rail to the right of the prose and
+// stays in view while the part scrolls. On a narrow screen it sits inline,
+// after the first paragraph of the part. The slot content lands in that place
+// in the HTML, so the reading order and the Tab order match the screen order.
 export interface Props {
   /** A plain string, so segmentTitles() can read it from the MDX. */
   title: string;
 }
 const { title } = Astro.props;
 const id = segmentAnchor(title);
+const [lead, rest] = splitLead(await Astro.slots.render('default'));
+const visual = Astro.slots.has('visual') ? await Astro.slots.render('visual') : '';
 ---
 
-<section class="segment" aria-labelledby={id}>
-  <h2 id={id}>{title}</h2>
-  <slot />
+<section class:list={['segment', { 'has-visual': visual }]} aria-labelledby={id}>
+  <div class="prose">
+    <h2 id={id}><span class="part">Part <span class="n"></span></span> {title}</h2>
+    <Fragment set:html={lead} />
+    {
+      visual && (
+        <div class="visual">
+          <div class="sticky" set:html={visual} />
+        </div>
+      )
+    }
+    <Fragment set:html={rest} />
+  </div>
 </section>
 
 <style>
   .segment {
     counter-increment: segment;
-    margin: var(--space-8) 0;
-    padding-top: var(--space-2);
-    border-top: 2px solid var(--rule);
+    position: relative;
+    margin: calc(2 * var(--space-8)) 0 var(--space-8);
   }
   h2 {
-    margin-top: var(--space-3);
+    margin: 0 0 var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 4px double var(--border-strong);
+    scroll-margin-top: 4.5rem;
   }
-  h2::before {
-    content: 'Part ' counter(segment) '. ';
-    color: var(--text-muted);
+  /* A small-caps eyebrow over the title, as in the theme kit */
+  .part {
+    display: block;
+    width: fit-content;
+    margin-bottom: var(--space-2);
+    padding: 2px 2px;
+    font-size: var(--text-sm);
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.18em;
+    color: var(--accent-2);
+    border-block: var(--bw) solid var(--border-strong);
+  }
+  .n::before {
+    content: counter(segment);
+  }
+
+  /* Wide screens: the module page sets --prose, --rail and --rail-gap. */
+  @media (min-width: 75rem) {
+    .segment.has-visual {
+      width: calc(var(--prose) + var(--rail-gap) + var(--rail));
+    }
+    .prose {
+      max-width: var(--prose);
+    }
+    .visual {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: calc(var(--prose) + var(--rail-gap));
+      width: var(--rail);
+    }
+    /* A visual taller than the window scrolls inside the rail. */
+    .sticky {
+      position: sticky;
+      top: var(--space-6);
+      max-height: min(100%, 100dvh - 2 * var(--space-6));
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
   }
 </style>

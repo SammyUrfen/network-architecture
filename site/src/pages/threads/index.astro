@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import { threadTitle } from '../../components/shell/lessons';
 import { href } from '../../lib/url';
 
 const threads = await getCollection('threads');
@@ -13,7 +14,7 @@ const threads = await getCollection('threads');
     {
       threads.map(({ id, data: t }) => (
         <li>
-          <a href={href(`threads/${id}/`)}>{id}</a>: {t.idea} <span class="first">First seen in Session {t.firstSeen}.</span>
+          <a href={href(`threads/${id}/`)}>{threadTitle(id)}</a>: {t.idea} <span class="first">First seen in Session {t.firstSeen}.</span>
         </li>
       ))
     }

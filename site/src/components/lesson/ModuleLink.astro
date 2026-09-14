@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { moduleHref } from '../../lib/url';
+import { plannedTitle } from '../shell/lessons';
 
 export interface Props {
   id: string;
@@ -8,18 +9,11 @@ export interface Props {
 const { id } = Astro.props;
 // A planned module has no page yet. getEntry() would also give undefined for
 // it, but it logs a warning for each one, so search the collection instead.
+// Its title comes from the curriculum file, so the reader never sees the ID.
 const entry = (await getCollection('modules')).find((m) => m.id === id);
 ---
 
-{
-  entry ? (
-    <a href={moduleHref(id)}>{entry.data.title}</a>
-  ) : (
-    <span class="planned">
-      <code>{id}</code> (planned)
-    </span>
-  )
-}
+{entry ? <a href={moduleHref(id)}>{entry.data.title}</a> : <span class="planned">{plannedTitle(id)} (planned)</span>}
 
 <style>
   .planned {

@@ -1,0 +1,337 @@
+---
+import { getCollection } from 'astro:content';
+import { href, sessionHref, moduleHref } from '../../lib/url';
+import ModuleProgress from '../lesson/ModuleProgress.tsx';
+import ThemeToggle from '../ThemeToggle.astro';
+import { plannedLessons, sessionLessons } from './lessons';
+import Outline from './Outline.astro';
+
+// The site navigation. On a wide screen it is a fixed column at the left. On a
+// narrower screen it is a drawer: a popover that the menu button in the top
+// bar opens. The popover gives Escape, a click outside and the return of focus
+// to the menu button with no script.
+export interface Props {
+  /** On a module page: the module ID and the titles of its parts. */
+  lesson?: { id: string; parts: string[] };
+}
+const { lesson } = Astro.props;
+const here = Astro.url.pathname;
+
+const modules = await getCollection('modules');
+const sessions = (await getCollection('sessions'))
+  .map((entry) => entry.data)
+  .sort((a, b) => a.number - b.number)
+  .map((s) => ({
+    ...s,
+    href: sessionHref(s.number),
+    lessons: sessionLessons(
+      plannedLessons(s.number),
+      modules
+        .filter((m) => m.data.session === s.number)
+        .sort((a, b) => a.data.order - b.data.order)
+        .map((m) => ({ id: m.id, title: m.data.title })),
+    ),
+  }));
+const links = [
+  ['review/', 'Review'],
+  ['progress/', 'Progress'],
+  ['assessments/', 'Graded work'],
+].map(([path, label]) => ({ href: href(path), label }));
+const current = (path: string) => (here === path ? 'page' : undefined);
+---
+
+<aside id="sidebar" class="sidebar" popover aria-label="Site menu">
+  <div class="head">
+    <a class="brand" href={href()} aria-current={current(href())}>Network Architecture</a>
+    <button type="button" class="close" popovertarget="sidebar" popovertargetaction="hide">
+      <span aria-hidden="true">✕</span>
+      <span class="sr-only">Close the menu</span>
+    </button>
+  </div>
+
+  <div class="scroll">
+    <nav aria-label="Site">
+      <ul class="links">
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={current(link.href)}>
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {lesson && <Outline parts={lesson.parts} />}
+
+    <nav class="sessions" aria-labelledby="sessions-label">
+      <p class="label" id="sessions-label">Sessions</p>
+      <ol>
+        {
+          sessions.map((s) => (
+            <li>
+              <details open={here.startsWith(s.href)}>
+                <summary>
+                  <span class="num">{s.number}</span>
+                  <span>{s.title}</span>
+                </summary>
+                <ol class="lessons">
+                  <li>
+                    <a href={s.href} aria-current={current(s.href)}>
+                      Overview
+                    </a>
+                  </li>
+                  {s.lessons.length === 0 && <li class="planned">No lessons planned yet</li>}
+                  {s.lessons.map((l) =>
+                    l.hasPage ? (
+                      <li>
+                        <a href={moduleHref(l.id)} aria-current={current(moduleHref(l.id))}>
+                          {l.title}
+                        </a>
+                      </li>
+                    ) : (
+                      <li class="planned">
+                        {l.title} <span class="tag">planned</span>
+                      </li>
+                    ),
+                  )}
+                </ol>
+              </details>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+  </div>
+
+  <div class="foot">
+    {
+      lesson && (
+        <div class="progress">
+          <ModuleProgress client:only="preact" id={lesson.id} />
+        </div>
+      )
+    }
+    <ThemeToggle />
+  </div>
+</aside>
+
+<script>
+  // In the drawer, a link closes the drawer, so a link to a part of this page
+  // shows that part. Focus that leaves the drawer closes it too, so the Tab
+  // key never lands on a link under the open drawer.
+  const sidebar = document.getElementById('sidebar')!;
+  const open = () => sidebar.matches(':popover-open');
+  sidebar.addEventListener('click', (event) => {
+    if (open() && (event.target as Element).closest('a')) sidebar.hidePopover();
+  });
+  sidebar.addEventListener('focusout', (event) => {
+    const next = event.relatedTarget as Node | null;
+    if (open() && next && !sidebar.contains(next)) sidebar.hidePopover();
+  });
+</script>
+
+<style>
+  .sidebar {
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    background: var(--bg-subtle);
+    border: 0;
+    border-right: var(--bw) solid var(--border);
+    overflow: hidden;
+  }
+  @media (width >= 75rem) {
+    .sidebar {
+      display: flex;
+      position: sticky;
+      top: 0;
+      inset: auto;
+      width: auto;
+      height: 100dvh;
+    }
+    .close {
+      display: none;
+    }
+  }
+  @media (width < 75rem) {
+    .sidebar:popover-open {
+      display: flex;
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(20rem, 88vw);
+      height: 100dvh;
+      max-height: none;
+      box-shadow: var(--shadow-2);
+      animation: slide-in 0.2s var(--ease);
+    }
+    .sidebar::backdrop {
+      background: rgb(20 14 4 / 0.45);
+    }
+  }
+  @keyframes slide-in {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    border-bottom: 4px double var(--border-strong);
+  }
+  .brand {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .brand:hover {
+    color: var(--accent-2);
+  }
+  .close {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: var(--bw) solid var(--border-strong);
+    border-radius: var(--radius-m);
+    cursor: pointer;
+  }
+  .close:hover {
+    color: var(--accent-2);
+    border-color: var(--accent);
+  }
+
+  .scroll {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: var(--space-6);
+    padding: var(--space-4);
+    overflow-y: auto;
+  }
+  ul,
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .label {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-variant: small-caps;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+
+  /* A link of the sidebar. The current page has a bar and bold text. */
+  .links a,
+  .lessons a {
+    display: block;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--text);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  }
+  .links a:hover,
+  .lessons a:hover,
+  summary:hover {
+    background: var(--surface-2);
+  }
+  .links a[aria-current='page'],
+  .lessons a[aria-current='page'] {
+    font-weight: 700;
+    border-left-color: var(--accent);
+  }
+  .links a[aria-current='page'],
+  .lessons a[aria-current='page'] {
+    background: var(--accent-soft);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+  }
+  .links a {
+    border: var(--bw) solid var(--border-strong);
+    border-radius: var(--radius-m);
+  }
+  .links a[aria-current='page'] {
+    border-color: var(--accent);
+  }
+
+  .sessions > ol {
+    display: grid;
+    gap: var(--space-1);
+  }
+  summary {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.35;
+    border-radius: var(--radius-s);
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary::before {
+    content: '▸';
+    flex: none;
+    color: var(--text-muted);
+  }
+  details[open] > summary::before {
+    content: '▾';
+  }
+  .num {
+    flex: none;
+    min-width: 1em;
+    font-family: var(--font-mono);
+    color: var(--accent-2);
+  }
+  .lessons {
+    display: grid;
+    gap: 1px;
+    margin: var(--space-1) 0 var(--space-2) calc(1.1em + var(--space-2));
+    padding-left: var(--space-2);
+    border-left: var(--bw) solid var(--border);
+  }
+  .planned {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+  .tag {
+    font-size: 0.75rem;
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .foot {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    background: var(--bg-subtle);
+    border-top: var(--bw) solid var(--border-strong);
+  }
+  /* The island renders only in the browser. The height holds its place. */
+  .progress {
+    min-height: 7.25rem;
+  }
+</style>

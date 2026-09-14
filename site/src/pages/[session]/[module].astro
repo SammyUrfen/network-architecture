@@ -1,10 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
 import ModuleHeader from '../../components/lesson/ModuleHeader.astro';
-import ModuleProgress from '../../components/lesson/ModuleProgress.tsx';
 import { segmentTitles } from '../../components/lesson/segments';
 import Base from '../../layouts/Base.astro';
-import { moduleParams, sessionHref } from '../../lib/url';
+import { moduleParams } from '../../lib/url';
 
 export async function getStaticPaths() {
   const modules = await getCollection('modules');
@@ -16,17 +15,30 @@ const m = entry.data;
 const { Content } = await render(entry);
 ---
 
-<Base title={m.title}>
-  <p class="crumb"><a href={sessionHref(m.session)}>Session {m.session}</a></p>
-  <ModuleHeader {...m} segments={segmentTitles(entry.body ?? '')}>
-    <ModuleProgress slot="progress" client:only="preact" id={m.id} />
-  </ModuleHeader>
-  <Content />
+<Base title={m.title} lesson={{ id: m.id, parts: segmentTitles(entry.body ?? '') }}>
+  <article class="lesson">
+    <ModuleHeader {...m} />
+    <Content />
+  </article>
 </Base>
 
 <style>
-  .crumb {
-    color: var(--text-muted);
-    font-size: var(--text-sm);
+  /* Narrower screens: one reading column, with each visual inline. */
+  .lesson {
+    max-width: var(--measure);
+    margin-inline: auto;
+  }
+
+  /* Wide screens: a reading column and a rail for the visual of each part.
+     Segment.astro reads --prose, --rail-gap and --rail. The reading column
+     gives way before the rail gets narrower than --rail-min. */
+  @media (width >= 75rem) {
+    .lesson {
+      --rail-gap: clamp(var(--space-8), 4cqi, 4rem);
+      --prose: min(var(--measure), 100cqi - var(--rail-gap) - var(--rail-min));
+      --rail: min(var(--rail-max), 100cqi - var(--prose) - var(--rail-gap));
+      max-width: var(--prose);
+      margin-inline: 0;
+    }
   }
 </style>
