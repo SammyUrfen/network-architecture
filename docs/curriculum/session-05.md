@@ -1022,25 +1022,28 @@ A second picture for discovery: a shop puts a sign inside its front door, "we ha
 ### s05-m12-assignment-prep
 
 - **Title:** Assignment prep: a calculator that stays on the line. **Minutes:** 20.
-- **Big idea:** The arithmetic is trivial, and the real skill is to take exactly one request off a persistent byte stream and pick the right status.
+- **Big idea:** The math is easy. The real skill is to take exactly one request at a time off a connection that stays open, and to answer each one with the right status code.
 - **Covers:** S05-C04, S05-C05, S05-C06, S05-C07, S05-C08, S05-C09, S05-C10, S05-C11.
 - **Prereqs:** s05-m02-keepalive-host, s05-m04-range-chunked-extras, s01-m08-framing, s01-m04-clients.
 - **Threads:** T-framing, T-setup-off-path.
-- **Integrity note.** This task counts for a grade. This module gives a checklist, concepts, a test plan and hints. It gives no solution code and no server skeleton. The instructor asks you not to read `server11.py` until you fail once. Page builders: every `server11.py` line pointer in modules 2 to 6 stays in a collapsed box labelled "open after your first calculator attempt". Keep that gate.
+- **Integrity note.** This task counts for a grade. This module gives a checklist, concepts, a test plan and hints. It gives no solution code, no server skeleton, and no list of server steps in order. The status picker gives no order of checks. The instructor asks you not to read `server11.py` until you fail once. Page builders: every `server11.py` line pointer in modules 2 to 6 stays in a collapsed box labelled "open after your first calculator attempt". Keep that gate.
 
 **Pretest.**
-1. Two GET requests arrive back to back on one socket. Where does the first one end? *Answer: at the empty line after its headers. A GET here has no body.*
-2. A request declares Content-Length: 5. How many body bytes do you read? *Answer: exactly 5.*
-3. The server knows the method, but this path does not allow it. Which status? *Answer: 405.*
+Plain words only, because the pretest comes before the lesson (learner review, 2026-09-14).
+1. Two requests arrive back to back on one connection. Each one is a few lines of text, with no extra data after the lines. Where does the first request end? *Answer: at the empty line after its header lines. It has no body.*
+2. The first lines of a request say that 5 more bytes of data follow them. How many of the bytes after those lines belong to this request? *Answer: exactly 5.*
+3. A program asks a web server for a page that exists, but for an action that this page does not allow, such as sending data to it. Every answer starts with a number. Which number fits? *Answer: 405.*
 
-**Rung 1, the picture.** A post office clerk takes letters from one long conveyor belt. Each letter has a label: "5 pages". The clerk takes exactly 5 pages, not the whole pile, because the next pages belong to the next person. *Where it breaks:* TCP shows no gaps between letters. The empty line and the length label are the only markers, and one read can hold half a letter or three letters.
+**Rung 1, the pictures.** The learner review of 2026-09-14 replaced the post office clerk, and then a homework pile, because a clerk or a teacher sees where each sheet ends, so the blank line did no job. One picture for each part of the page.
+- *Part 1, the order strip.* At a school fair, a kitchen printer prints every food order on one long strip of paper, like a long shop receipt, with no cut between orders. Each order starts with a line such as "MAKE pancakes", then short lines such as "TABLE: 4" and sometimes "NOTE: 5 letters", then one empty line. With a note line, exactly 5 letters follow. The letter after them starts the next order. Map: strip = connection, order = request, cook = server, first line = request line, short lines = header lines, "TABLE: 4" = the Host line, empty line = empty line, "NOTE: 5 letters" = `Content-Length: 5`, the letters = the body. *Where it breaks:* on paper the cook sees where a note ends. A body can hold any bytes, even an empty line, so the server counts body bytes and never searches them.
+- *Part 2, the torn pieces.* The strip comes out slowly, and the cook tears off whatever piece has come out. A piece can hold half an order, or the end of one order and the start of the next. The cook pins the unfinished part on a board. Map: printer = the client sending over TCP, torn piece = one read, board = the buffer. *Where it breaks:* the cook chooses where to tear. A read gets the bytes that already arrived, and it can stop between the CR and the LF of the empty line.
+- *Part 3, the snack counter.* Kids ask a school snack counter for things, one after another. Each gets a slip with a number and a note: "200: done", "400: that is not a number" for "x" apples, "400: that cannot be done" for 1 apple among 0 friends, "404: we have no pizza", "405: this counter only gives out apples" when a kid tries to sell an apple. The counter stays open after each slip. Map: counter = server, line of kids = requests on one connection, slip number = status code, "only gives out apples" = the Allow line of a 405. *Where it breaks:* a kid reads the words, but a program acts on the number.
 
-**Rung 2, how it works.** These are concepts, not code.
-1. Collect bytes until the header block ends at an empty line.
-2. Parse the request line and headers from those bytes only.
-3. If the request declares a body, collect exactly that many more bytes. Keep any extra bytes for the next request.
-4. Pick a status, and send a response with its own Content-Length.
-5. Go back to step 1 on the same socket, until the client closes or asks to close, or a timeout fires.
+**Rung 2, how it works.** These are concepts, not code, and not an order of server steps. The accuracy review of 2026-09-14 found that a numbered server loop reads as a solving order (CLAUDE.md rule 4), so the page teaches the facts below instead.
+- A request head ends at the empty line after its header lines.
+- `Content-Length: n` gives exactly n body bytes. A request with no Content-Length and no Transfer-Encoding has no body (RFC 9112 §6.3).
+- A read gives the bytes that arrived: a part of a request, one request, or parts of two. The bytes that the server did not use yet start the next request.
+- The status follows what is wrong: the input (400), the path (404), or the method on that path (405).
 
 **Rung 3, the real thing.**
 
@@ -1055,23 +1058,23 @@ A second picture for discovery: a shop puts a sign inside its front door, "we ha
 | 7 | `GET /pow?a=2&b=8` | 404 |
 | 8 | `POST /add` | 405 |
 | 9 | `GET /add` with no Host | 400 |
-| 10 | the marking run: rows 1, 2, 3, 5, 7 and 8, in that order, on one socket | socket still open, 1 TCP handshake, 6 responses |
+| 10 | the marking run: the marker connects to localhost, port 8080, and sends rows 1, 2, 3, 5, 7 and 8, in that order, on one socket | socket still open, 1 TCP handshake, 6 responses |
 | S | stretch: Connection: close, a defensible idle timeout, chunked, pipelined requests in order | optional |
 
 References for status choices: RFC 9110 §15.5.1 (400), §15.5.5 (404), §15.5.6 (405). RFC 9110 §15.5.6 also requires an Allow header in a 405. RFC 9112 §6.3 gives the body length rules, and §3.2 gives the Host rule.
 
 **Rung 4, exam depth.**
 - *Why framing is the whole task.* When the server hung up, end of file marked the end for free. On a kept connection nothing marks the end but your parser (S05-C09).
-- *The concepts to get right.* (1) Consume exactly Content-Length bytes. (2) Find where one request ends and the next starts. (3) Loop on the same socket. (4) Choose 400, 404 or 405 by what is wrong: the input, the resource, or the method.
+- *The concepts to get right.* (1) Consume exactly Content-Length bytes. (2) Find where one request ends and the next starts. (3) Keep the connection open through the three errors of the marking run. (4) Choose 400, 404 or 405 by what is wrong: the input, the resource, or the method.
 - *Timeout trade-off.* A short idle timeout frees server memory and breaks slow clients. A long one keeps idle sockets open. server11 uses 15 s. Be ready to defend your number (S05-C10).
 - *Pipelining.* If six requests arrive in one read, you must still answer in order, because the client matches by position (module 6).
 - *Exam prompts.* (1) Why must a server remove only the bytes it used from its read buffer? *Model answer: the bytes after the request can be the start of the next request.* (2) On a kept connection, why can a server not wait for end of file to find the end of a request? *Model answer: the client does not close between requests, so no end of file arrives. Only the empty line and the declared length mark the end.*
 
-**Local test plan** (run against your own server, on a spare port).
+**Local test plan** (run against your own server, also on port 8080, the port of the marker on slide 3).
 1. Open one socket with a short client of your own. Send the six requests of the slide 3 marking run in its order: add, sub, mul, div by zero, pow, POST /add. Check each result, then check that the socket still works. Test rows 4, 6 and 9 (div 9/3, a=x, no Host) on separate connections. Slide 3 does not say whether the socket must survive an error such as the no-Host 400 (section 7).
-2. Send one request in two writes, 1 s apart, split inside a header line. Expect one correct response.
-3. Send two requests in one write. Expect two responses, in order.
-4. Send a POST with `Content-Length: 5`, then 5 body bytes and a GET in the same write. Expect two responses.
+2. Send one request in two sends, 1 s apart, split inside a header line. Expect one correct response.
+3. Send two requests in one send. Expect two responses, in order.
+4. Send a POST with `Content-Length: 5`, then 5 body bytes and a GET in the same send. Expect two responses.
 5. Send `Connection: close`. Expect one response, then end of file.
 6. Stay idle past your timeout. Expect a close from the server.
 7. `python3 tools/talk.py PORT --keep-open --req "GET /add?a=2&b=3 HTTP/1.1" "Host: localhost" "" "GET /mul?a=6&b=7 HTTP/1.1" "Host: localhost" ""` sends a pipelined pair.
@@ -1079,10 +1082,11 @@ References for status choices: RFC 9110 §15.5.1 (400), §15.5.5 (404), §15.5.6
 **Hint ladder.** Open one hint at a time.
 1. Draw the byte stream of cases 1 and 2 on paper. Mark where each request ends.
 2. A single recv() can return any number of bytes. Keep a buffer between reads.
-3. Search the buffer for the empty line before you parse anything.
-4. Every response needs a length, or the client cannot find its end.
-5. After you answer, remove only the bytes you used from the buffer.
-6. Stretch: for pipelining, handle requests from the buffer in a loop before you call recv() again.
+3. Which bytes tell you that a head is complete? Look for them in the buffer.
+4. Look at an answer from your server as the client sees it. How does the client know where that answer ends?
+5. After an answer, look at the bytes that stay in your buffer. Which request do they belong to?
+6. Stretch: one read can hold two whole requests. What does your server do with the second one?
+Hints 3 to 6 are questions, not directives, so that the ladder read in order does not give a server loop (accuracy review, 2026-09-14).
 
 **Misconceptions.**
 - S05-M44: "One recv() returns exactly one request." Wrong. TCP keeps no message edges. Distractor in check 1.
@@ -1092,28 +1096,29 @@ References for status choices: RFC 9110 §15.5.1 (400), §15.5.5 (404), §15.5.6
 - S05-M53: "An error can go in the body of a 200 answer." Wrong. A 200 says that the request worked, so a client that acts on the status code takes the error as a result. Distractor in check 2.
 - S05-M54: "501 fits a method that one path does not allow." Wrong. 501 is for what the server does not support at all, such as a method that it knows for no path. A known method that one path refuses gets 405. Distractor in check 3.
 
-**Diagrams.** (1) Static: a byte ruler of two pipelined requests, with the empty lines and the boundary marked. (2) Step-by-step: the persistent loop. Wait for the header end, maybe read a body, respond, back to wait.
+**Diagrams.** (1) Animation, the visual of part 1: the worked example stream (114 bytes), one row for each line. A marker finds the empty line, the Content-Length line lights up, a box counts the 5 body bytes, and a mark shows request 2 at byte 67. (2) Static: the same stream as a byte view with a label on each field. The old step-by-step persistent loop is dropped, because it showed the server steps in order (rule 4).
 
-**Interactives.** *Request boundary finder* (P1). Inputs: a generic HTTP byte stream (the /echo and /style.css requests below, not calculator requests), and the sizes of each recv. The learner sees where the reads cut and where requests really end. The learner discovers that reads and requests do not line up.
+**Interactives.** (1) *Request boundary finder* (P1), the visual of part 2. Inputs: a generic HTTP byte stream (the /echo and /style.css requests below, not calculator requests), and the sizes of each recv. The learner sees where the reads cut and where requests really end. The learner discovers that reads and requests do not line up. (2) *Status picker* (P1), the visual of part 3. The requests of slide 3 are cards, and 200, 400, 404, 405, 500 and 501 are bins. The learner drops a card on a bin, with a click or a drag. Each card has one problem or none (the no-Host card carries the values of row 1). A wrong drop says what that status means and what is wrong with the request, but not the right status. The feedback never gives an order of checks.
 
-**Predict, observe, explain.** Command: `python3 tools/talk.py 8011 --keep-open --req "GET /style.css HTTP/1.1" "Host: site-a.local" "" "GET /app.js HTTP/1.1" "Host: site-a.local" ""`. Predict: how many status lines return from one send? Observe: two, with bodies of 55 and 32 bytes. No slide shows it. Our capture on a scratch copy (loopback, 2026-09-13): `--- sent 91 bytes`, then `--- no more data after 3.0s: the server is holding the connection open`, then `HTTP/1.1 200 OK` with `Content-Length: 55`, then `HTTP/1.1 200 OK` with `Content-Length: 32`, then `--- received 757 bytes in ... ms`. The script prints the responses only after its read loop ends (`talk.py` lines 83 to 94).
+**Predict, observe, explain.** Command: `python3 tools/talk.py 8011 --keep-open --req "GET /style.css HTTP/1.1" "Host: site-a.local" "" "GET /app.js HTTP/1.1" "Host: site-a.local" ""`. Predict, in plain words on the page: a small test program sends two GET requests in one send and keeps the connection open. How many answers come back? Observe: two, with bodies of 55 and 32 bytes. No slide shows it. Our capture on a scratch copy (loopback, 2026-09-13): `--- sent 91 bytes`, then `--- no more data after 3.0s: the server is holding the connection open`, then `HTTP/1.1 200 OK` with `Content-Length: 55`, then `HTTP/1.1 200 OK` with `Content-Length: 32`, then `--- received 757 bytes in ... ms`. The script prints the responses only after its read loop ends (`talk.py` lines 83 to 94).
 
 - **Worked example.** The stream holds `POST /echo HTTP/1.1`, `Host: site-a.local`, `Content-Length: 5`, an empty line, `hello`, then `GET /style.css ...`. The head is 21 + 20 + 19 + 2 = 62 bytes. The body is bytes 62 to 66. Request 2 starts at byte 67.
 - **Faded example.** Same, with `Content-Length: 11` and `hello world`. Head: ____ bytes. Request 2 starts at byte ____. *(63. 74.)*
 - **Your turn.** The stream holds `GET /a HTTP/1.1`, `Host: x`, an empty line, then a second GET. Where does the second request start? *(Byte 28.)*
 
 **Checks.**
-1. `spot-bug`: a server calls recv(4096) and treats the result as one request. What breaks? Answer: a read can hold half a request or two. Distractor: nothing, one read is one request (S05-M44). Distractor: only requests bigger than 4096 bytes break (S05-M44). Feedback: TCP keeps no message edges, so even a small request can arrive split or joined.
-2. `mcq`: `GET /div?a=1&b=0`? Answer: 400. Distractor: 500 (S05-M45). Distractor: 200 with an error message in the body (S05-M45). Feedback: the input is wrong, not the server.
-3. `mcq`: `POST /add` when the path allows only GET? Answer: 405. Distractor: 404 (S05-M46). Distractor: 501 Not Implemented (S05-M46). Feedback: the path exists and the method is known, so 405 with an Allow header.
-4. `mcq`: how many body bytes does a request with Content-Length: 5 own? Answer: exactly 5. Distractor: all bytes until the client closes (S05-M47). Distractor: every byte in the current read buffer (S05-M44). Feedback: byte 6 belongs to the next request.
+1. `spot-bug`: a server does one read of up to 4096 bytes and treats those bytes as one whole request. What goes wrong? Answer: a read can hold half a request or two. Distractor: nothing, one read is one request (S05-M44). Distractor: only requests bigger than 4096 bytes break (S05-M44). Feedback: TCP keeps no message edges, so even a small request can arrive split or joined.
+2. `mcq`: `GET /div?a=1&b=0`? Answer: 400. Distractor: 500 (S05-M45). Distractor: 200 with an error message in the body (S05-M53). Feedback: the input is wrong, not the server.
+3. `mcq`: `POST /add` when the path allows only GET? Answer: 405. Distractor: 404 (S05-M46). Distractor: 501 Not Implemented (S05-M54), with the feedback that 501 is for what the server does not support at all. Feedback: the path exists and the method is known, so 405 with an Allow header.
+4. `mcq`: a request has Content-Length: 5, and 12 more bytes arrive after its empty line. How many belong to it? Answer: exactly 5. Distractor: all 12, because they arrived together (S05-M44). Distractor: all bytes until the client closes (S05-M47), with the feedback that a client that closes cannot get its answer, so a request body always ends by its length. Feedback: the other 7 bytes start the next request.
 
 **Review cards.**
-- Q: On a persistent connection, what marks the end of a request with no body? A: The empty line after the headers.
+- Q: On a connection that stays open, what marks the end of a request with no body? A: The empty line after the header lines.
 - Q: How many body bytes belong to a request with Content-Length n? A: Exactly n. Byte n+1 belongs to the next request.
 - Q: Which status fits bad query values? A: 400.
 - Q: Which status fits a known path with a method it does not allow? A: 405, with an Allow header.
 - Q: When is the calculator assignment due? A: Before Session 7.
+- Q: After its six requests, what does the assignment marker check on the same connection? A: That the connection is still open. One connection setup gives six answers.
 
 ### s05-m13-project-studio
 
