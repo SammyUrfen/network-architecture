@@ -914,22 +914,17 @@ Expected: the three handshake packets, then the payload bytes `68 65 6c 6c 6f 0a
 - **Threads:** T-framing, T-skip-unknown.
 - **Graded-work guard:** the Session 5 calculator assignment turns on this idea. This module teaches the rule and gives no reading loop. The checklist lives in s05-m12-assignment-prep.
 
-**Pretest.**
-1. A sender writes "hello", then "world". Can one read() return "helloworld"? *Answer: yes.*
-2. What ends the HTTP header block? *Answer: an empty line.*
-3. What does `Content-Length: 219` tell the reader? *Answer: read exactly 219 body bytes.*
+**Pretest.** Plain words only, because the pretest comes before the lesson (v2 rewrite, 2026-09-14).
+1. A program sends "hello", and right after that it sends "world". Can the other program get "helloworld" in one read? *Answer: yes.*
+2. A web server answers with a few header lines, then the page itself. How does the reader know where the header lines stop? *Answer: an empty line, so the reader looks for CR LF CR LF.*
+3. An answer from a web server holds the line `Content-Length: 219`. What does that line tell the reader? *Answer: the body has exactly 219 bytes.*
 
-**Try to invent it first.** Before rung 2, the page asks: "Design a chat app where a message can hold any byte, even a newline. How does the receiver know where one message stops?" The learner types a rule. Then the page shows the three answers and the reconciliation in rung 4.
+**Try to invent it first.** At the start of Part 2, the page asks: "You build a chat app, and a message can hold any byte, even the newline byte that ends a line of text. How does the receiver know where one message stops?" The learner types a rule. Then the page shows two kinds of rule: mark the end (delimiter), or give the size (fixed length, length prefix).
 
-**Rung 1, the picture.**
-
-| The picture | The real thing |
-|---|---|
-| You pour the pages of a letter into a water pipe. | A program calls write() on a TCP socket. |
-| Your friend gets one long flow. The pipe keeps no gap between pages. | read() returns bytes with no gap between writes. |
-| So you agree: 100 words a page, or a page ends at STOP, or the first word gives the count. | Fixed length, delimiter, or length prefix. |
-
-Where this breaks: a real pipe can spill or mix water. TCP never loses, reorders or mixes bytes. It only forgets where each write stopped.
+**Rung 1, the picture.** Bead bracelets, one scene for each part (v2 rewrite, 2026-09-14). The water pipe of v1 failed the 10-year-old test: nobody pours paper into a pipe.
+- *Part 1.* Your friend makes two bead bracelets and sends them in a thin tube, all beads on one long string. You take beads off a handful at a time, and one handful can hold the end of the first bracelet and the start of the second. Nothing on the string shows where the first bracelet stopped. A bead is a byte, a bracelet is a message, the string is the connection, each write() adds beads, and each read() takes one handful. Where this breaks: a real string can snap and drop beads, but TCP never loses a byte and never changes their order.
+- *Part 2.* You agree on a rule first. Rule one: every bracelet has exactly 10 beads, and plain wooden beads fill a short one. Rule two: a big red bead ends each bracelet. The count of 10 is the fixed length N, the wooden beads are pad bytes, and the red bead is the delimiter. One rule counts, and the other looks for a marker, so they are two different answers. Where this breaks: a person can see that a red bead inside a pattern belongs to the pattern. A program cannot guess, so it ends the message at the first delimiter byte.
+- *Part 3.* A small card before each bracelet says how many beads follow. You read the card, then take exactly that many beads, so a bracelet can hold red beads too. The card is the length prefix. Where this breaks: a person stops at a card that says 9,000. A reader trusts the number, so a wrong length breaks every later message.
 
 **Rung 2, how it works.**
 1. The sender writes `hello`, then `world`.
@@ -947,7 +942,7 @@ Where this breaks: a real pipe can spill or mix water. TCP never loses, reorders
 - `notes.md` says binary protocols suit places where speed and efficiency matter. It also calls TCP/IP headers fixed size. In fact the IPv4 and TCP headers have a fixed 20-byte part plus a length field that covers options. So even a "fixed" header carries a length.
 
 **Rung 4, exam depth.**
-- *Three answers or two?* Slide 39 gives three. Session 2 slide 41, Session 3 slide 18 and Session 5 slide 16 say "length or delimiter", with no third option. Both statements hold. A fixed length is a length both sides agreed on before the connection started. It lives in the spec, not in each message.
+- *Three answers or two?* Slide 39 gives three. Session 2 slide 41, Session 3 slide 18 and Session 5 slide 16 say "length or delimiter", with no third option. Both statements hold. A fixed length is a length both sides agreed on before the connection started. It lives in the spec, not in each message. The page teaches this idea as a key idea in Part 2 and a short exam-depth note. No question asks which deck says what (v2, Bibek's feedback item 12).
 - *The cost of each rule.*
 
 | Rule | Good | Cost |
@@ -973,13 +968,15 @@ Where this breaks: a real pipe can spill or mix water. TCP never loses, reorders
 - S01-M77: "TCP sends nothing until the send buffer is full." Wrong: TCP sends small writes soon, and it can split or merge them. Distractor in check 6.
 
 **Diagrams.**
-- Step-by-step: two writes enter a send buffer, leave as segments of random size, and arrive as reads of other sizes.
-- Static: the same three messages framed four ways: fixed, delimiter, length prefix, both.
+- Step-by-step: two writes enter a send buffer, leave as segments of random size, and arrive as reads of other sizes. The v2 page draws it as an animation of beads: two writes, one stream with segment edges, then reads whose cuts move on each run (3 and 7, 6 and 4, then 10).
+- Static: the same three messages framed four ways: fixed, delimiter, length prefix, both. The v2 page shows fixed and delimiter as an animation in Part 2 (hi, hello, abc, N = 5): a marker counts or scans, then the pad cost and a newline inside message 3. The length prefix is the sandbox of Part 3, and "both" is the Redis view in exam depth.
 
 **Interactives.**
 - *Framing sandbox* (P1). Inputs: a list of messages, a framing rule, a chunking seed. The learner sees the bytes arrive in random TCP chunks and sees the parser output. The learner discovers that "one read is one message" fails, and that a delimiter inside the data breaks a naive parser. Graded-work limit: only three rules, a fixed N, a newline delimiter and a 1-byte length prefix. No "both" mode, no CR LF CR LF plus Content-Length mode, and no parser source on the page. The page shows the parser state step by step, not code.
 
-**Predict, observe, explain.** Start `02_echo_server_persistent` under `strace -e trace=read,write`. Run `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'`. Predict how many read() calls the server makes for the two sends. Observe one read of 10 bytes on loopback. A real network can split the bytes another way. The captured output is the verification run.
+**Predict, observe, explain.** The question uses plain words: a small echo server on your computer reports each read, and a client on the same computer sends "hello", then "world". How many reads does the server make? The result box then explains the strace line (v2, Bibek's feedback item 10). The lab: start `02_echo_server_persistent` under `strace -e trace=read,write`. Run `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'`. Predict how many read() calls the server makes for the two sends. Observe one read of 10 bytes on loopback. A real network can split the bytes another way. The captured output is the verification run, repeated on 2026-09-14 with the same result.
+
+**Explain it back.** Why can a length prefix carry any byte, even a newline, when a newline delimiter cannot? *Model: the length reader reads the count, then takes exactly that many bytes, and never checks the data for an end marker. A delimiter reader checks every byte, so a newline in the data ends the message there.* This replaces the v1 question about three rules or two.
 
 **Worked example, faded example, your turn.**
 - *Worked:* A 1-byte length prefix. The stream `03 61 62 63 02 68 69` arrives as `03 61`, then `62 63 02 68`, then `69`. Message 1: length 3, bytes `61 62 63`, "abc", across two reads. Message 2: length 2, bytes `68 69`, "hi", across two reads.
@@ -987,11 +984,11 @@ Where this breaks: a real pipe can spill or mix water. TCP never loses, reorders
 - *Your turn:* A newline delimiter, and the user sends the text `a\nb` as one message. How many messages does the receiver see? *(Two, "a" and "b", unless the sender escapes the newline.)*
 
 **Checks.**
-1. `mcq`: two writes, "hello" and "world". What can one read() return? Answer: any split, such as "helloworld". Distractor: always exactly "hello" (S01-M04). Distractor: the two words in two reads, one per packet (S01-M32). Feedback: TCP keeps no write edges.
-2. `mcq`: what is a fixed length, underneath? Answer: a length both sides agreed on ahead of time. Distractor: a third rule with no length (S01-M30). Distractor: N bytes plus an end marker (S01-M74).
+1. `mcq`: two writes, "hello" and "world". What can one read() return? Answer: any split, such as "helloworld". Distractor: always exactly "hello" (S01-M04). Distractor: always two reads, because TCP sends each write as its own segment (S01-M32). Feedback: TCP keeps no write edges.
+2. `mcq`: every message is exactly 100 bytes. How does the reader know where a message ends? Answer: it counts 100 bytes, a length both sides agreed on ahead of time. Distractor: a third rule with no length (S01-M30). Distractor: N bytes plus an end marker (S01-M74).
 3. `mcq`: the main risk of a delimiter? Answer: the delimiter shows up inside the data. Distractor: none, it works for any bytes (S01-M31). Distractor: the sender must know the size first (S01-M75).
 4. `numeric`: largest payload a 1-byte length prefix can describe? Answer: 255.
-5. `multi`: which of these mark a message end with a length? Answer: `Content-Length: 219`, the 2-byte prefix `00 05`. Wrong picks: the CR LF CR LF after the headers (S01-M76), the newline at the end of a homework 3 chat line (S01-M76). Feedback: those two are delimiters, found by a scan.
+5. `multi`: which of these mark a message end with a length? Answer: `Content-Length: 219`, the 2-byte prefix `00 05`. Wrong picks: the CR LF CR LF after the headers (S01-M76), the newline at the end of each message of a chat app (S01-M76). Feedback: those two are delimiters, found by a scan.
 6. `mcq`: how many TCP segments carry one 10-byte write()? Answer: one or more, as TCP decides. Distractor: always exactly one (S01-M32). Distractor: none until the send buffer fills (S01-M77).
 
 **Review cards.**
@@ -1000,6 +997,7 @@ Where this breaks: a real pipe can spill or mix water. TCP never loses, reorders
 - Q: Why is a fixed length a length rule? A: both sides agreed on N ahead of time.
 - Q: The cost of a delimiter? A: escape it when it appears in the data.
 - Q: The cost of a length prefix? A: the sender must know the size first.
+- Q: Why can a message with a length prefix hold any byte? A: the reader counts the bytes and never scans the data for an end marker.
 
 ### s01-m09-encodings
 

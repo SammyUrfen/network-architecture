@@ -25,7 +25,7 @@ export interface Props {
   rule: Rule;
   /** N for fixed length, in bytes. Default 8. */
   n?: number;
-  /** one: every byte in one read, as in the loopback run. random: reads of 1 to 8 bytes. Default random. */
+  /** one: every byte in one read, as on one computer. random: reads of 1 to 8 bytes. Default random. */
   split?: 'one' | 'random';
 }
 
@@ -94,7 +94,7 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
         <legend>How TCP cuts the bytes into reads</legend>
         <label class="choice">
           <input type="radio" name={`${title} split`} checked={split === 'one'} onChange={() => change(setSplit)('one')} />
-          All bytes in one read, as in the loopback run
+          All bytes in one read, as on one computer
         </label>
         <label class="choice">
           <input type="radio" name={`${title} split`} checked={split === 'random'} onChange={() => change(setSplit)('random')} />
