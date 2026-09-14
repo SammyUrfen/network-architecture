@@ -1,31 +1,31 @@
 # The items of s05-m12-assignment-prep in docs/curriculum/session-05.md.
-# q01 to q04 are checks 1 to 4. The section has no segment plan, so each
-# segment holds one group of related checks: 1 a read is not a request
-# (check 1), 2 exactly Content-Length bytes (check 4), 3 the status (checks 2, 3).
+# q01 to q04 are checks 1 to 4. The page has three parts: 1 where one request
+# ends (check 4), 2 a read is not a request (check 1), 3 the status (checks 2, 3).
 # q05 to q07 are the pretest, asked again in the exit quiz. q08 is the POE.
-# Graded work (CLAUDE.md rule 4): these items test concepts and the slide 3
-# statuses. None holds server code or a reading loop.
+# Graded work (CLAUDE.md rule 4): these items test concepts and the statuses of
+# the assignment slide. None holds server code or a reading loop.
 items:
   - id: s05-m12-q01
     use: [check, practice]
-    segment: 1
+    segment: 2
     type: spot-bug
-    prompt: A server calls recv(4096) one time and treats the bytes as one whole request. What breaks?
+    prompt: A server does one read of up to 4096 bytes and treats those bytes as one whole request. What goes wrong?
     options:
-      - text: Nothing. One read is one request.
+      - text: Nothing. One read always holds one request.
         correct: false
         misconception: S05-M44
-        feedback: TCP keeps no message edges. One recv() can return a part of a request, or parts of two.
-      - text: Only a request bigger than 4096 bytes breaks.
-        correct: false
-        misconception: S05-M44
-        feedback: Size does not protect a request. A 47-byte request can arrive in two reads, or share a read with the next request.
+        feedback: A read gives the bytes that arrived. It can hold a part of a request, or parts of two.
       - text: A read can hold half a request, or the end of one request and the start of the next.
         correct: true
         feedback: TCP keeps no message edges, so even a small request can arrive split or joined.
-    explanation: A recv() returns the bytes that wait, up to the size you ask for. The server must find where each request ends in those bytes.
+      - text: Only a request bigger than 4096 bytes goes wrong.
+        correct: false
+        misconception: S05-M44
+        feedback: Size does not protect a request. A 47-byte request can arrive in two reads, or share a read with the next request.
+    explanation: A read returns the bytes that wait, up to the size that you ask for. The server finds where each request ends in those bytes, and keeps the rest for the next request.
     covers: [S05-C09]
     tags: []
+    taughtIn: a-read-is-not-a-request
 
   - id: s05-m12-q02
     use: [check, practice]
@@ -35,7 +35,7 @@ items:
     options:
       - text: 200 OK, with an error message in the body
         correct: false
-        misconception: S05-M45
+        misconception: S05-M53
         feedback: A 200 says that the request worked. The client sent bad input, so 400.
       - text: 400 Bad Request
         correct: true
@@ -44,9 +44,10 @@ items:
         correct: false
         misconception: S05-M45
         feedback: The server did not fail. The client sent bad input, so 400.
-    explanation: Slide 3 asks for 400 when the input is bad, such as a division by zero or a value that is not a number. RFC 9110 §15.5.1 ties 400 to a client error.
+    explanation: The assignment asks for 400 when the input is bad, such as a division by zero or a value that is not a number. RFC 9110 §15.5.1 ties 400 to a client error.
     covers: [S05-C06]
     tags: []
+    taughtIn: status-by-what-is-wrong
 
   - id: s05-m12-q03
     use: [check, practice]
@@ -57,82 +58,88 @@ items:
       - text: 404 Not Found
         correct: false
         misconception: S05-M46
-        feedback: The path exists. Only the method is wrong for it, so 405.
+        feedback: The path exists. Only the method is wrong for it.
+      - text: 501 Not Implemented
+        correct: false
+        misconception: S05-M54
+        feedback: 501 means that the server does not support what the request needs, such as a method that it knows for no path. This server knows POST, and only this path refuses it.
       - text: 405 Method Not Allowed
         correct: true
         feedback: The path exists and the server knows POST, so 405, with an Allow header that lists GET.
-      - text: 501 Not Implemented
-        correct: false
-        misconception: S05-M46
-        feedback: 501 means that the server does not know the method for any resource. This server knows POST, and only this path refuses it.
-    explanation: 'Pick the status by what is wrong. Bad input gives 400, an unknown path gives 404, and a known method on the wrong path gives 405. RFC 9110 §15.5.6 also asks for an Allow header in a 405.'
+    explanation: 'Pick the status by what is wrong. Bad input gives 400, a path that does not exist gives 404, and a known method on a path that does not allow it gives 405. RFC 9110 §15.5.6 also asks for an Allow header in a 405.'
     covers: [S05-C07]
     tags: [beyond]
+    taughtIn: status-by-what-is-wrong
 
   - id: s05-m12-q04
     use: [check, practice]
-    segment: 2
+    segment: 1
     type: mcq
-    prompt: 'A request on a kept connection has `Content-Length: 5`. How many bytes after its empty line belong to it?'
+    prompt: 'A request has `Content-Length: 5`. After its empty line, 12 more bytes arrive on the same connection. How many of those 12 bytes belong to this request?'
     options:
       - text: Exactly 5.
         correct: true
-        feedback: Byte 6 after the empty line belongs to the next request.
-      - text: All bytes until the client closes.
-        correct: false
-        misconception: S05-M47
-        feedback: On a kept connection the client does not close between requests. Read exactly Content-Length bytes.
-      - text: Every byte in the current read buffer.
+        feedback: The other 7 bytes start the next request.
+      - text: All 12, because they arrived together.
         correct: false
         misconception: S05-M44
-        feedback: The buffer can already hold the start of the next request. Take only 5 bytes.
-    explanation: 'Slide 3: consume exactly Content-Length bytes, because byte n+1 belongs to the next request. RFC 9112 §6.3 gives the same rule.'
+        feedback: Bytes that arrive together can hold the start of the next request. Take only 5.
+      - text: All bytes until the client closes the connection.
+        correct: false
+        misconception: S05-M47
+        feedback: A client that closes cannot get its answer. So a request body always ends after its Content-Length bytes.
+    explanation: 'Content-Length: 5 gives a body of exactly 5 bytes. The byte after them starts the next request. RFC 9112 §6.3 gives the same rule.'
     covers: [S05-C09]
     tags: []
+    taughtIn: empty-line-then-content-length
 
   - id: s05-m12-q05
     use: [pretest, exit]
     type: recall
-    prompt: Two GET requests arrive back to back on one socket. Where does the first one end?
-    model: At the empty line after its headers. A GET here has no body.
+    prompt: Two requests arrive back to back on one connection. Each one is a few lines of text, with no extra data after the lines. Where does the first request end?
+    model: At the empty line after its header lines. It has no body, so the next byte starts request 2.
     explanation: A request with no Content-Length and no Transfer-Encoding has no body, so its empty line is its last 2 bytes. The next byte starts request 2.
     covers: [S05-C09]
     tags: []
+    taughtIn: empty-line-then-content-length
 
   - id: s05-m12-q06
     use: [pretest, exit]
     type: recall
-    prompt: 'A request declares `Content-Length: 5`. How many body bytes do you read?'
-    model: Exactly 5.
-    explanation: The byte after those 5 belongs to the next request.
+    prompt: The first lines of a request say that 5 more bytes of data follow them. How many of the bytes after those lines belong to this request?
+    model: Exactly 5. The byte after them starts the next request.
+    explanation: 'The line `Content-Length: 5` gives the body size. The server takes exactly 5 bytes after the empty line, because the next byte belongs to the next request.'
     covers: [S05-C09]
     tags: []
+    taughtIn: empty-line-then-content-length
 
   - id: s05-m12-q07
     use: [pretest, exit]
     type: recall
-    prompt: The server knows the method, but this path does not allow it. Which status fits?
+    prompt: A program asks a web server for a page that exists. But it asks for an action that this page does not allow, such as sending data to it. Every answer starts with a number. Which number fits here?
     model: 405 Method Not Allowed.
     explanation: The path exists and the method is known, so the problem is the method on this path. That is 405, not 404.
     covers: [S05-C07]
     tags: []
+    taughtIn: status-by-what-is-wrong
 
   - id: s05-m12-q08
     use: [practice]
     type: predict
-    prompt: 'The lab server runs on port 8011, over loopback. `talk.py` sends two GET requests, for /style.css and /app.js, in one send, and keeps the socket open. The requests have no Connection header. How many status lines come back?'
+    prompt: 'The lab server of the instructor runs on your own machine, on port 8011. A small test program sends it two GET requests, for /style.css and /app.js, in one send. It keeps the connection open, and the requests have no Connection line. How many answers come back?'
     options:
-      - text: One. One send holds one request, so the server answers one.
+      - text: One. One send holds one request, so the server answers one time.
         correct: false
         misconception: S05-M44
         feedback: The server found two requests in the bytes of one send, so it gave two answers.
       - text: Two, one for each request, in the order of the requests.
         correct: true
-        feedback: That is what the loopback run showed. Two 200 responses came back, and then the socket stayed open with no more data.
-      - text: One, and then the server closes, because the requests do not ask for keep-alive.
+        feedback: That is what the loopback run showed. Two 200 answers came back, and then the connection stayed open with no more data.
+      - text: One, and then the server closes, because the requests do not ask to stay open.
         correct: false
         misconception: S05-M05
-        feedback: An HTTP/1.1 connection stays open by default. The run showed both responses and an open socket.
-    explanation: The server took request 1 off the bytes, answered it, and found request 2 in the bytes that were left. HTTP/1.1 keeps the connection open by default, so the socket stayed open after both answers.
+        feedback: An HTTP/1.1 connection stays open by default. The run showed both answers and an open connection.
+    explanation: The server took request 1 off the bytes, answered it, and found request 2 in the bytes that were left. HTTP/1.1 keeps the connection open by default, so the connection stayed open after both answers.
     covers: [S05-C09, S05-C10]
     tags: [measured]
+    taughtIn: a-read-is-not-a-request

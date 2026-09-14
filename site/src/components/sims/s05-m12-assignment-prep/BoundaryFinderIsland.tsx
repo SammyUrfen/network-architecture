@@ -155,7 +155,7 @@ export default function BoundaryFinderIsland(_: Props) {
               ? `The buffer keeps bytes ${view.buffer.start} to ${view.buffer.end}, a part of request ${bufferOwner}.`
               : 'The buffer is empty.'}
             {at === last &&
-              ' The stream ends here. If the client keeps the connection open, no end of file arrives. A blocking read waits for more bytes, until the idle timeout fires.'}
+              ' The stream ends here. The client keeps the connection open, so the next read waits for more bytes.'}
           </p>
         </div>
         {at < last && (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRESETS, buildStream, cutReads, parseSizes, viewAfterRead, type RequestSpec } from './s05-m12-assignment-prep';
+import { CARDS, CELL, PRESETS, STATUSES, buildStream, cutReads, judge, layoutCells, parseSizes, viewAfterRead, type RequestSpec } from './s05-m12-assignment-prep';
 
 const post = (body: string): RequestSpec => ({ lines: ['POST /echo HTTP/1.1', 'Host: site-a.local'], body });
 const get = (path: string): RequestSpec => ({ lines: [`GET ${path} HTTP/1.1`, 'Host: site-a.local'] });
@@ -176,5 +176,96 @@ describe('PRESETS', () => {
 
   it('gives each preset valid default sizes', () => {
     for (const p of PRESETS) expect(parseSizes(p.sizes)).not.toBeNull();
+  });
+});
+
+describe('layoutCells', () => {
+  const { text } = buildStream(PRESETS[0].requests);
+  const cells = layoutCells(text, 40);
+
+  it('gives one cell for each byte, in order', () => {
+    expect(cells.map((c) => c.byte)).toEqual([...text].map((_, i) => i));
+  });
+
+  it('starts a row after each LF: the rows of the worked example stream start at 0, 21, 41, 60, 62, 92 and 112', () => {
+    // 21 + 20 + 19 bytes of head lines, the empty line at 60 and 61, the body at 62 to 66
+    // with no LF, so "hello" and the request line of request 2 share row 4
+    const starts = cells.filter((c, i) => i === 0 || c.row !== cells[i - 1].row).map((c) => c.byte);
+    expect(starts).toEqual([0, 21, 41, 60, 62, 92, 112]);
+    expect(cells.at(-1)!.row).toBe(6);
+  });
+
+  it('puts the empty line of request 1 alone on its row', () => {
+    expect(cells.filter((c) => c.row === 3).map((c) => c.label)).toEqual(['\\r', '\\n']);
+  });
+
+  it('places request 2 right after the 5 body bytes, with no gap', () => {
+    expect(cells[67].row).toBe(cells[62].row);
+    expect(cells[67].x).toBe(40 + 5 * CELL.char);
+    expect(cells[67].label).toBe('G');
+  });
+
+  it('gives CR and LF the wide cell, and starts each row at x0', () => {
+    expect(cells[19]).toEqual({ byte: 19, row: 0, x: 40 + 19 * CELL.char, width: CELL.control, label: '\\r' });
+    expect(cells[20].x).toBe(cells[19].x + CELL.control);
+    expect(cells[21].x).toBe(40);
+  });
+});
+
+describe('the status picker', () => {
+  // Session 5 deck, PDF page 3, the assignment slide: every request with the status that it gets.
+  const SLIDE: [string, number][] = [
+    ['GET /add?a=2&b=3', 200],
+    ['GET /sub?a=10&b=4', 200],
+    ['GET /mul?a=6&b=7', 200],
+    ['GET /div?a=9&b=3', 200],
+    ['GET /div?a=1&b=0', 400],
+    ['GET /add?a=x&b=3', 400],
+    ['GET /pow?a=2&b=8', 404],
+    ['POST /add', 405],
+    ['GET /add (no Host)', 400],
+  ];
+  const slideStatus = (card: (typeof CARDS)[number]) =>
+    new Map(SLIDE).get(card.lines[1] === 'with no Host line' ? 'GET /add (no Host)' : card.lines[0]);
+
+  it('gives each card the status of its slide row, and adds no request of its own (CLAUDE.md rule 4)', () => {
+    for (const card of CARDS) expect(card.status).toBe(slideStatus(card));
+  });
+
+  it('covers every error row of the slide', () => {
+    const errors = SLIDE.filter(([, status]) => status !== 200).map(([line]) => line);
+    const covered = CARDS.map((card) => (card.lines[1] === 'with no Host line' ? 'GET /add (no Host)' : card.lines[0]));
+    for (const line of errors) expect(covered).toContain(line);
+  });
+
+  it('offers a bin for every card status, and gives each card a unique id', () => {
+    const codes = STATUSES.map((s) => s.code);
+    for (const card of CARDS) expect(codes).toContain(card.status);
+    expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
+  });
+
+  it('says right for the slide status, with the problem and the status name', () => {
+    const post = CARDS.find((c) => c.id === 'post')!;
+    const result = judge(post, 405);
+    expect(result.correct).toBe(true);
+    expect(result.feedback).toContain(post.problem);
+    expect(result.feedback).toContain('405 Method Not Allowed');
+    // RFC 9110 §15.5.6: a 405 response MUST carry an Allow header
+    expect(result.feedback).toContain('Allow');
+  });
+
+  it('names what is wrong on a wrong drop, and never gives away the right status', () => {
+    for (const card of CARDS) {
+      for (const { code } of STATUSES.filter((s) => s.code !== card.status)) {
+        const result = judge(card, code);
+        expect(result.correct).toBe(false);
+        expect(result.feedback).toContain(card.problem);
+        expect(result.feedback).not.toContain(String(card.status));
+      }
+    }
+  });
+
+  it('throws for a status that the picker does not offer', () => {
+    expect(() => judge(CARDS[0], 418 as never)).toThrow();
   });
 });

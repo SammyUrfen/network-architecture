@@ -1,12 +1,12 @@
 # The review cards of s05-m12-assignment-prep, from docs/curriculum/session-05.md.
 items:
   - id: s05-m12-c01
-    front: On a persistent connection, what marks the end of a request with no body?
-    back: The empty line after the headers.
+    front: On a connection that stays open, what marks the end of a request with no body?
+    back: The empty line after the header lines.
     covers: [S05-C09]
   - id: s05-m12-c02
     front: How many body bytes belong to a request with Content-Length n?
-    back: Exactly n. Byte n+1 belongs to the next request.
+    back: Exactly n. The byte after them belongs to the next request.
     covers: [S05-C09]
   - id: s05-m12-c03
     front: Which status fits bad query values, such as a division by zero?
@@ -20,3 +20,7 @@ items:
     front: When is the calculator assignment due?
     back: Before Session 7.
     covers: [S05-C04]
+  - id: s05-m12-c06
+    front: After its six requests, what does the assignment marker check on the same connection?
+    back: That the connection is still open. One connection setup gives six answers.
+    covers: [S05-C08]

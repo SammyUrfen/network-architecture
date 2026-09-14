@@ -1,0 +1,13 @@
+---
+import ReadingAnimationIsland from './ReadingAnimationIsland.tsx';
+
+// The visual of part 1 of s05-m12: a reader finds where each of two requests
+// ends. The logic is layoutCells() in src/lib/sims/s05-m12-assignment-prep.ts.
+// The page before hydration shows step 1.
+export interface Props {}
+---
+
+<figure class="m12-figure">
+  <figcaption>Reading two requests on one connection</figcaption>
+  <ReadingAnimationIsland client:visible />
+</figure>

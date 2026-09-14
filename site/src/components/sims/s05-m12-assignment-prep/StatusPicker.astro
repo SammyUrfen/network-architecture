@@ -1,0 +1,17 @@
+---
+import StatusPickerIsland from './StatusPickerIsland.tsx';
+
+// The visual of part 3 of s05-m12: drop each request of the assignment slide
+// on the status that it earns. The requests, the statuses and the feedback are
+// CARDS, STATUSES and judge() in src/lib/sims/s05-m12-assignment-prep.ts.
+export interface Props {}
+---
+
+<figure class="m12-figure">
+  <figcaption>Status picker</figcaption>
+  <StatusPickerIsland client:visible />
+  <p class="m12-simplifies">
+    <strong>What this simplifies:</strong> each request here has one thing wrong, or nothing. A card shows only the
+    request line, and every card has a Host line unless it says so.
+  </p>
+</figure>

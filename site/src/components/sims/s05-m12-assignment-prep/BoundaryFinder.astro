@@ -13,7 +13,7 @@ export interface Props {}
   <BoundaryFinderIsland client:visible />
   <p class="simplifies">
     <strong>What this simplifies:</strong> the finder knows where every request ends before the first read, but a
-    server sees only bytes. Real reads split where packets and timing put them, not where you type. The finder shows
+    server sees only bytes. Real reads stop where the network and its timing put them, not where you type. The finder shows
     only Content-Length bodies, not chunked ones.
   </p>
 </figure>
@@ -42,7 +42,7 @@ export interface Props {}
   .finder-figure :global(fieldset) {
     margin: 0;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius);
   }
   .finder-figure :global(legend) {
@@ -76,7 +76,7 @@ export interface Props {}
     font-weight: 400;
     color: var(--text);
     background: var(--bg);
-    border: 2px solid var(--border);
+    border: 2px solid var(--border-strong);
     border-radius: var(--radius);
   }
   .finder-figure :global(.sizes input[aria-invalid='true']) {
@@ -197,7 +197,7 @@ export interface Props {}
   }
   .finder-figure :global(.controls button[aria-disabled='true']) {
     color: var(--text-muted);
-    border-color: var(--border);
+    border-color: var(--border-strong);
     background: var(--surface-2);
     cursor: default;
   }
