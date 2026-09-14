@@ -146,9 +146,12 @@ they exist.
   `slot="visual"` attribute. The part is a two-column grid row, and its
   visual is `position: sticky` in the rail. So no JavaScript swaps the
   visuals when the reader scrolls.
-- **Animation controls.** Every animation has the same control bar: play or
-  pause, previous step, next step, and speed. The controls are native buttons
-  and a select, so the keyboard works. No autoplay. Under
+- **Animation controls.** Every animation has the same control bar in
+  `components/motion/`: play or pause, previous step, next step, restart, and
+  speed. The group is one Tab stop: Space plays or pauses, and the arrow keys,
+  Home and End step. A `ScrollStep` block in the prose moves the visual of its
+  part to that step when the block reaches the middle of the screen. No
+  autoplay. Under
   `prefers-reduced-motion`, a step changes the picture with no motion. The
   animations use SVG, CSS and the Web Animations API, and no library.
 - **`taughtIn`.** A quiz item field: the `id` of a `KeyIdea`, or the anchor
