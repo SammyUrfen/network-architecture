@@ -4,7 +4,7 @@ session: 1
 order: 3
 title: "SIGPIPE: the write that kills your server"
 minutes: 18
-bigIdea: "When a program keeps writing to a connection that the other side already ended, the kernel sends the signal SIGPIPE, and by default SIGPIPE ends the program with no error message."
+bigIdea: "When a program keeps writing to a connection that the other side already ended, the kernel sends it SIGPIPE, a short message called a signal. By default, SIGPIPE ends the program with no error message."
 covers: [S01-C26, S01-C27, S01-C28, S01-C29, S01-C30, S01-C31, S01-C32, S01-C33, S01-C34]
 prereqs: [s01-m01-seven-syscalls]
 threads: [T-network-not-function]
@@ -49,11 +49,11 @@ import SignalBoard from '../../../components/sims/s01-m03-signals-sigpipe/Signal
 import ResetLanes from '../../../components/sims/s01-m03-signals-sigpipe/ResetLanes.astro';
 import KeepAlive from '../../../components/sims/s01-m03-signals-sigpipe/KeepAlive.astro';
 
-Your server runs well for hours. Then one client leaves in the middle of an answer, and your server is gone. It printed no error, and it left no line in a log. What killed it? This lesson answers that question.
+A server is a program that waits for other programs, its clients, to connect over the network, and then answers them. Picture your server as it runs well for hours. Then one client leaves in the middle of an answer, and your server is gone. It printed no error, and it left no line in a log. What killed it? This lesson answers that question.
 
-The killer is a signal called SIGPIPE. The kernel, the core of the operating system, sends it when a program keeps writing to a connection that the other side already ended. By default, SIGPIPE ends the program at once, and the program prints nothing. A server in C meets this trap as soon as one real client leaves early. The calculator assignment of this course asks you to write a server, so the trap is close.
+The killer is a **signal**, a short message that the kernel sends to a program that runs. The kernel is the core of the operating system. This signal is called SIGPIPE. The kernel sends it when a program keeps writing to a connection that the other side already ended. By default, SIGPIPE ends the program at once, and the program prints nothing. A server in C meets this trap as soon as one real client leaves early. The calculator assignment of this course asks you to write a server, so the trap is close.
 
-If you start here, you need three ideas. A server is a program that waits for other programs, its clients, to connect over the network. The server never uses the network itself. It asks the kernel with system calls: `write()` sends bytes to the client, `read()` gets bytes from it, and `close()` ends the connection. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows those calls in full. The top of the page also names a thread, a big idea that comes back in many lessons. This thread says that a call over the network is not like a call to a function in your own program. It can fail halfway, because the other side can vanish.
+If you start here, you need a few more ideas. The server never uses the network itself. It asks the kernel with system calls, which are requests from a program to the kernel. `write()` sends bytes to the client, `read()` gets bytes from it, and `close()` ends the connection. The connection follows TCP, the set of rules that the kernel uses to carry bytes in order. You type commands in a terminal window, and the program there that runs your commands is the **shell**. On Linux, the usual shell is bash. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows the system calls in full. The top of the page also names a thread, a big idea that comes back in many lessons. This thread says that a call over the network is not like a call to a function in your own program. It can fail halfway, because the other side can vanish.
 
 **The path through this lesson.** Part 1 runs the class demo: a server dies, prints nothing, and leaves only the number 141. Part 2 explains signals, and that number points to the killer, SIGPIPE. Part 3 looks inside: how the client hangs up the hard way, and which write of the server brings the signal. Part 4 shows two ways to keep a server alive, and you try each setting in a simulator.
 
@@ -67,17 +67,17 @@ If you start here, you need three ideas. A server is a program that waits for ot
 
 <VanishDemo slot="visual" />
 
-<Picture breaks="on a playground you can see your friend run off. A server cannot see the client. It learns that the client left only from the kernel, when the server calls read() or write().">
+<Picture breaks="when your friend runs off, nobody stays behind the wall. When the client program ends, its computer and its kernel stay, and that kernel still answers for the connection. Part 3 shows that answer.">
 
-You and a friend play catch over a low wall at recess. Your friend throws the ball over the wall to you. Then your friend runs off without a word, and the wall hides it from you. You pick up the ball and wait a moment. Then you throw the ball back over the wall, two times. What do you think happens to you? Make your guess below. Part 2 finishes the story.
+You and a friend play catch over a low wall at recess. Your friend throws the ball over the wall to you, then runs off without a word. The wall hides it from you. You pick up the ball and count to ten. Then you throw the ball back over the wall, two times. What do you think happens to you? Make your guess below. Part 2 finishes the story.
 
-You are the server program, and your friend is the client program. The game over the wall is the connection between them. The ball from your friend is the 5 bytes of `hello`, and your two throws back are two calls to `write()`. Running off without a word is the client hanging up the hard way. Part 3 shows what the hard way means in TCP.
+You are the server program, and your friend is the client program. The game over the wall is the connection between them. The ball from your friend is the 5 bytes of `hello`, and picking it up is `read()`. Counting to ten is the 1-second sleep of the server. Your two throws back are two calls to `write()`. Running off without a word is the client hanging up the hard way. Part 3 shows what the hard way means in TCP.
 
 </Picture>
 
 <Predict id="s01-m03-q02">
 
-The server printed nothing, and it was gone. Then the shell command that asks how the server ended printed two lines (bash, Linux 7.1.8, loopback, 2026-09-14):
+The server printed nothing, and it was gone. Then the shell command that asks how the server ended printed two lines. The run used bash on Linux 7.1.8 over loopback, which means with both programs on one computer (2026-09-14):
 
 ```
 [1]+  Broken pipe                ./04_sigpipe_server
@@ -94,7 +94,7 @@ The first class ran two small programs, a server and a client, on one computer. 
 
 <ScrollStep step={1}>
 
-You start the server in the background, so the terminal stays free for the next command. The server waits for one client on port 2026. A port is a number that picks one server program on a computer.
+You start the server in the background, so the terminal stays free for the next command. bash prints a job number, the short number that it gives a program in the background, and the process ID of the server. The server waits for one client on port 2026. A port is a number that picks one server program on a computer.
 
 </ScrollStep>
 
@@ -137,12 +137,12 @@ These three shell commands run the demo. The `&` at the end of a command starts 
   ]}
 />
 
-zsh prints the same job line in lower case, "broken pipe", and the same 141. The notes file of the repo, its README, runs a plain `wait` and then `echo $?`. In bash and in zsh, a plain `wait` returns 0, not the exit status of the server. A run on 2026-09-14 printed 0 that way and 141 with `wait $pid`. So always give `wait` the saved process ID.
+zsh, another common shell, prints the same job line in lower case, "broken pipe", and the same 141. The notes file of the repo, its README, runs a plain `wait` and then `echo $?`. In bash and in zsh, a plain `wait` returns 0, not the exit status of the server. A run on 2026-09-14 printed 0 that way and 141 with `wait $pid`. So always give `wait` the saved process ID.
 
 <ExamDepth>
 
 - **Why the sleep?** The comment next to `sleep(1)` in the server code says that it gives the client time to hang up the hard way. Without it, the server could write before the hang-up arrives.
-- **Why no message from the server?** The class code checks no result and prints nothing, on purpose, to stay short. The kernel ends the server inside a call, so no later line of the server runs. A server that a service manager starts, and not a shell, gets no job line either.
+- **Why no message from the server?** The class code checks no result and prints nothing, on purpose, to stay short. The kernel ends the server inside a call, so no later line of the server runs. A server that the computer starts at boot, with a tool such as systemd and not from a shell, gets no job line either.
 
 </ExamDepth>
 
@@ -154,11 +154,11 @@ zsh prints the same job line in lower case, "broken pipe", and the same 141. The
 
 <SignalBoard slot="visual" />
 
-<Picture breaks="a child hears each call and can ask why. A process that set up nothing for a signal gets the rule of the kernel at once, and for SIGPIPE that rule ends the process.">
+<Picture breaks="a child hears each call and can ask why. A process that made no plan for a signal gets the rule of the kernel at once, and for SIGPIPE that rule ends the process.">
 
-A teacher watches the playground, and every child knows the calls of the teacher. "Recess is over, come in!" lets you finish your throw and pick up your ball first. "Freeze!" makes you stand still until the teacher says "go on". The school also has a rule for a ball thrown over the wall to nobody, because it can break a window: that child goes inside at once. And in real danger, the teacher simply carries a child inside, and the child has no say.
+A teacher watches the playground, and every child knows the calls of the teacher. A child can have a plan for a call. When the teacher calls "Recess is over, come in!", your plan can be: finish my throw, pick up my ball, then go in. A child who is not in the choir can plan to take no notice of "Choir, come in!". "Freeze!" makes you stand still until the teacher says "go on". The school also has a rule: a child who keeps throwing a ball over the wall to nobody goes inside, because the ball can break a window. And in real danger, the teacher simply carries a child inside. No plan helps, and the child has no say.
 
-The teacher is the kernel, and each child is a **process**, a program that runs. Each call is a **signal**, a short message with a name and a number. "Recess is over" is SIGTERM: a process can catch it, finish its work, and then end. "Freeze" is a signal that pauses a process, so that it can go on later. Being carried inside is SIGKILL, which no process can catch. The rule for a ball thrown to nobody is SIGPIPE. It ended the server in Part 1.
+The teacher is the kernel, and each child is a **process**, a program that runs. Each call is a **signal**, a short message with a name and a number. A plan for a call is a **handler**, code that the program runs when that signal arrives. Programmers say that the handler catches the signal. A plan to take no notice is to ignore the signal. "Recess is over" is SIGTERM: a process can catch it, finish its work, and then end. "Freeze" is a signal that pauses a process, so that it can go on later. Being carried inside is SIGKILL: no handler can catch it. The rule for a child who keeps throwing to nobody is SIGPIPE. It ended the server in Part 1.
 
 </Picture>
 
@@ -190,7 +190,7 @@ Try it on the board next to this text. Pick SIGPIPE and keep the default. Then p
 
 ### The real thing
 
-The slide on signals warns that SIGPIPE is "the one that will kill you" <SlideLink session={1} page={12} />. It gives four numbers. Signal 2 is SIGINT, which Control-C sends. Signal 9 is SIGKILL, which no program can catch. Signal 13 is SIGPIPE, for a write to a peer that closed. The peer is the other end of the connection. Signal 15 is SIGTERM, the polite kill. The same slide adds SIGHUP, which a process gets when an SSH connection drops, and names SIGSTOP and SIGTSTP next to Control-Z. The README of the class repo explains 141 as 128 plus SIGPIPE, 13.
+The slide on signals warns that SIGPIPE is "the one that will kill you" <SlideLink session={1} page={12} />. It gives four numbers. Signal 2 is SIGINT, which Control-C sends. Signal 9 is SIGKILL, which no program can catch. Signal 13 is SIGPIPE, for a write to a peer that closed. The peer is the other end of the connection. Signal 15 is SIGTERM, the polite kill. The same slide adds SIGHUP, which a process gets when its remote terminal connection, SSH, drops. It also names SIGSTOP and SIGTSTP next to Control-Z. The name SIGPIPE and the words "Broken pipe" come from pipes, a way to join two programs in a shell. Part 4 shows a pipe. A write to a dead connection gets the same signal. The README of the class repo explains 141 as 128 plus SIGPIPE, 13.
 
 <ExamDepth>
 
@@ -223,17 +223,17 @@ The rule of 128 + N belongs to the shell. When a command ends on a fatal signal 
 
 <ResetLanes slot="visual" />
 
-<Picture breaks="the neighbor shouts at once, while you still hold the ball. In TCP, the kernel of the server keeps the news of the reset, and the server learns it only at its next write.">
+<Picture breaks="a ball flies over the wall on each throw. On the first write, the kernel of the server sends no byte at all. It only reports the reset that it already got.">
 
-Your friend can leave the game of catch in two ways. The nice way: your friend shouts "I am done, bye!", then waits at the wall for a moment, in case one last ball still flies over. The hard way: your friend just runs off and drops the ball in their hands. When you throw after the hard way, a neighbor shouts back: "Nobody is there!" If you throw again anyway, the teacher sends you inside.
+Your friend can leave the game of catch in two ways. The nice way: your friend shouts "I am done, bye!" and goes home. The hard way: your friend just runs off and drops the ball in their hands. Either way, your friend catches no more balls. When you throw after the hard way, a neighbor shouts back: "Nobody is there!" If you throw again anyway, the teacher sends you inside.
 
-Leaving the nice way is a normal `close()`, which sends **FIN**: I send no more data. The wait at the wall is TIME_WAIT, a short wait that the side that closes first keeps after the close. Leaving the hard way sends **RST**, a reset: the connection ends now, and bytes that wait to be sent are dropped. The shout of the neighbor is the error of your first write. The teacher who sends you inside is SIGPIPE, on your second write.
+Leaving the nice way is a normal `close()`, which sends **FIN**: I send no more data. Leaving the hard way sends **RST**, a reset: the connection ends now, and bytes that wait to be sent are dropped. The shout of the neighbor is the error of your first write. The teacher who sends you inside is SIGPIPE, on your second write. After a nice close, the side that closed first also waits for a set time, in a state called TIME_WAIT. The playground has nothing like that wait.
 
 </Picture>
 
 ### How it works
 
-A normal `close()` sends FIN. After both sides close, the side that closed first waits in TIME_WAIT for a set time. The class client does not close that way. Before `close()`, it sets the socket option SO_LINGER to `{1, 0}`, which people call linger 0. With linger 0, `close()` sends RST instead. The connection ends at once, unsent bytes are dropped, and no side waits in TIME_WAIT.
+A normal `close()` sends FIN. After both sides close, the side that closed first waits in TIME_WAIT for a set time. The class client does not close that way. A socket is the handle that a program holds on its end of a connection, and a socket option changes how the kernel treats it. Before `close()`, the client sets the option SO_LINGER to `{1, 0}`. The 1 turns lingering on, and the 0 sets a linger timeout of zero, so people call it linger 0. With linger 0, `close()` sends RST instead. The connection ends at once, unsent bytes are dropped, and no side waits in TIME_WAIT.
 
 <KeyIdea id="linger-zero-sends-rst" title="Linger 0 closes with RST, not FIN">
 
@@ -314,7 +314,7 @@ The client slide shows linger 0 <SlideLink session={1} page={14} />: a `struct l
 
 <Beyond source="net/core/stream.c, sk_stream_error(), Linux kernel source" url="https://github.com/torvalds/linux/blob/master/net/core/stream.c">
 
-**Why ECONNRESET first?** On Linux, a reset stores an error on the connection. When a TCP send fails, Linux first returns that stored error, ECONNRESET. It sends SIGPIPE only when the error is EPIPE, and never when the call passes the flag MSG_NOSIGNAL. After the reset, the connection can send no more, so every later write gets EPIPE and SIGPIPE.
+**Why ECONNRESET first?** On Linux, a reset stores an error on the connection. When a TCP send fails, Linux first returns that stored error, ECONNRESET. It sends SIGPIPE only when the error is EPIPE, and never when the call passes the flag MSG_NOSIGNAL, an option of `send()` that Part 4 shows. After the reset, the connection can send no more, so every later write gets EPIPE and SIGPIPE.
 
 </Beyond>
 
@@ -338,11 +338,11 @@ MSL means maximum segment lifetime: the longest time that the TCP standard expec
 
 <KeepAlive slot="visual" />
 
-<Picture breaks="the note does not bring your friend back. A write to the dead connection still fails, so the server must check each result and close that client.">
+<Picture breaks="in the story, you stop after one shout. A server keeps writing to the dead connection until its own code checks the error and closes that client.">
 
 Your parents write a note to the teacher: "If our child throws a ball to nobody, just say so. Please do not send our child inside." Now a throw to nobody gets only a shout: "Nobody is there!" You stop throwing to that friend, and you play with the next friend in line. You can also make a smaller ask. Before one throw, you tell the teacher: "For this throw only, just tell me."
 
-The note from home is one line at the start of the server, `signal(SIGPIPE, SIG_IGN)`, which ignores SIGPIPE for the whole process. The ask for one throw is the flag `MSG_NOSIGNAL` on one call to `send()`. The shout is the error that the write returns. Playing with the next friend is closing that one client and serving the next one.
+The note from home is one line at the start of the server, `signal(SIGPIPE, SIG_IGN)`, which ignores SIGPIPE for the whole process. `send()` is a write for a socket, with room for options called flags. The ask for one throw is the flag `MSG_NOSIGNAL` on one call to `send()`. The shout is the error that the write returns. Playing with the next friend is closing that one client and serving the next one.
 
 </Picture>
 
@@ -350,11 +350,11 @@ The note from home is one line at the start of the server, `signal(SIGPIPE, SIG_
 
 <Beyond source="send(2) and signal(7), Linux man pages" url="https://man7.org/linux/man-pages/man2/send.2.html">
 
-A server can stop SIGPIPE in two ways. The first way works for the whole process: call `signal(SIGPIPE, SIG_IGN)` one time, at the start. The second way works for one call: use `send(fd, buf, n, MSG_NOSIGNAL)` in place of `write()`. `send()` is a write for a socket, with room for flags. Either way, the write still fails and returns -1, with the error ECONNRESET or EPIPE. So the server checks the result of each write. On an error, it closes that one client and goes on with the others.
+A server can stop SIGPIPE in two ways. The first way works for the whole process: call `signal(SIGPIPE, SIG_IGN)` one time, at the start. The second way works for one call: use `send(fd, buf, n, MSG_NOSIGNAL)` in place of `write()`. Either way, the write still fails and returns -1, with the error ECONNRESET or EPIPE. So the server checks the result of each write. On an error, it closes that one client and goes on with the others.
 
 </Beyond>
 
-Try it in the simulator next to this text. The first setting is the class demo, and the server dies. Change one choice at a time. Find every setting that keeps the server alive, and look at which write fails in each one. On one computer, a normal close does not save the server: the first write works, and the second one still brings SIGPIPE.
+Try it in the simulator next to this text. The first setting is the class demo, and the server dies. Change one choice at a time. Find every setting that keeps the server alive, and look at which write fails in each one. On one computer, a normal close does not save the server. The first write works. But the client program already ended, so its kernel answers those bytes with RST, and the second write brings SIGPIPE.
 
 <Beyond source="pipe(7), Linux man page, and the GNU C Library manual, Operation Error Signals" url="https://man7.org/linux/man-pages/man7/pipe.7.html">
 
@@ -364,7 +364,7 @@ Try it in the simulator next to this text. The first setting is the class demo, 
 
 ### The real thing
 
-The client of the demo can die the same way. Run `./05_sigpipe_client` with no server. Its `connect()` fails, because nothing listens on the port, and returns -1. The code checks nothing and calls `write()` on a socket with no connection. That write fails with EPIPE and brings SIGPIPE, so the client also ends with 141. Here is `strace` of the client alone, with the meanings of the errors left out (a copy on a spare port, Linux 7.1.8, loopback, 2026-09-14):
+The client of the demo can die the same way. Run `./05_sigpipe_client` with no server. Its `connect()`, the call that asks the kernel to reach a server, fails and returns -1. The error is ECONNREFUSED, "connection refused", because no server waits on that port. The code checks nothing and calls `write()` on a socket with no connection. That write fails with EPIPE and brings SIGPIPE, so the client also ends with 141. Here is `strace` of the client alone, with the meanings of the errors left out (a copy on a spare port, Linux 7.1.8, loopback, 2026-09-14):
 
 ```
 connect(3, ...) = -1 ECONNREFUSED
@@ -393,7 +393,7 @@ So an exit status of 141 alone does not prove that the server demo worked. Run t
 
 <Lab title="Run the SIGPIPE demo and watch the writes" folder="lesson1">
 
-The two commands above copy the repo to your computer with `git clone`, then move into its folder `lesson1` with `cd`. That folder holds the server and the client of this lesson as C files. You need a Linux computer with `gcc`, the C compiler. You need `strace` only to watch the writes. Port 2026 must be free.
+The two commands above copy the repo to your computer with `git clone`, then move into its folder `lesson1` with `cd`. That folder holds the server and the client of this lesson as C files. You need a Linux computer with `gcc`, the C compiler. You need `strace` only to watch the writes. Port 2026 must be free. In the build commands, `-o` gives the name of the program that `gcc` makes.
 
 <Terminal
   title="Build both programs"
@@ -420,7 +420,7 @@ Run the demo in bash. Type each command on its own line, so that the server can 
 
 </Beyond>
 
-Now watch the writes. Start the server under `strace` in one terminal, and run `./05_sigpipe_client` in a second terminal.
+Now watch the writes. Start the server under `strace` in one terminal, and run `./05_sigpipe_client` in a second terminal. The option `-e trace=read,write` makes `strace` show only the reads and the writes.
 
 <Terminal
   title="Terminal 1: the server under strace"

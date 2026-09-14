@@ -11,8 +11,8 @@
 // SIGPIPE, and which call the server uses to send.
 //
 // What this simplifies: one computer (loopback), so a reset from the client
-// arrives at once. Over a real network a reset takes a round trip, so more
-// writes can succeed before one fails.
+// arrives at once. Over a real network a reset takes a round trip, so the
+// results can differ.
 
 // ---------------------------------------------------------------------------
 // The signal board
@@ -34,11 +34,11 @@ export interface SignalInfo {
 }
 
 export const SIGNALS: readonly SignalInfo[] = [
-  { name: 'SIGHUP', number: 1, sender: 'The terminal hangs up, for example when an SSH connection drops.', byDefault: 'end', catchable: true, numberOnSlide: false },
+  { name: 'SIGHUP', number: 1, sender: 'The terminal hangs up, for example when a remote terminal connection, SSH, drops.', byDefault: 'end', catchable: true, numberOnSlide: false },
   { name: 'SIGINT', number: 2, sender: 'You press Control-C in the terminal.', byDefault: 'end', catchable: true, numberOnSlide: true },
-  { name: 'SIGKILL', number: 9, sender: 'A person or a program that must stop the process now, with kill -9.', byDefault: 'end', catchable: false, numberOnSlide: true },
+  { name: 'SIGKILL', number: 9, sender: 'A person or a program that must stop the process now.', byDefault: 'end', catchable: false, numberOnSlide: true },
   { name: 'SIGPIPE', number: 13, sender: 'The kernel itself, when the process writes to a connection that the other side ended.', byDefault: 'end', catchable: true, numberOnSlide: true },
-  { name: 'SIGTERM', number: 15, sender: 'A person or a program that asks the process to stop, with kill.', byDefault: 'end', catchable: true, numberOnSlide: true },
+  { name: 'SIGTERM', number: 15, sender: 'A person or a program that asks the process to stop.', byDefault: 'end', catchable: true, numberOnSlide: true },
   { name: 'SIGSTOP', number: 19, sender: 'A person or a program that must pause the process.', byDefault: 'stop', catchable: false, numberOnSlide: false },
   { name: 'SIGTSTP', number: 20, sender: 'You press Control-Z in the terminal.', byDefault: 'stop', catchable: true, numberOnSlide: false },
 ];

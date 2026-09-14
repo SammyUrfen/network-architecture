@@ -12,7 +12,7 @@ import './m03.css';
 // later part is hidden.
 
 const STEPS = [
-  { caption: 'You start the server in the background. bash prints its job number and its process ID. The server waits for one client.', ms: 900 },
+  { caption: 'You start the server in the background. The shell, bash, prints a job number and the process ID of the server. The server waits for one client.', ms: 900 },
   { caption: 'You start the client. It connects, sends hello, hangs up the hard way at once, and ends.', ms: 1800 },
   { caption: 'The server reads the 5 bytes of hello. Then it sleeps for 1 second.', ms: 1000 },
   { caption: 'The server wakes up and writes hello back two times. Then it is gone. The server itself prints nothing.', ms: 1800 },
@@ -36,10 +36,13 @@ export default function VanishIsland() {
     const q = (name: string) => svg.current!.querySelector(`[data-part="${name}"]`)!;
     const appear = (step: number, name: string, from?: number, to?: number): Track => ({ step, el: q(name), frames: [hide, show], from, to });
     const vanish = (step: number, name: string, from?: number, to?: number): Track => ({ step, el: q(name), frames: [show, hide], from, to });
+    // Shows, holds, and hides inside one step. Two tracks on one element in one
+    // step would break the rule that a first keyframe matches the start of its step.
+    const flash = (step: number, name: string, from?: number, to?: number): Track => ({ step, el: q(name), frames: [hide, show, show, show, hide], from, to });
     const travel = CLIENT_EDGE - SERVER_EDGE;
     return [
       appear(1, 'cmd-client', 0, 200),
-      appear(1, 'client', 0, 300),
+      flash(1, 'client', 0, 1800),
       {
         step: 1,
         el: q('hello'),
@@ -53,14 +56,12 @@ export default function VanishIsland() {
         to: 1100,
       },
       appear(1, 'cut', 1100, 1300),
-      vanish(1, 'client', 1300, 1800),
       appear(1, 'c-ended', 1300, 1800),
       vanish(2, 's-waits', 0, 200),
-      appear(2, 's-got', 0, 200),
-      vanish(2, 's-got', 700, 900),
+      flash(2, 's-got', 0, 900),
       appear(2, 's-sleeps', 700, 900),
       vanish(3, 's-sleeps', 0, 200),
-      appear(3, 's-writes', 0, 200),
+      flash(3, 's-writes', 0, 1500),
       {
         step: 3,
         el: q('reply'),
@@ -74,7 +75,6 @@ export default function VanishIsland() {
         to: 900,
       },
       vanish(3, 'server', 1000, 1500),
-      vanish(3, 's-writes', 1000, 1500),
       appear(3, 'gone', 1000, 1500),
       appear(3, 'no-output', 1400, 1800),
       appear(4, 'cmd-wait', 0, 300),

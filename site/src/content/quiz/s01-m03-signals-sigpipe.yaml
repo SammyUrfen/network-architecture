@@ -167,7 +167,7 @@ items:
   - id: s01-m03-q09
     use: [pretest, exit]
     type: recall
-    prompt: A server ends with no error message. The shell shows its exit status, the number that a program leaves when it ends, and that number is 141. What do you think the number tells you?
+    prompt: A server ends with no error message. In the terminal window, the shell shows its exit status, the number that a program leaves when it ends. That number is 141. What do you think the number tells you?
     model: Most likely a signal ended the server. When signal N ends a process, the shell shows 128 + N. 141 - 128 = 13, and signal 13 is SIGPIPE.
     explanation: An exit status over 128 usually means that a signal ended the process. Subtract 128 to get the signal number. A program can also exit with such a number by itself.
     covers: [S01-C27, S01-C34]
