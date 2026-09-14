@@ -235,21 +235,15 @@ Site order: m01, m02, m03, m04, m05, m06, m07, m08, m09, m11, m10. Module m11 is
 - **Prereqs:** none.
 - **Threads:** T-framing.
 
-**Pretest.**
-1. Which call waits for the next client? *Answer: accept().*
-2. read() returns 0. What happened? *Answer: the peer closed its side. That is end of file.*
-3. Which call does a client make that a server does not? *Answer: connect().*
+**Pretest.** Plain words, because the pretest comes before the lesson (lesson contract v2, rule 10, 2026-09-14). The page asks the same three items again in the exit quiz.
+1. A server program must ask the operating system for help to talk over the network. What does it ask for, from its start up to its first answer to a client? *Answer: seven requests: socket, bind, listen, accept, read, write, close.*
+2. A server program told the operating system to take clients, but it did not ask for its next client yet. A new client connects. What happens? *Answer: the kernel finishes the connection, and the client waits in a line.* Distractors: the client waits, not connected, until the program asks (S01-M03). The kernel drops the bytes of the client until the program reads (S01-M47).
+3. A server asks for the bytes of a client and gets 0 bytes. What happened? *Answer: the client closed its side. That is end of file.*
 
-**Rung 1, the picture.**
+**Rung 1, the picture.** A story paragraph for each part, in one scene (lesson contract v2). The phone table failed the 10-year-old test: callers do not sit on a bench.
 
-| The picture | The real thing |
-|---|---|
-| You buy a phone and get a number. | socket() returns an fd, and bind() attaches port 2026. |
-| You switch on the ringer. A receptionist seats callers on a bench. | listen() lets the kernel queue handshakes. |
-| You take the next caller from the bench. | accept() returns a new fd for one client. |
-| You talk, listen, and hang up. | read() and write() move bytes, and close() ends it. |
-
-Where this breaks: the receptionist is the kernel, and it finishes the handshake before you pick up. A phone call also keeps sentences apart. TCP does not (s01-m08-framing).
+- *Parts 1 to 3, a shop in a mall.* A shopkeeper cannot build walls or doors, so the mall office does that work. The shopkeeper asks the office for a shop (socket, key tag 3 is the fd), a number on the door (bind, port 2026), and a line of customers that a guard keeps (listen, the kernel keeps the queue). The shopkeeper calls "next, please" (accept, fd 4 for the customer at the counter while the door, fd 3, stays open), hears a word and says it back (read, write), says goodbye (close) and calls the next customer (the loop). Where this breaks: the guard only lines customers up, but the kernel finishes the whole handshake before the program knows about the client. A customer speaks whole words, but a read gets whatever bytes wait.
+- *Part 4, a mailbox.* You take out every note that waits. An empty box means you wait. A sign "no more notes" means stop (read returns 0). Where this breaks: notes are separate papers, but two lines that wait together come out as one run of bytes (s01-m08-framing).
 
 **Rung 2, how it works.**
 1. socket() makes an endpoint and returns fd 3.
@@ -300,7 +294,9 @@ With the one-read server, the same client gets `one` back and never `two` (verif
 **Interactives.**
 - *Syscall theater* (P1). Inputs: a "next call" button, a toggle for the one-read or the loop server, a "client sends a second line" button. The learner sees each call, its return value, the queue and the fd table. The learner discovers that the handshake happens before accept(), and that the one-read server drops line two.
 
-**Predict, observe, explain.** Build `01_echo_server.c` and run `(printf 'one\n'; sleep 0.5; printf 'two\n'; sleep 0.5) | nc 127.0.0.1 2026`. Predict: how many lines come back? Observe: one, `one`. Repeat with `02_echo_server_persistent.c`: two lines. The captured output is the verification run in rung 3.
+**Predict, observe, explain.** Build `01_echo_server.c` and run `(printf 'one\n'; sleep 0.5; printf 'two\n'; sleep 0.5) | nc 127.0.0.1 2026`. Predict: how many lines come back? Observe: one, `one`. Repeat with `02_echo_server_persistent.c`: two lines. The captured output is the verification run in rung 3. The page asks this as check 6, and uses check 5 as its predict block.
+
+Two quick sends to the persistent server on loopback, verified 2026-09-14: when the client sends both lines right after connect(), the first read got both lines in 5 runs of 5 (`read(4, "one\ntwo\n", 4096) = 8`). When the server already waits inside read(), the first read got only `one` in 3 runs of 10. With Fedora's `nc` (Ncat 7.92), `nc` does not end when the one-read server closes. It ends at Control-C or at the end of its input.
 
 **Worked example, faded example, your turn.**
 - *Worked:* The strace above. Each read returns 4, because `one\n` is 4 bytes. The last read returns 0 when nc closes, and the server calls close(4).
@@ -308,11 +304,12 @@ With the one-read server, the same client gets `one` back and never `two` (verif
 - *Your turn:* With `02_echo_server_persistent`, a client sends `ab\n`, then `cdef\n` half a second later, then quits. `accept → 4`, `read(4) → ____`, `write(4) → ____`, `read(4) → ____`, `write(4) → ____`, `read(4) → ____`. *(3, 3, 5, 5, 0.)*
 
 **Checks.**
-1. `order`: put the seven server calls in order. Answer: socket, bind, listen, accept, read, write, close. Feedback: setup, wait, talk, hang up.
-2. `mcq`: how does Flask reach the network? Answer: through the same socket calls. Distractor: a private network stack of its own (S01-M01). Distractor: it asks the kernel for HTTP requests (S01-M46). Feedback: strace finds accept4 under it, and Flask parses the HTTP text itself.
+1. `numeric` (the site shows no `order` item yet, so the order moves to card 1 and the pretest): the one-read server gets `hi` and a newline. What does read() return? Answer: 3 bytes. Distractor: 2, the newline is a byte too.
+2. `mcq`: how does Flask reach the network? Answer: through the same kind of system calls, such as accept(). Distractor: a private network stack of its own (S01-M01). Distractor: it asks the kernel for HTTP requests (S01-M46). Feedback: Flask parses the HTTP text itself. Under strace, Python's server shows accept4, recvfrom and sendto, not read and write.
 3. `mcq`: which call do both the client and the echo server make? Answer: socket(). Distractor: accept() (S01-M02). Distractor: listen() (S01-M45). Feedback: every endpoint starts with socket(). The slide says socket is among "the four that only a server makes". The client calls it too. On the quiz, expect the slide wording.
 4. `mcq`: when accept() returns, the handshake is? Answer: already complete. Distractor: about to start (S01-M03). Distractor: halfway, and accept() waits for the last ACK (S01-M03). Feedback: the kernel did it while the client waited in the queue.
 5. `predict`: a client sends `one\n` and `two\n` back to back, with no pause, to the persistent server on loopback. What can the first read() return? Answer: `one\n` or both lines (8 bytes), as the bytes happen to wait. Distractor: always exactly `one\n`, because a read returns one message (S01-M04). Distractor: only bytes sent after read() started, because earlier bytes are dropped (S01-M47). Feedback: a read takes every byte that waits, up to the buffer size.
+6. `numeric`: the one-read server gets `one`, then `two` half a second later, then the client quits. How many lines come back? Answer: 1. Distractors: 2 (the one read returns before `two` arrives) and 0 (the one read gets `one` and writes it back).
 
 **Review cards.**
 - Q: The seven server calls, in order? A: socket, bind, listen, accept, read, write, close.
@@ -320,7 +317,9 @@ With the one-read server, the same client gets `one` back and never `two` (verif
 - Q: What does accept() return? A: a new fd for one client.
 - Q: Which client call starts the handshake? A: connect().
 - Q: Why does the one-read server lose the second line? A: it closes after one read.
-- Q: Which four calls does slide 5 mark as the ones only a server makes? A: socket, bind, listen and accept.
+- Q: Which two calls does only a server make, and never a client? A: listen() and accept(). (It replaces a card about what slide 5 marks, because a card never asks which slide says what.)
+- Q: When accept() gives a client to the program, what state is the handshake in? A: already complete, done by the kernel.
+- Q: What do Express, Flask and net/http call underneath? A: the same seven system calls.
 
 ### s01-m02-ports-and-queue
 
