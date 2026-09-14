@@ -25,7 +25,9 @@ jobs:
       - uses: withastro/action@v6
         with:
           path: site
-          node-version: 24
+          # Match the local Node (24.6.0, npm 11.5.1). A newer npm on the runner rejects the lock file:
+          # it resolves nested @emnapi optional deps of the wasm32 fallback differently.
+          node-version: '24.6.0'
 
   deploy:
     needs: build
