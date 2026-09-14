@@ -1,0 +1,26 @@
+---
+// Prose that drives the visual of its part. When this block reaches the middle
+// of the screen, the AnimationControls in the same <section> goes to step N.
+// The block of the current step gets a colored bar, also when the learner
+// steps with the buttons. Put blank lines inside the tag, so MDX makes paragraphs.
+export interface Props {
+  /** The step to show, from 1, as in the "Step N of M" caption. */
+  step: number;
+}
+const { step } = Astro.props;
+if (!Number.isInteger(step) || step < 1) throw new Error(`ScrollStep needs a whole step number from 1, not ${step}.`);
+---
+
+<div class="scroll-step" data-scroll-step={step}>
+  <slot />
+</div>
+
+<style>
+  .scroll-step {
+    padding-left: var(--space-3);
+    border-left: 3px solid transparent;
+  }
+  .scroll-step[data-current] {
+    border-left-color: var(--key);
+  }
+</style>

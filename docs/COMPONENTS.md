@@ -171,41 +171,64 @@ All in `src/components/diagram/`.
 | `ByteView` | Astro | `caption: string`, `messages: ByteMessage[]`, `view?: 'bytes' \| 'text'`. `ByteMessage` is `{ name?: string; fields: { hex?: string; text?: string; label?: string; kind?: 'length' \| 'delimiter' \| 'pad' }[] }`. A field has `hex` or `text`, not both. Offsets count from 0 across all messages. | both |
 | `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. Planned for v2: a long line wraps, or scrolls with a visible scroll bar. | both |
 | `SequenceDiagram` | Astro | `title: string`, `actors: string[]`, `messages: { from: string; to: string; label: string }[]`. A message with `from` equal to `to` is a note. | m12 |
-| `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. The wrapper uses `client:visible`. | m08, m12 |
+| `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. It uses `AnimationControls`, so `ScrollStep` blocks in its part move it too. A step changes the lanes with no motion. Play shows each step for 5 seconds at 1×, and stops at a step with an `ask`. The wrapper uses `client:visible`. | m08, m12 |
 
 `ByteView` colors mark the role of a field, not a network layer. No pilot
 shows two layers.
 
-### Animation controls (planned for v2)
+### Animation controls and scroll steps
 
-Every animation island uses one plain Preact control bar,
-`src/components/diagram/AnimationControls.tsx`. The island owns its SVG and
-its Web Animations API objects. No animation library.
+All in `src/components/motion/`. Hand-built with SVG, CSS and the Web
+Animations API. No animation library. `BytePipeDemo.tsx` is the sample to
+copy: an SVG, three steps, and three `ScrollStep` blocks on the dev page
+`/dev/v2-motion/`.
 
-**Props:** `title: string`, `captions: string[]` (one for each step),
-`step: number` (from 0), `playing: boolean`, `speed: 0.5 | 1 | 2`,
-`onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`,
-`onSpeed: (speed: 0.5 | 1 | 2) => void`.
+| Name | Kind | Props | Pilot |
+|---|---|---|---|
+| `AnimationControls` | Plain Preact | `title: string`, `captions: string[]` (one for each step), `step: number` (from 0), `playing: boolean`, `speed: Speed`, `onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`, `onSpeed: (speed: Speed) => void`, `children`: the visual. `Speed` is `0.5 \| 1 \| 2`. Spread the result of `useTimeline` into it. It also follows the `ScrollStep` blocks of its part. | the Stepper |
+| `useTimeline(timeline, tracks?)` | Preact hook | `timeline: { durations: number[]; hold: number; stops?: boolean[] }`, all in ms at 1×. `durations`: the motion of each step. `hold`: the pause between two steps while play runs. `stops`: play stops at the end of a step marked `true`. `tracks: () => Track[]` runs one time after the island mounts. | the Stepper, the demo |
+| `Track` | type | `{ step: number; el: Element; frames: Keyframe[]; from?: number; to?: number }`. One motion of one element in one step. The motion runs from `from` ms to `to` ms after the step starts. The default is the whole step. | the demo |
+| `ScrollStep` | Astro | `step: number`, from 1. Default slot: the prose of that step. Put blank lines inside the tag, so MDX makes paragraphs. A step that is not a whole number from 1 fails the build. | none yet |
+
+**How to build an animation island**
+
+1. Draw the SVG at the end frame of step 1. The page shows this picture
+   before the island loads.
+2. Give each motion as a `Track`. Animate only `transform` and `opacity`.
+   The first keyframe must match the picture at the start of its step.
+3. Render the SVG inside `<AnimationControls {...player}>`. Styles go in a
+   prefixed CSS file. `motion.css` has `mo-label`, `mo-shape`, `mo-pipe`,
+   `mo-arrow` and `mo-token` for simple SVG shapes.
+4. In the MDX, wrap the prose of step N in `<ScrollStep step={N}>`, in the
+   same `Segment` as the visual.
 
 | Control | Element | What it does |
 |---|---|---|
-| Play and pause | one `<button>` | Play runs from the current step to the last step. Play on the last step starts again at step 1. Pause stops at the current frame. |
-| Previous step, next step | two `<button>` elements | Pause, then play the motion of that one step and stop at its end. Disabled at the first and at the last step. |
-| Speed | a `<select>` with 0.5×, 1× and 2× | Calls `updatePlaybackRate()` on each animation of the island |
-| Caption | a `<p>` with `aria-live="polite"` | "Step N of M", then the caption of the step |
+| Caption | a `<p>` with `aria-live="polite"`, above the visual | "Step N of M", then the caption of the step |
+| Restart | a `<button>` | Plays the motion of step 1 again |
+| Back, Next | two `<button>` elements | Play only the motion of that step, then stop at its end. `aria-disabled` at the first and at the last step, so the focus stays. |
+| Play and pause | one `<button>` | Play runs from the current frame to the last step, with a hold between steps. From the end of a step, it starts the next step at once. On the last step, it starts again at step 1. Pause stops at the current frame. |
+| Speed | a `<select>` with 0.5×, 1× and 2× | Multiplies the clock of the island |
+| Keys | on the group, which is also a Tab stop | Space plays or pauses. The Left and Right arrow keys step. Home and End go to the first and the last step. Space on a button and the arrows on the select stay native. |
 
 How an animation behaves:
 
-- It starts paused at step 1. Nothing plays before the learner presses play.
-- The prerendered HTML shows the end frame of step 1, so the page shows a
-  picture before the island loads.
+- It starts paused at the end frame of step 1. Nothing plays before the
+  learner presses a control or scrolls.
+- One clock drives each island. The hook makes one paused Web Animations
+  API object for each track, with `delay` at the start of its step and
+  `fill: 'forwards'`. On each frame, it sets `currentTime` on all of them to
+  the same time. So the motions stay in step at every speed, and a step
+  stops on its exact end frame.
 - Under `prefers-reduced-motion: reduce`, read on the client with
-  `matchMedia`, each step jumps to its end frame with no motion. Play then
-  shows the end frame of each step in turn.
-- The controls are native elements, so Tab, Enter and Space work, with a
-  visible focus. No custom key handler.
-- Each step is one time range on the animation timeline. A step change sets
-  `currentTime` to the start of that range.
+  `matchMedia`, a step jumps to its end frame with no motion. Play then
+  shows the end frame of each step in turn. A change of the setting applies
+  at once.
+- A `ScrollStep` block that enters the band from 45% to 55% of the screen
+  height moves the visual of its `<section>` to its step. If the visual
+  already shows that step, nothing happens. The block of the current step
+  gets a bar on its left, also when the learner uses the buttons.
+- The pure logic is in `timeline.ts`, with tests in `timeline.test.ts`.
 
 ---
 

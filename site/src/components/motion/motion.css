@@ -1,0 +1,100 @@
+/* AnimationControls. An island cannot use scoped Astro styles, so every class has the mo- prefix. */
+.mo {
+  display: grid;
+  gap: var(--space-3);
+  border-radius: var(--radius);
+}
+.mo-caption {
+  min-height: 3.2em;
+  margin: 0;
+}
+.mo-visual {
+  min-width: 0;
+}
+.mo-visual svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.mo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* The min-height gives a 44 px touch target. */
+.mo-btn,
+.mo-speed select {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-weight: 600;
+  color: var(--interactive);
+  background: var(--surface);
+  border: 2px solid var(--interactive);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.mo-btn:hover,
+.mo-speed select:hover {
+  background: var(--interactive-bg);
+}
+.mo-play {
+  min-width: 6.5rem;
+  color: var(--surface);
+  background: var(--interactive);
+}
+.mo-play:hover {
+  color: var(--interactive);
+}
+.mo-btn[aria-disabled='true'] {
+  color: var(--text-muted);
+  border-color: var(--border);
+  background: var(--surface-2);
+  cursor: default;
+}
+.mo-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.mo-keys {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Shapes for an SVG visual. Labels sit on the visual (PEDAGOGY rule 15). */
+.mo-label {
+  font-size: 13px;
+  text-anchor: middle;
+  fill: var(--text-muted);
+}
+.mo-shape {
+  fill: var(--surface-2);
+  stroke: var(--border);
+}
+.mo-pipe {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-dasharray: 136 32;
+}
+.mo-arrow {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.mo-token rect {
+  fill: var(--key-bg);
+  stroke: var(--key);
+  stroke-width: 2;
+}
+.mo-token text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}

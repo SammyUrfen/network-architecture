@@ -3,7 +3,8 @@ import StepperIsland, { type Props as IslandProps } from './StepperIsland.tsx';
 
 // A picture that changes one step at a time. Each step gives the full state
 // of every lane, and the island marks what changed. The page before hydration
-// shows step 1.
+// shows step 1. The island uses AnimationControls, so ScrollStep blocks in the
+// same part also move it.
 export interface Props extends IslandProps {}
 const { title, steps } = Astro.props;
 if (steps.length === 0) throw new Error(`Stepper "${title}" has no steps.`);
@@ -65,45 +66,12 @@ if (steps.length === 0) throw new Error(`Stepper "${title}" has no steps.`);
     color: var(--text-muted);
     border-style: dashed;
   }
-  .stepper-figure :global(.caption) {
-    min-height: 3.2em;
-  }
   .stepper-figure :global(.ask) {
+    margin: var(--space-3) 0 0;
     padding: var(--space-2) var(--space-3);
     background: var(--interactive-bg);
     border-left: 4px solid var(--interactive);
     border-radius: var(--radius);
-  }
-  .stepper-figure :global(.controls) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2) var(--space-3);
-  }
-  .stepper-figure :global(.controls button) {
-    min-width: 5.5rem;
-    min-height: 2.75rem;
-    padding: var(--space-2) var(--space-4);
-    font: inherit;
-    font-weight: 600;
-    color: var(--interactive);
-    background: var(--surface);
-    border: 2px solid var(--interactive);
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-  .stepper-figure :global(.controls button:hover) {
-    background: var(--interactive-bg);
-  }
-  .stepper-figure :global(.controls button[aria-disabled='true']) {
-    color: var(--text-muted);
-    border-color: var(--border);
-    background: var(--surface-2);
-    cursor: default;
-  }
-  .stepper-figure :global(.keys) {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
   }
   @media (max-width: 40rem) {
     .stepper-figure :global(.lane) {

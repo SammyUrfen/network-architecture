@@ -1,26 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampStep, isNewChunk, stepForKey, type Step } from './stepper';
-
-describe('stepForKey', () => {
-  it('moves one step with the arrows and jumps with Home and End', () => {
-    expect(stepForKey('ArrowRight', 2, 6)).toBe(3);
-    expect(stepForKey('ArrowLeft', 2, 6)).toBe(1);
-    expect(stepForKey('Home', 4, 6)).toBe(0);
-    expect(stepForKey('End', 1, 6)).toBe(5);
-  });
-
-  it('stops at the first and the last step', () => {
-    expect(stepForKey('ArrowLeft', 0, 6)).toBe(0);
-    expect(stepForKey('ArrowRight', 5, 6)).toBe(5);
-    expect(clampStep(9, 1)).toBe(0);
-  });
-
-  it('leaves other keys to the browser', () => {
-    for (const key of ['ArrowUp', 'ArrowDown', 'Tab', 'Enter', ' ', 'toString']) {
-      expect(stepForKey(key, 2, 6)).toBeNull();
-    }
-  });
-});
+import { isNewChunk, type Step } from './stepper';
 
 describe('isNewChunk', () => {
   const steps: Step[] = [
