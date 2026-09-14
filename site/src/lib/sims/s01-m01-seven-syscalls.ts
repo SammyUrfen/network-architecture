@@ -65,7 +65,7 @@ export function start(kind: ServerKind): Theater {
     conn: null,
     held: '',
     log: [],
-    caption: 'The server program has started, but it has no socket yet. Press "Next call".',
+    caption: 'The server program runs, but it owns no socket yet. Press "Next call" to step the server.',
   };
 }
 
@@ -215,7 +215,7 @@ function connect(s: Theater): Theater {
   s.conn = { place: 'in-line', waiting: '', sent: 0, echoed: '', clientClosed: false, serverClosed: false };
   const queued = `The client calls connect(). The kernel of the server finishes the handshake at once, and the connection waits in the line.`;
   if (s.blocked) return { ...accept(s), caption: `${queued} accept() was waiting, so it returns ${CLIENT_FD} now.` };
-  s.caption = `${queued} The program has not called accept(), so it does not know about this client yet.`;
+  s.caption = `${queued} The program did not call accept() yet, so it does not know about this client.`;
   return s;
 }
 
