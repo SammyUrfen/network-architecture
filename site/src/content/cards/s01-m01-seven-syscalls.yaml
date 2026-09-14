@@ -1,0 +1,35 @@
+# The review cards of s01-m01-seven-syscalls, from docs/curriculum/session-01.md.
+# c06 asks which calls only a server makes, not which slide says what.
+items:
+  - id: s01-m01-c01
+    front: What are the seven system calls of a TCP server, in order?
+    back: socket, bind, listen, accept, read, write, close.
+    covers: [S01-C04]
+  - id: s01-m01-c02
+    front: What does read() return when the client closed its side of the connection?
+    back: 0, which means end of file. No more bytes will come.
+    covers: [S01-C19]
+  - id: s01-m01-c03
+    front: What does accept() return, and what happens to the listening socket?
+    back: A new file descriptor for one client. The listening socket stays open for the next client.
+    covers: [S01-C04, S01-C07]
+  - id: s01-m01-c04
+    front: Which call does a client make to start the connection to a server?
+    back: connect().
+    covers: [S01-C04]
+  - id: s01-m01-c05
+    front: Why does the first echo server lose a second line that comes half a second after the first?
+    back: It calls read() one time, writes those bytes back and closes. Nobody reads the later line.
+    covers: [S01-C07, S01-C19]
+  - id: s01-m01-c06
+    front: Which two calls does only a server make, and never a client?
+    back: listen() and accept().
+    covers: [S01-C06]
+  - id: s01-m01-c07
+    front: When accept() gives a client to the program, what state is the TCP handshake in, and who did it?
+    back: Already complete. The kernel did it while the client waited in the line.
+    covers: [S01-C21]
+  - id: s01-m01-c08
+    front: What do Express, Flask and Go's net/http call underneath?
+    back: The same seven system calls as the 20-line echo server.
+    covers: [S01-C05, S01-C126]

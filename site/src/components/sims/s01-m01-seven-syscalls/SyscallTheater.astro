@@ -1,0 +1,13 @@
+---
+import TheaterIsland, { type Props as IslandProps } from './TheaterIsland.tsx';
+
+// The syscall theater of s01-m01-seven-syscalls, in a figure. Part 3 uses the
+// first server only. Part 4 lets the learner pick the server.
+export interface Props extends IslandProps {}
+const props = Astro.props;
+---
+
+<figure class="s1m1-figure">
+  <figcaption>{props.title}</figcaption>
+  <TheaterIsland client:visible {...props} />
+</figure>

@@ -1,0 +1,257 @@
+/* The visuals of s01-m01-seven-syscalls. An island cannot use scoped Astro
+   styles, so every class has the s1m1- prefix. Inputs and option edges use
+   --border-strong, the edge of a control in the theme. */
+
+.s1m1-figure {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+}
+.s1m1-figure > figcaption {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* SVG parts. The SVG grows with the rail only up to 30rem, so its labels stay near the size of the prose. */
+.s1m1-figure svg {
+  max-width: 30rem;
+  margin-inline: auto;
+}
+.s1m1-row-label {
+  font-size: 12px;
+  fill: var(--text-muted);
+  text-anchor: start;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+.s1m1-call {
+  fill: var(--surface-2);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+.s1m1-call-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.s1m1-num {
+  font-size: 8.5px;
+  fill: var(--text-muted);
+}
+.s1m1-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.s1m1-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text);
+}
+.s1m1-small {
+  font-size: 9.5px;
+}
+.s1m1-mid {
+  text-anchor: middle;
+}
+.s1m1-note {
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--text-muted);
+}
+.s1m1-note-strong {
+  font-weight: 700;
+  fill: var(--text);
+}
+.s1m1-tag {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.s1m1-tag-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.s1m1-slot {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-dasharray: 3 3;
+}
+.s1m1-conn {
+  fill: var(--key-bg);
+  stroke: var(--key);
+  stroke-width: 2;
+}
+.s1m1-conn-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.s1m1-msg {
+  fill: var(--key);
+}
+
+/* The syscall theater */
+.s1m1-theater {
+  display: grid;
+  gap: var(--space-3);
+}
+.s1m1-theater p {
+  margin: 0;
+}
+.s1m1-theater h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-base);
+}
+.s1m1-kinds {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.s1m1-kinds legend {
+  padding: 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.s1m1-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.s1m1-choice:has(input:checked) {
+  background: var(--accent-soft);
+  border-width: 2px;
+}
+.s1m1-choice input {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--interactive);
+}
+.s1m1-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: var(--space-2);
+}
+.s1m1-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  background: var(--surface-2);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+}
+.s1m1-panel code,
+.s1m1-log code {
+  overflow-wrap: anywhere;
+}
+.s1m1-sub {
+  margin-top: var(--space-1) !important;
+  font-size: 0.8rem;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.s1m1-muted,
+.s1m1-empty {
+  color: var(--text-muted);
+}
+.s1m1-wait {
+  font-weight: 700;
+  color: var(--warn);
+}
+.s1m1-fds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.s1m1-fd {
+  display: inline-block;
+  min-width: 1.6em;
+  margin-right: var(--space-1);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: center;
+  background: var(--accent-soft);
+  border: var(--bw) solid var(--accent);
+  border-radius: var(--radius-s);
+}
+/* A client in the line and waiting bytes: a border as well as the tint, so color is not the only cue */
+.s1m1-token {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+  background: var(--key-bg);
+  border: 2px solid var(--key);
+  border-radius: var(--radius-s);
+}
+.s1m1-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.s1m1-btn {
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-weight: 600;
+  color: var(--interactive);
+  background: var(--surface);
+  border: 2px solid var(--interactive);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.s1m1-btn:hover {
+  background: var(--interactive-bg);
+}
+.s1m1-btn[aria-disabled='true'] {
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  cursor: default;
+}
+.s1m1-caption {
+  min-height: 3.2em;
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-soft);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+}
+.s1m1-log ol {
+  margin: var(--space-1) 0 0;
+  padding-left: 2.2em;
+  font-size: var(--text-sm);
+}
+.s1m1-log li {
+  padding: 1px var(--space-1);
+}
+.s1m1-log code {
+  background: none;
+  padding: 0;
+}
+.s1m1-new {
+  background: var(--key-bg);
+  border-left: 3px solid var(--key);
+}
+.s1m1-simplifies {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}

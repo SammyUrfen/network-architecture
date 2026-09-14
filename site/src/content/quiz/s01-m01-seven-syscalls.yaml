@@ -1,0 +1,167 @@
+# The items of s01-m01-seven-syscalls in docs/curriculum/session-01.md.
+# q01 to q06 are the checks. q01 was an order item (the check islands show
+# no order item yet), so it asks for the result of read() in Part 3. q06 is a
+# new check for Part 3: the line that the one-read server loses. q05 is also
+# the predict, observe, explain block of Part 4. q07 to q09 are the pretest in
+# plain words, asked again in the exit quiz.
+# Segments: 1 the seven calls (q02, q03), 2 the setup (q04), 3 serve one
+# client (q01, q06), 4 the read loop (q05).
+items:
+  - id: s01-m01-q01
+    use: [check, practice]
+    segment: 3
+    type: numeric
+    prompt: 'The first echo server accepts a client. The client sends the two letters `hi` and a newline. The server calls read() and gets every byte. What number does read() return?'
+    answer: { value: 3, tolerance: 0, unit: bytes }
+    distractors:
+      - value: 2
+        feedback: The newline is a byte too. The letters h and i and the newline make 3 bytes.
+    explanation: read() returns how many bytes it got. The two letters and the newline are 3 bytes, so it returns 3. The echo server then passes the same 3 bytes to write().
+    covers: [S01-C07]
+    tags: []
+    taughtIn: seg-serve-one-client
+
+  - id: s01-m01-q02
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: A web app built with Flask answers a request from a browser. How does Flask reach the network?
+    options:
+      - text: Flask has its own network code, so it does not need the kernel.
+        correct: false
+        misconception: S01-M01
+        feedback: Only the kernel uses the network card. Flask wraps the same seven calls as the echo server.
+      - text: The kernel reads the web request and gives Flask a finished request.
+        correct: false
+        misconception: S01-M46
+        feedback: The kernel moves plain bytes and knows nothing about web pages. Flask reads the request out of the bytes by itself.
+      - text: Through the same kind of system calls that the echo server makes, such as accept().
+        correct: true
+        feedback: Flask wraps the seven calls, then reads the web request out of the bytes that the kernel gives it.
+    explanation: Express, Flask and net/http are wrappers around the seven calls. The kernel moves the bytes, and the framework reads the web request out of them.
+    covers: [S01-C05, S01-C126]
+    tags: []
+    taughtIn: seven-calls
+
+  - id: s01-m01-q03
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: Which call do both a client and the echo server make?
+    options:
+      - text: socket()
+        correct: true
+        feedback: Every end of a connection starts with socket(), on the client too.
+      - text: accept()
+        correct: false
+        misconception: S01-M02
+        feedback: Only a server calls accept(). The shared call is socket(), because a client needs a socket too.
+      - text: listen()
+        correct: false
+        misconception: S01-M45
+        feedback: Only a server calls listen(), to take new clients. A client gets its reply through read().
+    explanation: A client calls socket(), then connect(), then write(), read() for an answer, and close(). Only a server calls listen() and accept(). A slide marks socket() among "the four that only a server makes", but the client calls it too.
+    covers: [S01-C04, S01-C06]
+    tags: []
+    taughtIn: seg-seven-requests-to-the-kernel
+
+  - id: s01-m01-q04
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A client waited in the line, and now accept() gives it to the server. What state is the TCP handshake in?
+    options:
+      - text: About to start, because accept() starts it.
+        correct: false
+        misconception: S01-M03
+        feedback: The kernel did the handshake earlier, while the client waited in the line.
+      - text: Halfway, and accept() waits for its last message.
+        correct: false
+        misconception: S01-M03
+        feedback: The kernel finished all of the handshake before the connection joined the line.
+      - text: Already complete.
+        correct: true
+        feedback: The kernel finished the handshake by itself. accept() only hands the finished connection to the program.
+    explanation: After listen(), the kernel finishes the handshake with each client and keeps the connection in a line. accept() takes a connection that already exists.
+    covers: [S01-C04, S01-C21]
+    tags: []
+    taughtIn: kernel-answers-before-accept
+
+  - id: s01-m01-q05
+    use: [check, practice]
+    segment: 4
+    type: predict
+    prompt: 'The second echo server runs on one computer, and a client on the same computer connects. The client sends the line `one`, and right after it the line `two`, with no pause. What can the first read() of the server return?'
+    options:
+      - text: 'Always only `one` and its newline, because a read returns one line.'
+        correct: false
+        misconception: S01-M04
+        feedback: A read knows nothing about lines. It takes every byte that waits, up to the room that it has.
+      - text: 'The line `one`, or both lines at once, as the bytes happen to wait.'
+        correct: true
+        feedback: A read takes every byte that waits. When both lines wait, one read returns both.
+      - text: Only bytes that arrive after read() starts, because the kernel drops earlier bytes.
+        correct: false
+        misconception: S01-M47
+        feedback: The kernel keeps bytes that arrive early, until a read takes them.
+    explanation: 'A read returns every byte that waits, up to 4096 bytes. Runs on Linux over loopback gave both answers: `read(4, "one\ntwo\n", 4096) = 8` in most runs, and `read(4, "one\n", 4096) = 4` in some. So a server must not count on one read for each line.'
+    covers: [S01-C19, S01-C92]
+    tags: [measured]
+    taughtIn: seg-one-read-is-not-a-conversation
+
+  - id: s01-m01-q06
+    use: [check, practice]
+    segment: 3
+    type: numeric
+    prompt: 'The first echo server runs. A client connects and sends the line `one`. Half a second later, it sends the line `two`, and then it quits. How many lines come back to the client?'
+    answer: { value: 1, tolerance: 0, unit: lines }
+    distractors:
+      - value: 2
+        feedback: This server calls read() one time. That read returns when `one` arrives. The server then writes and closes, so nobody reads `two`.
+      - value: 0
+        feedback: The one read gets `one`, and the server writes it back before it closes. Only `two` gets no answer.
+    explanation: 'The first server reads one time, writes those bytes back, and closes. The line `two` arrives after that, so no echo comes back for it. A run with nc on Linux over loopback gave back only `one`.'
+    covers: [S01-C07, S01-C19]
+    tags: [measured]
+    taughtIn: seg-serve-one-client
+
+  - id: s01-m01-q07
+    use: [pretest, exit]
+    type: recall
+    prompt: A server program must ask the operating system for help to talk over the network. What do you think it asks for, from its start up to its first answer to a client?
+    model: 'Seven requests, in order: make a socket, give it a port, start to take clients, give me the next client, read its bytes, write bytes back, close the connection. Their names are socket, bind, listen, accept, read, write and close.'
+    explanation: A TCP server is seven system calls. The program only asks, and the kernel does the network work.
+    covers: [S01-C04]
+    tags: []
+    taughtIn: seven-calls
+
+  - id: s01-m01-q08
+    use: [pretest, exit]
+    type: mcq
+    prompt: A server program told the operating system to take clients. Now the program is busy, and it did not ask for its next client yet. A new client tries to connect. What happens?
+    options:
+      - text: The client waits, not connected, until the program asks for it.
+        correct: false
+        misconception: S01-M03
+        feedback: The kernel finishes the connection before the program asks. accept() only hands over a connection that already exists.
+      - text: The operating system finishes the connection, and the client waits in a line.
+        correct: true
+        feedback: The kernel does the handshake by itself and keeps the connection in a line until the program calls accept().
+      - text: The client connects, but the operating system throws away what the client sends until the program asks for it.
+        correct: false
+        misconception: S01-M47
+        feedback: The kernel keeps the bytes of the client until a read takes them.
+    explanation: After listen(), the kernel answers each client by itself. It finishes the handshake and keeps the connection, and its bytes, until the program takes them.
+    covers: [S01-C21]
+    tags: []
+    taughtIn: kernel-answers-before-accept
+
+  - id: s01-m01-q09
+    use: [pretest, exit]
+    type: recall
+    prompt: A server asks the operating system for the bytes that a client sent, and the answer is 0 bytes. What do you think happened?
+    model: The client closed its side of the connection. A read() that returns 0 means end of file, so no more bytes will come, and the server can close the connection.
+    explanation: A read() with no bytes waits. It returns 0 only when the client closed its side. The second echo server stops its loop at 0 and calls close().
+    covers: [S01-C19]
+    tags: []
+    taughtIn: loop-until-read-returns-0
