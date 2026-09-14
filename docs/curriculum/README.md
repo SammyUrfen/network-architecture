@@ -133,8 +133,10 @@ module, give all of these fields.
   when no thread fits. Put a candidate thread under "Open questions".
 - **Pretest.** Two or three questions the learner answers before the lesson.
   Give the answers.
-- **Rung 1, the picture.** The analogy or everyday story, for a 10-year-old.
-  Then **where the analogy breaks**, in one or two lines.
+- **Rung 1, the picture.** A paragraph about a real-life scene that a
+  10-year-old knows. Map each part of the scene to a part of the real thing.
+  Then **where the analogy breaks**, in one sentence. The 10-year-old test is
+  rule 5 in `docs/PEDAGOGY.md` section 2.
 - **Rung 2, how it works.** The mechanism as short numbered steps, plain words.
 - **Rung 3, the real thing.** The syscalls, the bytes, the RFC text, the code
   lines. Point at the source file and line or slide.
@@ -155,7 +157,9 @@ module, give all of these fields.
 - **Checks.** Three to six questions. Type (`mcq`, `multi`, `numeric`,
   `order`, `bytes`, `predict`, `spot-bug`, `recall`), the answer, each
   distractor with its misconception ID, and a one-line feedback. An `mcq` or
-  `predict` check has 3 or 4 options, so it has 2 or 3 distractors.
+  `predict` check has 3 or 4 options, so it has 2 or 3 distractors. A check
+  asks only what the module teaches, in plain words. It never asks which
+  slide or deck says what.
 - **Review cards.** Three to eight spaced-repetition prompts. One fact per
   card. The answer is short and exact.
 - **Lab (optional).** Exact commands to run on Linux, what to look at, and the

@@ -1,17 +1,20 @@
 items:
   - id: s01-m01-alpha-q01
+    taughtIn: seg-two-writes-one-read
     use: [pretest, exit]
     type: recall
     prompt: A sender writes "hello", then "world". Can one read() return "helloworld"?
     model: Yes.
     covers: [S01-C02]
   - id: s01-m01-alpha-q02
+    taughtIn: seg-two-writes-one-read
     use: [pretest, exit]
     type: recall
     prompt: What does TCP deliver?
     model: A byte stream with no message edges.
     covers: [S01-C01]
   - id: s01-m01-alpha-q03
+    taughtIn: seg-two-writes-one-read
     use: [check, practice]
     segment: 1
     type: mcq
@@ -31,6 +34,7 @@ items:
     explanation: A read returns the bytes available. The application finds the message end.
     covers: [S01-C02]
   - id: s01-m01-alpha-q04
+    taughtIn: length-first
     use: [check]
     segment: 2
     type: numeric
@@ -41,6 +45,7 @@ items:
     explanation: One byte holds 256 values, and the largest is 255.
     covers: [S01-C01]
   - id: s01-m01-alpha-q05
+    taughtIn: seg-the-length-rule
     use: [check]
     segment: 2
     type: predict

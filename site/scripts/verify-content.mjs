@@ -1,4 +1,4 @@
-// The content gate. It checks the nine rules of "What `npm run verify`
+// The content gate. It checks the ten rules of "What `npm run verify`
 // checks" in docs/PLAN.md section 5, and prints one line for each failure.
 // The curriculum files stay the single source of truth: this script reads
 // only the four line patterns below from them, never a copy.
@@ -6,6 +6,9 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
+// The page makes its segment anchors with the same helper, so rule 10 and the
+// page agree. Node imports a .ts file with type stripping (Node 22.18 and up).
+import { segmentAnchor, segmentTitles } from '../src/components/lesson/segments.ts';
 
 const CLAIM = /^\| (S\d\d-C\d+) \|/;
 const MISCONCEPTION = /^- (S\d\d-M\d+)(?: \([^)]*\))?: "/;
@@ -154,8 +157,8 @@ export function verify(contentDir, curriculumDir) {
     for (const card of items) checkCovers(file, card.id, card.covers);
   }
 
-  // Rule 5. Only a ready module with an MDX page. A quiz pack has no page,
-  // so this loop never sees it. Segments count in page order from 1.
+  // Rules 5 and 10. Only a ready module with an MDX page. A quiz pack has no
+  // page, so this loop never sees it. Segments count in page order from 1.
   const quizById = new Map(quizFiles.map((quiz) => [quiz.id, quiz]));
   const cardsById = new Map(cardFiles.map((cards) => [cards.id, cards]));
   for (const { file, data, body } of modules) {
@@ -177,6 +180,17 @@ export function verify(contentDir, curriculumDir) {
     for (const item of checks) {
       if (!(Number.isInteger(item.segment) && item.segment >= 1 && item.segment <= segments)) {
         fail(quiz.file, 5, `${item.id}: segment ${item.segment} is not one of the ${segments} <Segment> blocks`);
+      }
+    }
+    // Rule 10. The feedback of each item links to the place that taught it.
+    const anchors = new Set([
+      ...segmentTitles(body).map(segmentAnchor),
+      ...[...body.matchAll(/<KeyIdea\b[^>]*?\bid="([^"]*)"/g)].map((match) => match[1]),
+    ]);
+    for (const item of quiz.items) {
+      if (!item.taughtIn) fail(quiz.file, 10, `${item.id}: no taughtIn`);
+      else if (!anchors.has(item.taughtIn)) {
+        fail(quiz.file, 10, `${item.id}: taughtIn ${item.taughtIn} is not a KeyIdea id or a segment anchor of ${data.id}`);
       }
     }
   }

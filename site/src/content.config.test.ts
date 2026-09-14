@@ -54,6 +54,11 @@ describe('quizItem', () => {
     expect(quizItem.safeParse({ ...base, ...fields }).success).toBe(false);
   });
 
+  test('keeps an optional taughtIn string', () => {
+    expect(quizItem.parse({ ...base, type: 'recall', model: 'm', taughtIn: 'seg-one' }).taughtIn).toBe('seg-one');
+    expect(quizItem.safeParse({ ...base, type: 'recall', model: 'm', taughtIn: 2 }).success).toBe(false);
+  });
+
   test('defaults tolerance to 0 and tags to []', () => {
     const r = quizItem.parse({ ...base, type: 'numeric', answer: { value: 1, unit: 'bytes' } });
     expect(r.tags).toEqual([]);
