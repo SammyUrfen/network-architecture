@@ -5,6 +5,8 @@ import {
   MAX_READ,
   MAX_WIRE,
   frame,
+  groupSlot,
+  messageEnds,
   readAll,
   readSizes,
   sandbox,
@@ -197,6 +199,39 @@ describe('readSizes', () => {
       (sizes) => !verdict(frames, found('none', 8, wire, sizes)).ok,
     );
     expect(wrong.length).toBeGreaterThan(45);
+  });
+});
+
+describe('messageEnds', () => {
+  it('cuts after every N bytes, after each newline, or after each length', () => {
+    // The three messages of the Part 2 visual: hi, hello and abc, with N = 5.
+    const messages = ['hi', 'hello', 'abc'];
+    expect(messageEnds('fixed', 5, framed('fixed', messages, 5).wire)).toEqual([5, 10, 15]);
+    expect(messageEnds('delimiter', 5, framed('delimiter', messages).wire)).toEqual([3, 9, 13]);
+    expect(messageEnds('length', 5, framed('length', messages).wire)).toEqual([3, 9, 13]);
+  });
+
+  it('cuts one message in two when its data holds the delimiter', () => {
+    // docs/curriculum/session-01.md, s01-m08 "Your turn": a newline inside the data gives two messages.
+    expect(messageEnds('delimiter', 5, framed('delimiter', ['hi', 'hello', 'a\\nc']).wire)).toEqual([3, 9, 11, 13]);
+  });
+
+  it('gives no cut for the bytes of a message that is not complete', () => {
+    expect(messageEnds('fixed', 5, ascii('hello wor'))).toEqual([5]);
+    expect(messageEnds('length', 5, bytesOf('03 61 62'))).toEqual([]);
+  });
+});
+
+describe('groupSlot', () => {
+  it('leaves one empty slot between two groups', () => {
+    // The Part 1 visual: the writes hello and world, then the reads hel and loworld.
+    expect([4, 5, 9].map((i) => groupSlot(i, [5, 5]))).toEqual([4, 6, 10]);
+    expect([2, 3].map((i) => groupSlot(i, [3, 7]))).toEqual([2, 4]);
+    expect(groupSlot(9, [10])).toBe(9);
+  });
+
+  it('refuses a byte outside the groups', () => {
+    expect(() => groupSlot(10, [5, 5])).toThrow();
   });
 });
 
