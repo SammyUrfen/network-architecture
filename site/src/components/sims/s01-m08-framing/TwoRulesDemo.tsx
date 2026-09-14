@@ -40,9 +40,9 @@ const PADS = FIXED.kinds.reduce<[number, number][]>((runs, kind, i) => {
 const PAD_COUNT = PADS.reduce((sum, [, count]) => sum + count, 0);
 
 const CAPTIONS = [
-  `Fixed length, with N = ${N}. The sender adds pad bytes to hi and abc, so each message is exactly ${N} bytes.`,
+  `Fixed length: every message is N = ${N} bytes. The sender fills hi and abc with pad bytes, filler that means nothing, shown as dots.`,
   `The reader counts ${N} bytes and cuts, three times. It never looks at what the bytes say.`,
-  'Delimiter, with a newline, written \\n. The sender puts one after each message. No message needs pad.',
+  'Delimiter: a newline, the invisible byte that ends a line of text, written \\n. The sender puts one after each message. No message needs pad.',
   'The reader checks one byte at a time. When it meets a newline, it cuts.',
   `The cost of a fixed length: ${PAD_COUNT} of the ${FIXED.wire.length} bytes are pad. A message of ${N + 1} bytes does not fit, and N can never change.`,
   `The cost of a delimiter: now message 3 holds a newline, a\\nc. The reader cuts at that newline and finds ${BROKE.ends.length} messages, not 3.`,

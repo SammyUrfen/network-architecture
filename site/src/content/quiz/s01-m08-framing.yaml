@@ -65,7 +65,7 @@ items:
         correct: false
         misconception: S01-M75
         feedback: That cost belongs to a length prefix. A delimiter lets the sender start before it knows the size.
-    explanation: The reader scans for the delimiter. If the data holds the same bytes, the reader stops too early, unless the sender escapes them. SMTP adds a dot to a body line that starts with a dot.
+    explanation: The reader scans for the delimiter. If the data holds the same bytes, the reader stops too early, unless the sender escapes them. SMTP ends a mail with a line that holds only a dot, so it adds a dot to a body line that starts with a dot.
     covers: [S01-C95]
     tags: []
     taughtIn: a-delimiter-marks-the-end
@@ -74,7 +74,7 @@ items:
     use: [check, practice]
     segment: 3
     type: numeric
-    prompt: A protocol puts a 1-byte length in front of each message. What is the largest payload that this length can describe?
+    prompt: A protocol puts a 1-byte length in front of each message. What is the largest message that this length can describe?
     answer: { value: 255, tolerance: 0, unit: bytes }
     explanation: One byte holds 256 values, from 0 to 255. So the largest length that it can say is 255, and a 1-byte length caps a message at 255 bytes. Two bytes cap it at 65,535.
     covers: [S01-C96]
@@ -116,10 +116,10 @@ items:
         correct: false
         misconception: S01-M32
         feedback: TCP can split or merge writes.
-      - text: None, until the send buffer is full.
+      - text: None, until TCP has collected many bytes.
         correct: false
         misconception: S01-M77
-        feedback: TCP does not wait for a full buffer. It can split or merge writes.
+        feedback: TCP does not wait to collect many bytes. It can split or merge writes.
       - text: One or more, as TCP decides.
         correct: true
         feedback: TCP can send the 10 bytes in one segment, split them, or merge them with other writes.
@@ -141,8 +141,8 @@ items:
   - id: s01-m08-q08
     use: [pretest, exit]
     type: recall
-    prompt: A web server answers with a few header lines, then the page itself. How does the reader know where the header lines stop?
-    model: An empty line ends the header lines. Each line ends with the two bytes CR LF, so the reader looks for CR LF CR LF.
+    prompt: A web page arrives with a few lines of notes in front of it. How does the reader know where the notes stop and the page starts?
+    model: An empty line ends the notes, which HTTP calls header lines. Each line ends with the two bytes CR LF, so the reader looks for CR LF CR LF.
     explanation: The empty line is a delimiter. The reader scans for it to find where the header lines stop.
     covers: [S01-C95]
     tags: []
@@ -151,8 +151,8 @@ items:
   - id: s01-m08-q09
     use: [pretest, exit]
     type: recall
-    prompt: 'An answer from a web server holds the line `Content-Length: 219`. What does that line tell the reader?'
-    model: The body has exactly 219 bytes. The reader takes 219 bytes after the header lines, then stops.
+    prompt: One of the notes in front of a web page says how long the page is, 219 bytes. What does the reader do with that number?
+    model: 'It takes exactly 219 bytes of page after the notes, then stops. HTTP writes this note as `Content-Length: 219`.'
     explanation: Content-Length is a length for the body. The reader counts the bytes, so it needs no scan.
     covers: [S01-C96]
     tags: []
@@ -161,7 +161,7 @@ items:
   - id: s01-m08-q10
     use: [practice]
     type: predict
-    prompt: 'In a test run, a small echo server runs on a computer and reports each read. A client on the same computer sends "hello", then "world", on one connection. How many reads did the server make for the two sends?'
+    prompt: 'In a test run, a small echo server runs on a computer and reports each read. A second program, the client, on the same computer sends "hello", then "world", on one connection. How many reads did the server make for the two sends?'
     options:
       - text: Two reads of 5 bytes, one for each send.
         correct: false
@@ -170,10 +170,10 @@ items:
       - text: One read that returns all 10 bytes.
         correct: true
         feedback: That is what this run on one computer showed. Another run or a real network can split the bytes another way.
-      - text: No read, until the send buffer fills.
+      - text: No read, until TCP has collected many bytes.
         correct: false
         misconception: S01-M77
-        feedback: TCP does not wait for a full buffer. It can split or merge writes.
+        feedback: TCP does not wait to collect many bytes. It can split or merge writes.
     explanation: In this run on one computer, the server made one read that returned all 10 bytes. TCP kept no edge between the two sends. Another run or a real network can give other cuts.
     covers: [S01-C92]
     tags: [measured]
