@@ -138,6 +138,10 @@
   background: var(--bad-soft);
   border-color: var(--bad);
 }
+.m02-result.info {
+  background: var(--info-soft);
+  border-color: var(--info);
+}
 
 /* QueueSim */
 .m02-zone-list {

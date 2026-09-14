@@ -120,7 +120,7 @@ export default function QueueSim({ title }: { title: string }) {
 
       <p class="m02-simplifies">
         <strong>What this simplifies:</strong> Linux with default settings, and clients that connect and stay. The model
-        shows no time: a client with no answer gives up after about two minutes. Other systems can refuse a client when
+        shows no time: a client with no answer and no timeout of its own gives up after about two minutes. Other systems can refuse a client when
         the queue is full.
       </p>
     </div>

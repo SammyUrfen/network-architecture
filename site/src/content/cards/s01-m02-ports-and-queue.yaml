@@ -14,7 +14,7 @@ items:
     covers: [S01-C20, S01-C25]
   - id: s01-m02-c04
     front: When accept() returns, what has already happened to the TCP connection?
-    back: The handshake is complete. The kernel finished it while the client waited in the queue.
+    back: The handshake is complete. The kernel finished it, and then the connection waited in the accept queue.
     covers: [S01-C21]
   - id: s01-m02-c05
     front: Which Linux setting caps the backlog of listen()?
@@ -26,9 +26,9 @@ items:
     covers: [S01-C22]
   - id: s01-m02-c07
     front: Why does a real deployment run its program on port 8080 and not on port 80?
-    back: Port 80 needs root, so a bug in the request code would give an attacker root. A front proxy owns 80 and 443.
+    back: By default, port 80 needs root, and a bug in request code that runs as root gives an attacker root. A front proxy owns 80 and 443.
     covers: [S01-C09, S01-C13, S01-C14]
   - id: s01-m02-c08
     front: Why can a quick restart of a server fail with "Address already in use"?
-    back: A connection that the server closed first sits in TIME_WAIT and holds the port. SO_REUSEADDR lets bind() work anyway.
+    back: A connection that the server closed first sits in TIME_WAIT and holds the port. A server that sets SO_REUSEADDR before bind() on every start can bind anyway.
     covers: [S01-C83]

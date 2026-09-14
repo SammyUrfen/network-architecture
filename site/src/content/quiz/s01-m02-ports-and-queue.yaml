@@ -44,7 +44,7 @@ items:
       - text: It connects, then waits with no reply.
         correct: true
         feedback: The kernel finished the handshake and took the bytes. Only the program can send a reply, and it never takes the connection.
-    explanation: The kernel completes the handshake, puts the connection in the accept queue, and sends an ACK for the bytes. With no accept(), no program replies, so the client waits until its own timeout, if it has one.
+    explanation: The kernel completes the handshake, puts the connection in the accept queue, and sends an ACK for the bytes. With no accept(), no program replies, so the client waits until its own timeout, if it has one. The slide says that the client "waits until TCP times out", so expect that wording on a quiz.
     covers: [S01-C17, S01-C18]
     tags: []
     taughtIn: refused-or-a-silent-wait
@@ -53,7 +53,7 @@ items:
     use: [check, practice]
     segment: 3
     type: numeric
-    prompt: On Linux, a server calls listen() with a backlog of 1, and it never calls accept(). Clients keep coming. How many of them complete the handshake?
+    prompt: On Linux, a server calls listen() with a backlog of 1, and it never calls accept(). Clients connect, one after the other, and stay. How many of them complete the handshake?
     answer: { value: 2, tolerance: 0, unit: connections }
     distractors:
       - value: 1
@@ -72,7 +72,7 @@ items:
     options:
       - text: A bind() that fails while an old connection on the port sits in TIME_WAIT.
         correct: true
-        feedback: With the option set, bind() works next to the old connection.
+        feedback: When the old run and the new run both set the option, the new bind() works next to the old connection.
       - text: It lets two server programs listen on the same port.
         correct: false
         misconception: S01-M09
@@ -81,7 +81,7 @@ items:
         correct: false
         misconception: S01-M51
         feedback: The old connections stay in TIME_WAIT for their full time. Only the bind() failure goes away.
-    explanation: A connection that the server closed first stays in TIME_WAIT for about 60 seconds and holds the port. SO_REUSEADDR lets a new bind() work anyway. The old connection keeps its TIME_WAIT.
+    explanation: A connection that the server closed first stays in TIME_WAIT for about 60 seconds and holds the port. A server that sets SO_REUSEADDR before bind() on every start can bind anyway. The old connection keeps its TIME_WAIT.
     covers: [S01-C83]
     tags: []
     taughtIn: a-restart-can-lose-the-port

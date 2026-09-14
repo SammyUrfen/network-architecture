@@ -48,7 +48,8 @@ export default function PortPicker({ title }: { title: string }) {
 
   let result: string;
   let risk = '';
-  if (check === 'invalid') result = `✗ A port is a whole number from 1 to ${MAX_PORT}.`;
+  if (port === 0) result = 'Port 0 asks the kernel to pick any free port, as listen() does in Part 2. Pick a port from 1 up here.';
+  else if (check === 'invalid') result = `A port is a whole number from 1 to ${MAX_PORT}.`;
   else if (check === 'denied') {
     result = `✗ ${what} fails with "Permission denied". Only root may bind a port below ${UNPRIVILEGED_START}.`;
     risk = 'The usual design: the program binds 8080 as a normal user, and a front proxy owns 80 and 443.';
@@ -56,8 +57,8 @@ export default function PortPicker({ title }: { title: string }) {
     result = `✓ ${what} works.`;
     if (who === 'root') {
       risk = isPrivileged(port)
-        ? 'But the whole program now runs as root. A bug in the code that reads requests gives an attacker root.'
-        : `Any user may bind this port, so root adds only risk here. A bug in the program gives an attacker root.`;
+        ? 'The program runs as root. If it keeps root while it reads requests, a bug in that code gives an attacker root.'
+        : 'Any user may bind this port, so root adds only risk here. A bug in a root program gives an attacker root.';
     } else if (who === 'capability') {
       risk = 'The program keeps the rights of a normal user. A bug gives an attacker only those rights, plus the low ports.';
     }
@@ -81,7 +82,7 @@ export default function PortPicker({ title }: { title: string }) {
         Or type any port
         <input
           type="number"
-          min={1}
+          min={0}
           max={MAX_PORT}
           value={Number.isNaN(port) ? '' : port}
           onInput={(e) => setPort(e.currentTarget.valueAsNumber)}
@@ -108,7 +109,7 @@ export default function PortPicker({ title }: { title: string }) {
         ))}
       </fieldset>
 
-      <div class={check === 'ok' ? 'm02-result ok' : 'm02-result bad'} aria-live="polite">
+      <div class={`m02-result ${check === 'ok' ? 'ok' : check === 'denied' ? 'bad' : 'info'}`} aria-live="polite">
         <p>
           <strong>{result}</strong>
         </p>
@@ -118,7 +119,7 @@ export default function PortPicker({ title }: { title: string }) {
 
       <p class="m02-simplifies">
         <strong>What this simplifies:</strong> Linux with the line at its default, 1024. The model leaves out a port that
-        another program already holds, and firewalls.
+        another program already holds, a program that starts as root and then drops root, and firewalls.
       </p>
     </div>
   );
