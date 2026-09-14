@@ -63,7 +63,7 @@ items:
         correct: false
         misconception: S01-M54
         feedback: A read never brings SIGPIPE. Only a write to a dead connection does.
-    explanation: 'strace of the demo on Linux shows `write(4, "hello", 5) = -1 ECONNRESET`, then `write(4, "hello", 5) = -1 EPIPE` and the SIGPIPE line. The comments of the class code put SIGPIPE on the first write. On a quiz, expect that wording.'
+    explanation: 'strace of the demo on Linux shows `write(4, "hello", 5) = -1 ECONNRESET`, then `write(4, "hello", 5) = -1 EPIPE` and the SIGPIPE line. The comments of the class code put SIGPIPE on the first write, but a Linux run shows it on the second.'
     covers: [S01-C30]
     tags: [measured]
     taughtIn: write-after-reset-kills

@@ -4,12 +4,12 @@ session: 1
 order: 3
 title: "SIGPIPE: the write that kills your server"
 minutes: 18
-bigIdea: "When a program keeps writing to a connection that the other side already ended, the kernel sends it SIGPIPE, a short message called a signal. By default, SIGPIPE ends the program with no error message."
+bigIdea: "When a program keeps writing to a connection that the other side already ended, the operating system sends it SIGPIPE, a short message called a signal. By default, SIGPIPE ends the program with no error message."
 covers: [S01-C26, S01-C27, S01-C28, S01-C29, S01-C30, S01-C31, S01-C32, S01-C33, S01-C34]
 prereqs: [s01-m01-seven-syscalls]
 threads: [T-network-not-function]
 confidence: high
-status: draft
+status: ready
 terms:
   - term: process
     meaning: a program while it runs. The kernel gives each process a number, its process ID.
@@ -51,9 +51,9 @@ import KeepAlive from '../../../components/sims/s01-m03-signals-sigpipe/KeepAliv
 
 A server is a program that waits for other programs, its clients, to connect over the network, and then answers them. Picture your server as it runs well for hours. Then one client leaves in the middle of an answer, and your server is gone. It printed no error, and it left no line in a log. What killed it? This lesson answers that question.
 
-The killer is a **signal**, a short message that the kernel sends to a program that runs. The kernel is the core of the operating system. This signal is called SIGPIPE. The kernel sends it when a program keeps writing to a connection that the other side already ended. By default, SIGPIPE ends the program at once, and the program prints nothing. A server in C meets this trap as soon as one real client leaves early. The calculator assignment of this course asks you to write a server, so the trap is close.
+The killer is a **signal**, a short message that the kernel sends to a program that runs. The kernel is the core of the operating system. This signal is called SIGPIPE. The kernel sends it when a program keeps writing to a connection that the other side already ended. By default, SIGPIPE ends the program at once, and the program prints nothing. A server in C, a programming language, meets this trap as soon as one real client leaves early. The calculator assignment of this course asks you to write a server, so the trap is close.
 
-If you start here, you need a few more ideas. The server never uses the network itself. It asks the kernel with system calls, which are requests from a program to the kernel. `write()` sends bytes to the client, `read()` gets bytes from it, and `close()` ends the connection. The connection follows TCP, the set of rules that the kernel uses to carry bytes in order. You type commands in a terminal window, and the program there that runs your commands is the **shell**. On Linux, the usual shell is bash. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows the system calls in full. The top of the page also names a thread, a big idea that comes back in many lessons. This thread says that a call over the network is not like a call to a function in your own program. It can fail halfway, because the other side can vanish.
+If you start here, you need a few more ideas. The server never uses the network itself. It asks the kernel with system calls, which are requests from a program to the kernel. `write()` sends bytes to the client, `read()` gets bytes from it, and `close()` ends the connection. Each call gives back a number, its result. A result of -1 means that the call failed, and a short error name, such as EPIPE, says why. The connection follows TCP, the set of rules that the kernel uses to carry bytes in order. You type commands in a terminal window, and the program there that runs your commands is the **shell**. On Linux, the usual shell is bash. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows the system calls in full. The top of the page also names a thread, a big idea that comes back in many lessons. This thread says that a request over the network is not like a question to a friend in the same room. It is more like a question on the phone: the line can go dead halfway, and you do not know what the other side heard.
 
 **The path through this lesson.** Part 1 runs the class demo: a server dies, prints nothing, and leaves only the number 141. Part 2 explains signals, and that number points to the killer, SIGPIPE. Part 3 looks inside: how the client hangs up the hard way, and which write of the server brings the signal. Part 4 shows two ways to keep a server alive, and you try each setting in a simulator.
 
@@ -67,7 +67,7 @@ If you start here, you need a few more ideas. The server never uses the network 
 
 <VanishDemo slot="visual" />
 
-<Picture breaks="when your friend runs off, nobody stays behind the wall. When the client program ends, its computer and its kernel stay, and that kernel still answers for the connection. Part 3 shows that answer.">
+<Picture breaks="when your friend runs off, nobody stays behind the wall. When the client program ends, its computer and its kernel stay. That kernel still answers bytes that arrive for the dead connection, as Part 4 shows.">
 
 You and a friend play catch over a low wall at recess. Your friend throws the ball over the wall to you, then runs off without a word. The wall hides it from you. You pick up the ball and count to ten. Then you throw the ball back over the wall, two times. What do you think happens to you? Make your guess below. Part 2 finishes the story.
 
@@ -223,17 +223,17 @@ The rule of 128 + N belongs to the shell. When a command ends on a fatal signal 
 
 <ResetLanes slot="visual" />
 
-<Picture breaks="a ball flies over the wall on each throw. On the first write, the kernel of the server sends no byte at all. It only reports the reset that it already got.">
+<Picture breaks="the helper warns you before you throw. The kernel warns the server only when the server calls write(), and only one time. The next write brings SIGPIPE.">
 
-Your friend can leave the game of catch in two ways. The nice way: your friend shouts "I am done, bye!" and goes home. The hard way: your friend just runs off and drops the ball in their hands. Either way, your friend catches no more balls. When you throw after the hard way, a neighbor shouts back: "Nobody is there!" If you throw again anyway, the teacher sends you inside.
+Your friend can leave the game of catch in two ways. The nice way: your friend shouts "I am done, bye!" and goes home. The hard way: your friend just runs off and drops the ball in their hands. Either way, your friend catches no more balls. After the hard way, a helper on your side of the wall saw your friend run off. When you get ready to throw, the helper stops you: "Nobody is there!" If you throw anyway, the teacher sends you inside.
 
-Leaving the nice way is a normal `close()`, which sends **FIN**: I send no more data. Leaving the hard way sends **RST**, a reset: the connection ends now, and bytes that wait to be sent are dropped. The shout of the neighbor is the error of your first write. The teacher who sends you inside is SIGPIPE, on your second write. After a nice close, the side that closed first also waits for a set time, in a state called TIME_WAIT. The playground has nothing like that wait.
+Leaving the nice way is a normal `close()`, which sends **FIN**: I send no more data. Leaving the hard way sends **RST**, a reset: the connection ends now, and bytes that wait to be sent are dropped. The helper and the teacher both stand for the kernel of the server, which got the reset. The helper who stops you is your first write, which fails and sends no byte. The teacher who sends you inside is SIGPIPE, on your second write. After a nice close, the side that closed first also waits for a set time, in a state called TIME_WAIT. The playground has nothing like that wait.
 
 </Picture>
 
 ### How it works
 
-A normal `close()` sends FIN. After both sides close, the side that closed first waits in TIME_WAIT for a set time. The class client does not close that way. A socket is the handle that a program holds on its end of a connection, and a socket option changes how the kernel treats it. Before `close()`, the client sets the option SO_LINGER to `{1, 0}`. The 1 turns lingering on, and the 0 sets a linger timeout of zero, so people call it linger 0. With linger 0, `close()` sends RST instead. The connection ends at once, unsent bytes are dropped, and no side waits in TIME_WAIT.
+A normal `close()` sends FIN. After both sides close, the side that closed first waits in TIME_WAIT for a set time. The class client does not close that way. A socket is the handle that a program holds on its end of a connection, and a socket option changes how the kernel treats it. Before `close()`, the client sets the option SO_LINGER to `{1, 0}`. The 1 turns lingering on, and the 0 sets a linger timeout of zero, so people call it linger 0. To linger means to stay a while. The second class says that linger with a zero timeout sends RST and drops the unsent data <SlideLink session={2} page={5} />. So with linger 0, `close()` sends RST instead of FIN. The connection ends at once, unsent bytes are dropped, and no side waits in TIME_WAIT.
 
 <KeyIdea id="linger-zero-sends-rst" title="Linger 0 closes with RST, not FIN">
 
@@ -241,7 +241,7 @@ A normal `close()` sends FIN, and the side that closes first waits in TIME_WAIT.
 
 </KeyIdea>
 
-Now follow the demo from inside, on Linux, with both programs on one computer. Scroll through the steps.
+Why does the demo pick the hard way? After a FIN, the server can still send, and its first write works. After an RST, the connection is dead at once, so the very next write of the server fails. Runs on one computer showed both results. Now follow the demo from inside, on Linux, with both programs on one computer. Scroll through the steps.
 
 <ScrollStep step={1}>
 
@@ -287,7 +287,7 @@ The server set up nothing for SIGPIPE, so the default action ends it inside that
 
 <KeyIdea id="write-after-reset-kills" title="A write after a reset kills the process">
 
-On Linux, the first write after a reset fails with the error ECONNRESET. The next write fails with EPIPE, and the kernel sends SIGPIPE. Its default action ends the process with no error message.
+When the other side resets an open connection, as in the demo, the first write on Linux fails with the error ECONNRESET. The next write fails with EPIPE, and the kernel sends SIGPIPE. Its default action ends the process with no error message.
 
 </KeyIdea>
 
@@ -303,7 +303,7 @@ write(4, "hello", 5) = -1 EPIPE
 +++ killed by SIGPIPE +++
 ```
 
-The number 4 is the file descriptor of the connection, the number that the server uses to name it. The first write fails with ECONNRESET and brings no signal. The second write does run. It fails with EPIPE and brings SIGPIPE, and the server dies inside it. So on Linux, the call after the second write never runs. Nobody checked macOS for this page. On a quiz, expect the wording of the slide.
+The number 4 is the file descriptor of the connection, the number that the server uses to name it. The first write fails with ECONNRESET and brings no signal. The second write does run. It fails with EPIPE and brings SIGPIPE, and the server dies inside it. So on Linux, the call after the second write never runs. The comments of the class code put the signal one write earlier. This page teaches the Linux result, and nobody checked macOS for it.
 
 The client slide shows linger 0 <SlideLink session={1} page={14} />: a `struct linger` with the values `{1, 0}`, then `setsockopt()` with `SO_LINGER`, then `close()`. The second class comes back to it <SlideLink session={2} page={5} />. A normal close sends FIN, and the socket waits in TIME_WAIT for 2 MSL. The closed box below explains MSL. Linger 0 sends RST, drops unsent data and leaves no TIME_WAIT. The slide calls linger 0 fast and lossy: good to show the difference, not for production. A run on Linux 7.1.8 over loopback agreed (2026-09-14). After a normal close, the client socket sat in TIME_WAIT. After a linger 0 close, no socket did.
 
@@ -334,7 +334,7 @@ MSL means maximum segment lifetime: the longest time that the TCP standard expec
 
 <Segment title="Keep the server alive">
 
-**In this part.** Part 3 showed the trap: one client that leaves can kill the whole server. A real server serves many clients, so it must survive that. This part gives two ways to turn the signal off. It also shows why the same signal is useful for other programs. Then you try every setting in the simulator.
+**In this part.** Part 3 showed the trap: one client that leaves can kill the whole server. A real server serves many clients, so it must survive that. This part gives two ways to turn the signal off. It also shows why the same signal is useful for other programs. Then you try every setting in the simulator. Last, you see that a client can die the same way, so the number 141 alone proves nothing.
 
 <KeepAlive slot="visual" />
 
@@ -354,7 +354,13 @@ A server can stop SIGPIPE in two ways. The first way works for the whole process
 
 </Beyond>
 
-Try it in the simulator next to this text. The first setting is the class demo, and the server dies. Change one choice at a time. Find every setting that keeps the server alive, and look at which write fails in each one. On one computer, a normal close does not save the server. The first write works. But the client program already ended, so its kernel answers those bytes with RST, and the second write brings SIGPIPE.
+Try it in the simulator next to this text. The first setting is the class demo, and the server dies. Change one choice at a time. Find every setting that keeps the server alive, and look at which write fails in each one. On one computer, a normal close does not save the server. The first write works. But the client program already ended, so its kernel answers those bytes with RST. The second write then fails with EPIPE at once, not with ECONNRESET, and brings SIGPIPE.
+
+<Beyond source="tcp_reset() in net/ipv4/tcp_input.c, Linux kernel source" url="https://github.com/torvalds/linux/blob/master/net/ipv4/tcp_input.c">
+
+**Why EPIPE at once after a normal close?** After the FIN of the client, the connection of the server is half closed, in a state that Linux calls CLOSE_WAIT. A reset in that state stores the error EPIPE, not ECONNRESET. So the next write gets EPIPE, and with it SIGPIPE.
+
+</Beyond>
 
 <Beyond source="pipe(7), Linux man page, and the GNU C Library manual, Operation Error Signals" url="https://man7.org/linux/man-pages/man7/pipe.7.html">
 
@@ -364,7 +370,7 @@ Try it in the simulator next to this text. The first setting is the class demo, 
 
 ### The real thing
 
-The client of the demo can die the same way. Run `./05_sigpipe_client` with no server. Its `connect()`, the call that asks the kernel to reach a server, fails and returns -1. The error is ECONNREFUSED, "connection refused", because no server waits on that port. The code checks nothing and calls `write()` on a socket with no connection. That write fails with EPIPE and brings SIGPIPE, so the client also ends with 141. Here is `strace` of the client alone, with the meanings of the errors left out (a copy on a spare port, Linux 7.1.8, loopback, 2026-09-14):
+SIGPIPE does not care which program writes: a server, `cat`, or a client. The client of the demo can die the same way. Run `./05_sigpipe_client` with no server. Its `connect()`, the call that asks the kernel to reach a server, fails and returns -1. The error is ECONNREFUSED, "connection refused", because no server waits on that port. The code checks nothing and calls `write()` on a socket with no connection. That write fails with EPIPE and brings SIGPIPE, so the client also ends with 141. Here is `strace` of the client alone, with the meanings of the errors left out (a copy on a spare port, Linux 7.1.8, loopback, 2026-09-14):
 
 ```
 connect(3, ...) = -1 ECONNREFUSED
@@ -425,6 +431,13 @@ Now watch the writes. Start the server under `strace` in one terminal, and run `
 <Terminal
   title="Terminal 1: the server under strace"
   runs={[{ cmd: 'strace -e trace=read,write ./04_sigpipe_server' }]}
+/>
+
+A new terminal starts in your home folder, so go to the folder `lesson1` again. The path below assumes that you ran `git clone` in your home folder.
+
+<Terminal
+  title="Terminal 2: the client"
+  runs={[{ cmd: 'cd cn-at-scaler/lesson1' }, { cmd: './05_sigpipe_client' }]}
 />
 
 The first lines of `strace` load the program, so look for the lines with the number 4, the connection. You see one read of 5 bytes, a write with ECONNRESET, and a write with EPIPE. Then you see the SIGPIPE line and `+++ killed by SIGPIPE +++`.
