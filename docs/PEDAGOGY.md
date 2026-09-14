@@ -200,7 +200,8 @@ the program must find where each message ends."
     the visual, not in a caption. A simulation has a "what this simplifies"
     line.
 16. **The learner drives the motion.** No animation plays before the learner
-    presses play. Under `prefers-reduced-motion`, a step changes the picture
+    presses play or scrolls to a step. A scroll step is a learner action, so it
+    can play the motion of that one step. Under `prefers-reduced-motion`, a step changes the picture
     with no motion. Every control works with the keyboard. Build animations by
     hand with SVG, CSS and the Web Animations API. No animation library.
 17. **Labs say where everything comes from.** Give the instructor repo URL

@@ -29,19 +29,30 @@ remove the mark in the same change.
 
 ### Page frame
 
-- The module page `src/pages/[session]/[module].astro` gives block 1 of the
-  lesson contract: `ModuleHeader`, the outline and `ModuleProgress`. The MDX
-  does not write a header. It starts at block 2, the pretest.
+- The module page `src/pages/[session]/[module].astro` gives the page frame.
+  `ModuleHeader` opens the page with the title and the big idea. The sidebar
+  of the `Base` layout holds the outline of the parts and `ModuleProgress`.
+  The MDX does not write a header. It starts at block 1 of the lesson
+  contract, the opening story, as plain prose before the `Pretest`.
+- A prereq or a thread shows as a lesson title or a thread title, never as a
+  raw ID. `ModuleHeader` and `ModuleLink` already do this.
 - An MDX file imports each component with a relative path, such as
   `import Check from '../../../components/check/Check.astro';`.
 - The MDX never writes a client directive. The wrappers set it.
 - For a link to another module, use `<ModuleLink id="..." />`. Never write a
   root-relative Markdown link (verify rule 8).
 - Give `WordCard` the frontmatter terms: `<WordCard terms={frontmatter.terms} />`.
-- Planned for v2: the sidebar holds the outline and the progress, and
-  `ModuleHeader` goes away. The MDX starts at block 1, the opening story, as
-  plain prose before the `Pretest`. A prereq or a thread shows as a lesson
-  title or a thread idea, never as a raw ID.
+
+### Slide citations
+
+This note follows rule 5 in `CLAUDE.md`.
+
+- Cite a slide with `<SlideLink session={1} page={39} />`, never with bare
+  text such as "slide 39". The link opens the deck at that page.
+- `page` is the PDF page. In the Session 1 and Session 3 decks, the number
+  printed on a slide can differ from its PDF page.
+- `SlideLink` is an Astro component, so it works in MDX prose only. A string
+  in a quiz file or a card file cannot hold it.
 
 ### Segments
 
@@ -105,19 +116,20 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
-| `ModuleHeader` | Astro | `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, `segments: string[]`. Named slot `progress`. The module page gives it. | both |
+| `ModuleHeader` | Astro | `session: number`, `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, the fields of the module frontmatter. No slot. Shows a small line with the session link, the minutes and a "Draft" tag, then the title, then one block with the big idea and one sentence with the titles of the prereqs and the threads. The module page gives it. | both |
 | `WordCard` | Astro | `terms: { term: string; meaning: string }[]` | both |
-| `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. Planned for v2: named slot `visual`, for the one visual of the part. Put `slot="visual"` on the visual component, or on a `<div>` that holds it. On a wide screen, the visual is sticky in the rail next to the prose of its part. | both |
+| `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. Named slot `visual`, for the one visual of the part. Put `slot="visual"` on the visual component, or on a `<div>` that holds it. The visual goes in the HTML after the first paragraph of the part, so the reading order and the Tab order match the screen. On a screen 1200 px wide or more, the visual is sticky in the rail next to the prose of its part, and a visual taller than the window scrolls inside the rail. On a narrower screen, it sits inline. | both |
 | `KeyIdea` | Astro | `id: string`, `title: string`, both plain string attributes, because verify rule 10 and the check wrappers read them from the raw MDX. Default slot: the idea in 1 to 3 sentences. Shows a "Key idea" label, the title as an `h3`, and a visible `#` link to itself. The `id` is the HTML anchor: lowercase words with hyphens, with no `seg-` prefix. Another `id` fails the build. A "Taught in" link that lands on it gives it an outline. 2 to 4 for each lesson. | none yet |
 | `Picture` | Astro | `breaks: string`. Default slot: the picture paragraph, then the sentences that map it to the real thing. It sits in an open box. `rows?: { picture: string; real: string }[]` is the old table. Only the pilots use it, until their rebuild. A new picture leaves it out. | both |
 | `ExamDepth` | Astro | No props. Default slot. A closed box. | both |
-| `ModuleLink` | Astro | `id: string`. A module with no page shows its ID and "(planned)". Planned for v2: a module with no page shows its title and "(planned)", never its ID. | both |
+| `ModuleLink` | Astro | `id: string`. A module with a page shows its title as a link. A module with no page shows its title from the curriculum file and "(planned)", never its ID. | both |
 | `InventFirst` | Astro | `prompt: string`. Default slot holds the full explanation. | m08 |
 | `Beyond` | Astro | `source: string`, `url?: string`. Default slot. Shows the "beyond the slides" badge. | m12 |
 | `Lab` | Astro | `title: string`, `folder?: string`, the folder in the instructor repo, such as `lesson1`. Every new lab gives `folder`. A source header says that the code comes from the course repo, with a link to https://github.com/jitendraag/cn-at-scaler. Then a `Terminal` shows `git clone https://github.com/jitendraag/cn-at-scaler.git` and `cd cn-at-scaler/<folder>`. With no `folder`, the pilot form, it shows the clone command only. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
-| `SlideLink` | Astro | Planned for v2. `session: number`, `page: number`, the PDF page. Shows "slide N" as a link to `slides/session-0N.pdf#page=N` under the base URL. The browser PDF viewer opens at that page and offers the download. The PDFs sit in `site/public/slides/`. | none yet |
+| `SlideLink` | Astro, with a script | In `src/components/slides/`. `session: number`, `page: number` (the PDF page, from 1), `class?: string`. Default slot: the link text, "slide N" when empty. It is a link to `slides/session-0N.pdf#page=N` under the base URL. A plain click opens `SlideViewer` at that page. With no JavaScript, or with a modifier key, the browser opens the PDF at that page. `class` replaces the inline citation look, for example `class="btn"`. An unknown session, or a page outside the deck, fails the build. The PDFs sit in `site/public/slides/`. A new deck also needs its page count and size in `decks.ts`, and `decks.test.ts` checks both. | none yet |
+| `SlideViewer` | Plain Preact | In `src/components/slides/`. `url: string` (the PDF, with no `#page`), `session: number`, `page: number`, `pages: number`, `onClose: () => void`. The script of `SlideLink` loads it on the first click and calls `openSlides(link)`, so a page loads no PDF code before a click. A modal `<dialog>` shows one page with `pdfjs-dist`: previous, next, a page number field, "Open the full deck" and "Download the PDF". Arrow keys change the page. Escape, the close button or a click on the backdrop closes it, and the focus goes back to the link. | none yet |
 | `CardsAdded` | Island with wrapper | Wrapper: `id: string`, the module ID. Island: `cards: string[]`. It adds the cards when the learner pushes the button, not on page load. | both |
-| `ModuleProgress` | Island, no wrapper | `id: string`, the module ID. The module page uses `<ModuleProgress slot="progress" client:only="preact" id={id} />`. | both, through the page |
+| `ModuleProgress` | Island, no wrapper | `id: string`, the module ID. The sidebar of a lesson page shows it at the bottom, with `client:only="preact"`. | both, through the page |
 
 `ModuleProgress` shows four steps: pretest, questions answered, review cards
 added, and done. It has no totals, so it counts what the store holds.
@@ -179,41 +191,64 @@ All in `src/components/diagram/`.
 | `ByteView` | Astro | `caption: string`, `messages: ByteMessage[]`, `view?: 'bytes' \| 'text'`. `ByteMessage` is `{ name?: string; fields: { hex?: string; text?: string; label?: string; kind?: 'length' \| 'delimiter' \| 'pad' }[] }`. A field has `hex` or `text`, not both. Offsets count from 0 across all messages. | both |
 | `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. A long command wraps at a space only, with the next lines indented under the command. An output line keeps its columns. A word or an output line longer than the box scrolls, with a scroll bar that stays visible. A copy of a command leaves out the `$`. Selected text uses the button colors, so it reads in both themes. | both |
 | `SequenceDiagram` | Astro | `title: string`, `actors: string[]`, `messages: { from: string; to: string; label: string }[]`. A message with `from` equal to `to` is a note. | m12 |
-| `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. The wrapper uses `client:visible`. | m08, m12 |
+| `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. It uses `AnimationControls`, so `ScrollStep` blocks in its part move it too. A step changes the lanes with no motion. Play shows each step for 5 seconds at 1×, and stops at a step with an `ask`. The wrapper uses `client:visible`. | m08, m12 |
 
 `ByteView` colors mark the role of a field, not a network layer. No pilot
 shows two layers.
 
-### Animation controls (planned for v2)
+### Animation controls and scroll steps
 
-Every animation island uses one plain Preact control bar,
-`src/components/diagram/AnimationControls.tsx`. The island owns its SVG and
-its Web Animations API objects. No animation library.
+All in `src/components/motion/`. Hand-built with SVG, CSS and the Web
+Animations API. No animation library. `BytePipeDemo.tsx` is the sample to
+copy: an SVG, three steps, and three `ScrollStep` blocks on the dev page
+`/dev/v2-motion/`.
 
-**Props:** `title: string`, `captions: string[]` (one for each step),
-`step: number` (from 0), `playing: boolean`, `speed: 0.5 | 1 | 2`,
-`onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`,
-`onSpeed: (speed: 0.5 | 1 | 2) => void`.
+| Name | Kind | Props | Pilot |
+|---|---|---|---|
+| `AnimationControls` | Plain Preact | `title: string`, `captions: string[]` (one for each step), `step: number` (from 0), `playing: boolean`, `speed: Speed`, `onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`, `onSpeed: (speed: Speed) => void`, `children`: the visual. `Speed` is `0.5 \| 1 \| 2`. Spread the result of `useTimeline` into it. It also follows the `ScrollStep` blocks of its part. | the Stepper |
+| `useTimeline(timeline, tracks?)` | Preact hook | `timeline: { durations: number[]; hold: number; stops?: boolean[] }`, all in ms at 1×. `durations`: the motion of each step. `hold`: the pause between two steps while play runs. `stops`: play stops at the end of a step marked `true`. `tracks: () => Track[]` runs one time after the island mounts. | the Stepper, the demo |
+| `Track` | type | `{ step: number; el: Element; frames: Keyframe[]; from?: number; to?: number }`. One motion of one element in one step. The motion runs from `from` ms to `to` ms after the step starts. The default is the whole step. | the demo |
+| `ScrollStep` | Astro | `step: number`, from 1. Default slot: the prose of that step. Put blank lines inside the tag, so MDX makes paragraphs. A step that is not a whole number from 1 fails the build. | none yet |
+
+**How to build an animation island**
+
+1. Draw the SVG at the end frame of step 1. The page shows this picture
+   before the island loads.
+2. Give each motion as a `Track`. Animate only `transform` and `opacity`.
+   The first keyframe must match the picture at the start of its step.
+3. Render the SVG inside `<AnimationControls {...player}>`. Styles go in a
+   prefixed CSS file. `motion.css` has `mo-label`, `mo-shape`, `mo-pipe`,
+   `mo-arrow` and `mo-token` for simple SVG shapes.
+4. In the MDX, wrap the prose of step N in `<ScrollStep step={N}>`, in the
+   same `Segment` as the visual.
 
 | Control | Element | What it does |
 |---|---|---|
-| Play and pause | one `<button>` | Play runs from the current step to the last step. Play on the last step starts again at step 1. Pause stops at the current frame. |
-| Previous step, next step | two `<button>` elements | Pause, then play the motion of that one step and stop at its end. Disabled at the first and at the last step. |
-| Speed | a `<select>` with 0.5×, 1× and 2× | Calls `updatePlaybackRate()` on each animation of the island |
-| Caption | a `<p>` with `aria-live="polite"` | "Step N of M", then the caption of the step |
+| Caption | a `<p>` with `aria-live="polite"`, above the visual | "Step N of M", then the caption of the step |
+| Restart | a `<button>` | Plays the motion of step 1 again |
+| Back, Next | two `<button>` elements | Play only the motion of that step, then stop at its end. `aria-disabled` at the first and at the last step, so the focus stays. |
+| Play and pause | one `<button>` | Play runs from the current frame to the last step, with a hold between steps. From the end of a step, it starts the next step at once. On the last step, it starts again at step 1. Pause stops at the current frame. |
+| Speed | a `<select>` with 0.5×, 1× and 2× | Multiplies the clock of the island |
+| Keys | on the group, which is also a Tab stop | Space plays or pauses. The Left and Right arrow keys step. Home and End go to the first and the last step. Space on a button and the arrows on the select stay native. |
 
 How an animation behaves:
 
-- It starts paused at step 1. Nothing plays before the learner presses play.
-- The prerendered HTML shows the end frame of step 1, so the page shows a
-  picture before the island loads.
+- It starts paused at the end frame of step 1. Nothing plays before the
+  learner presses a control or scrolls.
+- One clock drives each island. The hook makes one paused Web Animations
+  API object for each track, with `delay` at the start of its step and
+  `fill: 'forwards'`. On each frame, it sets `currentTime` on all of them to
+  the same time. So the motions stay in step at every speed, and a step
+  stops on its exact end frame.
 - Under `prefers-reduced-motion: reduce`, read on the client with
-  `matchMedia`, each step jumps to its end frame with no motion. Play then
-  shows the end frame of each step in turn.
-- The controls are native elements, so Tab, Enter and Space work, with a
-  visible focus. No custom key handler.
-- Each step is one time range on the animation timeline. A step change sets
-  `currentTime` to the start of that range.
+  `matchMedia`, a step jumps to its end frame with no motion. Play then
+  shows the end frame of each step in turn. A change of the setting applies
+  at once.
+- A `ScrollStep` block that enters the band from 45% to 55% of the screen
+  height moves the visual of its `<section>` to its step. If the visual
+  already shows that step, nothing happens. The block of the current step
+  gets a bar on its left, also when the learner uses the buttons.
+- The pure logic is in `timeline.ts`, with tests in `timeline.test.ts`.
 
 ---
 
@@ -221,7 +256,7 @@ How an animation behaves:
 
 | Name | Kind | Props | Notes |
 |---|---|---|---|
-| `Base` layout | Astro | `title: string` | The theme script, the header, the nav and the global styles. Planned for v2: the sidebar, the drawer and the visual rail, with no top nav bar (`docs/PLAN.md` section 3). |
+| `Base` layout | Astro | `title: string`, `wide?: boolean`, `lesson?: { id: string; parts: string[] }` | The theme script, the global styles and the sidebar, with no top nav bar. The sidebar holds the site name, the site links, the outline of the parts (with `lesson`), the sessions with their lessons, `ModuleProgress` (with `lesson`) and `ThemeToggle`. On a screen under 1200 px, the sidebar is a drawer that a Menu button in a slim top bar opens. `wide` gives a 72 rem column, for a page of cards. The module page sets `lesson`, and the columns of the visual rail come from its own styles (`docs/PLAN.md` section 3). |
 | `ThemeToggle` | Astro | No props | System, light, dark. It writes the `na-theme` key. |
 | `SourceBadge` | Astro | `status: 'complete' \| 'partial' \| 'missing'` | Session source status |
 | `/review/` island `_ReviewQueue.tsx` | Island, no wrapper | `cards: ReviewCard[]`, `progressHref: string`. `ReviewCard` is `{ id; front; options?; back; explanation?; examDates }`. | Holds the cards and every quiz item |

@@ -15,6 +15,21 @@ what should be here, where it came from, and whether it is complete.
 | `session-0N/slides.txt` | `pdftotext -layout` output. A form feed separates pages. | complete |
 | `cn-at-scaler/` | clone of the instructor repo `github.com/jitendraag/cn-at-scaler` | at commit `4398388`, 2026-09-11 |
 
+## Published decks
+
+The site also holds a copy of each deck, for the slide viewer and the
+downloads (`CLAUDE.md` rule 5). Git tracks these copies. When a deck in
+`sources/` changes, copy it again. Then update the page count and size in
+`site/src/components/slides/decks.ts`, and the row below.
+
+| Source | Published copy | Public URL after the deploy | Copied |
+|---|---|---|---|
+| `session-01/slides.pdf` | `site/public/slides/session-01.pdf` | https://sammyurfen.github.io/network-architecture/slides/session-01.pdf | 2026-09-14, same bytes |
+| `session-02/slides.pdf` | `site/public/slides/session-02.pdf` | https://sammyurfen.github.io/network-architecture/slides/session-02.pdf | 2026-09-14, same bytes |
+| `session-03/slides.pdf` | `site/public/slides/session-03.pdf` | https://sammyurfen.github.io/network-architecture/slides/session-03.pdf | 2026-09-14, same bytes |
+| `session-04/slides.pdf` | `site/public/slides/session-04.pdf` | https://sammyurfen.github.io/network-architecture/slides/session-04.pdf | 2026-09-14, same bytes |
+| `session-05/slides.pdf` | `site/public/slides/session-05.pdf` | https://sammyurfen.github.io/network-architecture/slides/session-05.pdf | 2026-09-14, same bytes |
+
 ## Class transcripts
 
 None. The class platform gave AI revision notes for Sessions 1 and 2 only.

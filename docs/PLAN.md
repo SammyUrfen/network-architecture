@@ -93,6 +93,8 @@ site/
       check/                   Pretest, Check, ExitQuiz, Predict, ExplainBack, FadedExample, Generator, ExamPrompts
       diagram/                 Stepper, SequenceDiagram, LayerStack, ByteView, Terminal, Timeline
       sims/<module-id>/        one folder per simulator
+      slides/                  SlideLink, SlideViewer, decks.ts
+      motion/                  AnimationControls, ScrollStep, the timeline
     lib/
       progress.ts              localStorage store, schema version, export, import
       schedule.ts              review boxes and due dates
@@ -146,9 +148,12 @@ they exist.
   `slot="visual"` attribute. The part is a two-column grid row, and its
   visual is `position: sticky` in the rail. So no JavaScript swaps the
   visuals when the reader scrolls.
-- **Animation controls.** Every animation has the same control bar: play or
-  pause, previous step, next step, and speed. The controls are native buttons
-  and a select, so the keyboard works. No autoplay. Under
+- **Animation controls.** Every animation has the same control bar in
+  `components/motion/`: play or pause, previous step, next step, restart, and
+  speed. The group is one Tab stop: Space plays or pauses, and the arrow keys,
+  Home and End step. A `ScrollStep` block in the prose moves the visual of its
+  part to that step when the block reaches the middle of the screen. No
+  autoplay. Under
   `prefers-reduced-motion`, a step changes the picture with no motion. The
   animations use SVG, CSS and the Web Animations API, and no library.
 - **`taughtIn`.** A quiz item field: the `id` of a `KeyIdea`, or the anchor
@@ -188,6 +193,8 @@ and `ModuleLink` handles that case.
 | `/progress/` | Export, import, reset |
 | `/dev/gallery/` | Phase 4. Fixture data only for a component that no real page uses yet. Not in the nav. |
 | `/glossary/` | Phase 8. Built from module word cards. |
+| `/slides/` | The five session decks, with a viewer and a download for each. |
+| `/about/` | What the site is, for classmates: unofficial, built by a student, and the content rules. |
 
 ### Content schemas
 

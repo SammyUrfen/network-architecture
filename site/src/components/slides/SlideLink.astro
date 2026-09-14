@@ -1,0 +1,63 @@
+---
+import { decks, slideHref } from './decks';
+
+// A slide citation: "slide 39". Cite a slide with this link, never with bare
+// text. With no JavaScript, or a click with a modifier key, it is a plain
+// link that opens the PDF at its page in the browser PDF viewer. A plain
+// click opens the in-page viewer instead, because a phone browser often
+// cannot open a PDF at one page. The viewer and the PDF code load on the
+// first click, so a page that nobody clicks loads no PDF code.
+export interface Props {
+  session: number;
+  /** The PDF page, from 1. A page outside the deck fails the build. */
+  page: number;
+  /** Replaces the inline citation look, for a link that looks like a button. */
+  class?: string;
+}
+const { session, page, class: className } = Astro.props;
+---
+
+<a
+  class:list={[className ?? 'slide-link']}
+  href={slideHref(session, page)}
+  data-slide-session={session}
+  data-slide-page={page}
+  data-slide-pages={decks[session].pages}
+  ><slot>slide {page}</slot><span class="sr-only">, Session {session} deck</span></a
+>
+
+<script>
+  // One listener for every slide link. Astro puts this script on a page one
+  // time, however many links the page has.
+  document.addEventListener('click', (event) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-slide-session]');
+    // A modifier key or another button keeps what the browser does, such as a new tab.
+    if (!link || event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    // If the viewer code does not load, the plain link still works.
+    import('./SlideViewer').then(({ openSlides }) => openSlides(link)).catch(() => location.assign(link.href));
+  });
+</script>
+
+<style>
+  .slide-link {
+    padding: 0 0.3em;
+    font-size: 0.88em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-decoration: none;
+    border: var(--bw) solid var(--border-strong);
+    border-radius: var(--radius-s);
+  }
+  .slide-link::before {
+    content: '▭ ';
+    /* An empty alt text, so a screen reader does not read the shape */
+    content: '▭ ' / '';
+    color: var(--text-muted);
+  }
+  .slide-link:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+</style>
