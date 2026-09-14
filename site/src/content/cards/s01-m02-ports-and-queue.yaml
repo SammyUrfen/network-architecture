@@ -1,0 +1,34 @@
+# The review cards of s01-m02-ports-and-queue, from docs/curriculum/session-01.md.
+items:
+  - id: s01-m02-c01
+    front: What does a client see when no program listens on the port that it connects to?
+    back: '"Connection refused", at once. The kernel answers the SYN with an RST.'
+    covers: [S01-C15, S01-C16]
+  - id: s01-m02-c02
+    front: A server calls bind() and listen(), but never accept(). What does a client see?
+    back: connect() succeeds, then the client waits with no reply. From outside, it looks like an overloaded server.
+    covers: [S01-C17, S01-C18]
+  - id: s01-m02-c03
+    front: What does the second argument of listen() set?
+    back: The size of the accept queue, the connections whose handshake is done and that wait for accept(). It is not a limit on clients.
+    covers: [S01-C20, S01-C25]
+  - id: s01-m02-c04
+    front: When accept() returns, what has already happened to the TCP connection?
+    back: The handshake is complete. The kernel finished it, and then the connection waited in the accept queue.
+    covers: [S01-C21]
+  - id: s01-m02-c05
+    front: Which Linux setting caps the backlog of listen()?
+    back: net.core.somaxconn. Its default is 4096 since Linux 5.4.
+    covers: [S01-C24]
+  - id: s01-m02-c06
+    front: What does Linux do with a new SYN when the accept queue is full?
+    back: It drops the SYN with no answer. The client sends it again and later times out. Some other systems refuse instead.
+    covers: [S01-C22]
+  - id: s01-m02-c07
+    front: Why does a real deployment run its program on port 8080 and not on port 80?
+    back: By default, port 80 needs root, and a bug in request code that runs as root gives an attacker root. A front proxy owns 80 and 443.
+    covers: [S01-C09, S01-C13, S01-C14]
+  - id: s01-m02-c08
+    front: Why can a quick restart of a server fail with "Address already in use"?
+    back: A connection that the server closed first sits in TIME_WAIT and holds the port. A server that sets SO_REUSEADDR before bind() on every start can bind anyway.
+    covers: [S01-C83]

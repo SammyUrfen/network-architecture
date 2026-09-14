@@ -1,0 +1,325 @@
+/* The islands of s01-m02-ports-and-queue. An island cannot use scoped Astro styles, so every class has the m02- prefix. */
+
+/* Shared parts of the two simulations */
+.m02-sim {
+  display: grid;
+  gap: var(--space-3);
+}
+.m02-sim p {
+  margin: 0;
+}
+.m02-note,
+.m02-simplifies {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+.m02-fieldset {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.m02-fieldset legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+/* The min-height gives a 44 px touch target. */
+.m02-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+.m02-choice input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: var(--accent-2);
+}
+
+/* PortPicker: the ruler with its two zones */
+.m02-ruler {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+@media (max-width: 30rem) {
+  .m02-ruler {
+    grid-template-columns: 1fr;
+  }
+}
+.m02-zone {
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-top-width: 4px;
+  border-radius: var(--radius);
+}
+/* The zone label says the rule in words, so the color is not the only cue. */
+.m02-zone.low {
+  background: var(--warn-soft);
+  border-top-color: var(--warn);
+}
+.m02-zone.high {
+  background: var(--ok-soft);
+  border-top-color: var(--ok);
+}
+.m02-zone-label {
+  margin-bottom: var(--space-2) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.m02-ports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.m02-port {
+  display: grid;
+  min-width: 4rem;
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  line-height: 1.2;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.m02-port:hover {
+  background: var(--accent-soft);
+}
+/* The picked port gets a thick edge and inverted colors, not only a new color. */
+.m02-port[aria-pressed='true'] {
+  color: var(--on-accent);
+  background: var(--accent-2);
+  border: 2px solid var(--accent-2);
+}
+.m02-port-number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.m02-port-name {
+  font-size: 0.75rem;
+}
+.m02-number {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+.m02-number input {
+  width: 7rem;
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.m02-result {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid;
+  border-radius: var(--radius);
+}
+.m02-result.ok {
+  background: var(--ok-soft);
+  border-color: var(--correct);
+}
+.m02-result.bad {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+}
+.m02-result.info {
+  background: var(--info-soft);
+  border-color: var(--info);
+}
+
+/* QueueSim */
+.m02-zone-list {
+  display: grid;
+  gap: var(--space-2);
+}
+.m02-box {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.m02-box.served {
+  background: var(--ok-soft);
+}
+.m02-box.syn-sent {
+  background: var(--warn-soft);
+}
+.m02-box.refused {
+  background: var(--bad-soft);
+}
+.m02-box-label {
+  margin-bottom: var(--space-2) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.m02-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.m02-seat {
+  display: grid;
+  place-items: center;
+  min-width: 3.5rem;
+  min-height: 2.5rem;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.m02-seat.extra {
+  border-style: dashed;
+}
+.m02-empty {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+.m02-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2rem;
+  padding: 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: 999px;
+}
+.m02-chip.queued {
+  background: var(--info-soft);
+  border-color: var(--info);
+}
+.m02-chip.syn-sent {
+  border-style: dashed;
+  border-color: var(--warn);
+}
+.m02-chip.refused {
+  border-color: var(--bad);
+}
+.m02-chip.served {
+  border-color: var(--ok);
+}
+.m02-summary {
+  min-height: 3.2em;
+}
+.m02-ss pre {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) var(--space-3);
+  overflow-x: auto;
+  font-size: var(--text-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.m02-range {
+  display: grid;
+  gap: var(--space-1);
+}
+.m02-range input {
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  accent-color: var(--accent-2);
+}
+
+/* KnockDemo: the SVG. 14 to 15 px in a 400-unit view box stays readable when a phone draws it about 320 px wide. */
+.m02-knock {
+  max-height: 64dvh;
+}
+/* No fill, so the halo of every label matches the page behind it. */
+.m02-machine {
+  fill: none;
+  stroke: var(--border-strong);
+}
+.m02-head {
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.m02-life {
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+.m02-divider {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+/* A halo in the page color keeps a label readable over a dashed lifeline. */
+.m02-halo {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.m02-section {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--accent-2);
+}
+.m02-muted {
+  font-size: 14px;
+  fill: var(--text-2);
+}
+.m02-note.ok,
+.m02-note.bad,
+.m02-note.wait {
+  font-size: 15px;
+  font-weight: 700;
+}
+text.m02-note.ok {
+  fill: var(--correct);
+}
+text.m02-note.bad {
+  fill: var(--bad);
+}
+text.m02-note.wait {
+  fill: var(--warn);
+}
+.m02-msg line {
+  stroke: var(--text-2);
+  stroke-width: 1.5;
+}
+.m02-msg path {
+  fill: var(--text-2);
+}
+.m02-msg text {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.m02-msg.bad line {
+  stroke: var(--bad);
+}
+.m02-msg.bad path {
+  fill: var(--bad);
+}
+.m02-dot {
+  fill: var(--accent);
+}
+.m02-queue rect {
+  fill: var(--info-soft);
+  stroke: var(--info);
+  stroke-width: 1.5;
+}
+.m02-queue text {
+  font-size: 14px;
+  fill: var(--text);
+}

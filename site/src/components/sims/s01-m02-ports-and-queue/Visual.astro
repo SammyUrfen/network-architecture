@@ -1,0 +1,36 @@
+---
+import KnockDemo from './KnockDemo.tsx';
+import PortPicker from './PortPicker.tsx';
+import QueueSim from './QueueSim.tsx';
+
+// The wrapper of the three islands of this lesson, because the MDX writes no
+// client directive. ports is the visual of Part 1, knock of Part 2, queue of
+// Part 3. Part 4 uses the shared Stepper.
+export interface Props {
+  name: 'ports' | 'knock' | 'queue';
+  /** The caption, and the accessible name of the visual */
+  title: string;
+}
+const { name, title } = Astro.props;
+---
+
+<figure class="m02-figure">
+  <figcaption>{title}</figcaption>
+  {name === 'ports' && <PortPicker client:visible title={title} />}
+  {name === 'knock' && <KnockDemo client:visible title={title} />}
+  {name === 'queue' && <QueueSim client:visible title={title} />}
+</figure>
+
+<style>
+  .m02-figure {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  figcaption {
+    margin-bottom: var(--space-3);
+    font-weight: 600;
+  }
+</style>
