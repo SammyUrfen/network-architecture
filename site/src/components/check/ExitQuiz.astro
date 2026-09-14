@@ -1,7 +1,7 @@
 ---
 // Finds the exit items of the module at build time and passes them to the island.
 import Island from './ExitQuiz.tsx';
-import { itemsFor, misconceptionsOf } from './items';
+import { itemsFor, misconceptionsOf, taughtInByItem } from './items';
 
 export interface Props {
   /** A module ID, such as s01-m08-framing. Every item with use: exit shows, in file order. */
@@ -9,6 +9,7 @@ export interface Props {
 }
 
 const items = await itemsFor(Astro.props.module, 'exit');
+const taughtIn = await taughtInByItem(items);
 ---
 
-<Island client:load module={Astro.props.module} items={items} misconceptions={misconceptionsOf(items)} />
+<Island client:load module={Astro.props.module} items={items} misconceptions={misconceptionsOf(items)} taughtIn={taughtIn} />

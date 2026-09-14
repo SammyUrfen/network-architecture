@@ -1,8 +1,10 @@
 // Build-time lookups for the .astro wrappers. An island never imports this
 // file: it reads the quiz collection and the curriculum files.
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import type { QuizItem } from '../../lib/grade';
+import { moduleHref } from '../../lib/url';
 import type { SupportedItem } from './Question';
+import { taughtInLabel, type TaughtIn } from './taught';
 
 // The misconception bullets of docs/curriculum, with the line pattern of
 // scripts/verify-content.mjs, plus the quoted statement.
@@ -35,6 +37,28 @@ export async function itemById(id: string): Promise<SupportedItem> {
   const item = (await getCollection('quiz')).flatMap((quiz) => quiz.data.items).find((i) => i.id === id);
   if (!item) throw new Error(`No quiz item ${id} in src/content/quiz/.`);
   return supported(item);
+}
+
+/**
+ * The "Taught in" link of an item: its module page, then the `taughtIn`
+ * anchor. Undefined when the item has no `taughtIn`, or when its quiz file
+ * has no module page (a quiz pack). The build fails when the page has no part
+ * and no KeyIdea with that anchor, so a link never points at nothing.
+ */
+export async function taughtInOf(item: QuizItem): Promise<TaughtIn | undefined> {
+  if (!item.taughtIn) return undefined;
+  const quiz = (await getCollection('quiz')).find(({ data }) => data.items.some((i) => i.id === item.id));
+  const page = quiz && (await getEntry('modules', quiz.id));
+  if (!page) return undefined;
+  const label = taughtInLabel(page.body ?? '', item.taughtIn);
+  if (!label) throw new Error(`${item.id}: taughtIn ${item.taughtIn} is not a KeyIdea id or a part anchor of ${page.id}.`);
+  return { href: `${moduleHref(page.id)}#${item.taughtIn}`, label };
+}
+
+/** The "Taught in" link of each item that has one, by item ID. */
+export async function taughtInByItem(items: QuizItem[]): Promise<Record<string, TaughtIn>> {
+  const links = await Promise.all(items.map(async (item) => [item.id, await taughtInOf(item)] as const));
+  return Object.fromEntries(links.filter((link): link is readonly [string, TaughtIn] => link[1] !== undefined));
 }
 
 // Phase 2 builds the question types of the two pilot pages only (docs/PLAN.md section 4).

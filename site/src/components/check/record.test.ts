@@ -29,4 +29,10 @@ describe('addAnswer', () => {
     const progress = addAnswer(addAnswer(emptyProgress(), 's01-m08-q01', true, 'sure', now), 's01-m08-q02', false, 'think', now);
     expect(progress.cards).toEqual({});
   });
+
+  it('saves an exit answer with no confidence field, and a wrong one stays out of the queue', () => {
+    const progress = addAnswer(emptyProgress(), 's01-m08-q09', false, null, now);
+    expect(progress.answers['s01-m08-q09']).toEqual([{ at: now.toISOString(), correct: false }]);
+    expect(progress.cards).toEqual({});
+  });
 });

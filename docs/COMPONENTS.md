@@ -87,8 +87,10 @@ A missing quiz item ID, or a module with no item for a `use`, also fails the
 build.
 
 Every quiz item of a `ready` module has `taughtIn`: the `id` of a `KeyIdea`
-in the MDX, or the anchor of a part. Verify rule 10 checks it now. The
-"Taught in" link on the page is planned for v2.
+in the MDX, or the anchor of a part. Verify rule 10 checks it. The check
+wrappers turn it into the "Taught in" link. The build fails when the module
+page has no part and no `KeyIdea` with that anchor, also in a `draft`
+module.
 
 In a quiz file with 3 or more `mcq` and `predict` items, move the right
 option between positions. Verify rule 9 fails a file with the right option
@@ -106,13 +108,13 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 | `ModuleHeader` | Astro | `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, `segments: string[]`. Named slot `progress`. The module page gives it. | both |
 | `WordCard` | Astro | `terms: { term: string; meaning: string }[]` | both |
 | `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. Planned for v2: named slot `visual`, for the one visual of the part. Put `slot="visual"` on the visual component, or on a `<div>` that holds it. On a wide screen, the visual is sticky in the rail next to the prose of its part. | both |
-| `KeyIdea` | Astro | Planned for v2. `id: string`, `title: string`, both plain string attributes, because verify rule 10 and the check wrappers read them from the raw MDX. Default slot: the idea in 1 to 3 sentences. Shows a "Key idea" label and the title. The `id` is the HTML anchor: lowercase words with hyphens, with no `seg-` prefix. 2 to 4 for each lesson. | none yet |
-| `Picture` | Astro | `rows: { picture: string; real: string }[]`, `breaks: string`. Planned for v2: no `rows` table. The default slot holds the picture paragraph and the sentences that map it to the real thing. `breaks: string` stays. It sits in an open box. | both |
+| `KeyIdea` | Astro | `id: string`, `title: string`, both plain string attributes, because verify rule 10 and the check wrappers read them from the raw MDX. Default slot: the idea in 1 to 3 sentences. Shows a "Key idea" label, the title as an `h3`, and a visible `#` link to itself. The `id` is the HTML anchor: lowercase words with hyphens, with no `seg-` prefix. Another `id` fails the build. A "Taught in" link that lands on it gives it an outline. 2 to 4 for each lesson. | none yet |
+| `Picture` | Astro | `breaks: string`. Default slot: the picture paragraph, then the sentences that map it to the real thing. It sits in an open box. `rows?: { picture: string; real: string }[]` is the old table. Only the pilots use it, until their rebuild. A new picture leaves it out. | both |
 | `ExamDepth` | Astro | No props. Default slot. A closed box. | both |
 | `ModuleLink` | Astro | `id: string`. A module with no page shows its ID and "(planned)". Planned for v2: a module with no page shows its title and "(planned)", never its ID. | both |
 | `InventFirst` | Astro | `prompt: string`. Default slot holds the full explanation. | m08 |
 | `Beyond` | Astro | `source: string`, `url?: string`. Default slot. Shows the "beyond the slides" badge. | m12 |
-| `Lab` | Astro | `title: string`. Default slot, for `Terminal` blocks. Planned for v2: `folder: string`, the folder in the instructor repo, such as `lesson1`. A source header shows the repo URL https://github.com/jitendraag/cn-at-scaler, the clone command `git clone https://github.com/jitendraag/cn-at-scaler.git`, and `cd cn-at-scaler/<folder>`. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
+| `Lab` | Astro | `title: string`, `folder?: string`, the folder in the instructor repo, such as `lesson1`. Every new lab gives `folder`. A source header says that the code comes from the course repo, with a link to https://github.com/jitendraag/cn-at-scaler. Then a `Terminal` shows `git clone https://github.com/jitendraag/cn-at-scaler.git` and `cd cn-at-scaler/<folder>`. With no `folder`, the pilot form, it shows the clone command only. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
 | `SlideLink` | Astro | Planned for v2. `session: number`, `page: number`, the PDF page. Shows "slide N" as a link to `slides/session-0N.pdf#page=N` under the base URL. The browser PDF viewer opens at that page and offers the download. The PDFs sit in `site/public/slides/`. | none yet |
 | `CardsAdded` | Island with wrapper | Wrapper: `id: string`, the module ID. Island: `cards: string[]`. It adds the cards when the learner pushes the button, not on page load. | both |
 | `ModuleProgress` | Island, no wrapper | `id: string`, the module ID. The module page uses `<ModuleProgress slot="progress" client:only="preact" id={id} />`. | both, through the page |
@@ -129,14 +131,14 @@ All in `src/components/check/`. Each wrapper adds `client:load`.
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
 | `Pretest` | Island with wrapper | Wrapper: `module: string`. Island: `module: string`, `items: SupportedItem[]`, `misconceptions: Record<string, string>`. Shows every item with `use: pretest`, in file order. | both |
-| `Check` | Island with wrapper | Wrapper: `id: string`, a quiz item ID. Island: `item: SupportedItem`, `misconceptions: Record<string, string>`. | both |
-| `Predict` | Island with wrapper | Wrapper: `id: string` of a `predict` item. Default slot: the observed result, hidden until the learner commits. | both |
+| `Check` | Island with wrapper | Wrapper: `id: string`, a quiz item ID. Island: `item: SupportedItem`, `misconceptions: Record<string, string>`, `taughtIn?: TaughtIn`. | both |
+| `Predict` | Island with wrapper | Wrapper: `id: string` of a `predict` item. Default slot: the observed result, hidden until the learner commits. Island: `item`, `misconceptions`, `taughtIn?: TaughtIn`. | both |
 | `ExplainBack` | Island with wrapper | `prompt: string`, `model: string` | both |
 | `FadedExample` | Island with wrapper | `worked: { problem: string; steps: string[] }`, `faded: { problem: string; blanks: { label: string; answer: string }[] }`, `yourTurn: { problem: string; answer: string }` | both |
 | `ExamPrompts` | Island with wrapper | `prompts: { prompt: string; model: string }[]` | both |
-| `ExitQuiz` | Island with wrapper | The same props as `Pretest`, with `use: exit`. Planned for v2: no `Confidence` step. An exit answer saves with no `confidence`. | both |
+| `ExitQuiz` | Island with wrapper | Wrapper: `module: string`. Island: the props of `Pretest`, with `use: exit`, and `taughtIn: Record<string, TaughtIn>` by item ID. No `Confidence` step: each answer gets its grade on "Check my answer", and it saves with no `confidence`. | both |
 | `Confidence` | Plain Preact | `name: string`, `value: Confidence \| null`, `onChange: (value: Confidence) => void`, `disabled?: boolean`. Radios for sure, think so, guessing. | inside `Question` and the review page |
-| `Question` | Plain Preact | `item: SupportedItem`, `misconceptions: Record<string, string>`, `name: string`, `mode: 'guess' \| 'graded'`, `hideExplanation?: boolean`, `onDone?: (result: Result) => void` | inside the quiz islands |
+| `Question` | Plain Preact | `item: SupportedItem`, `misconceptions: Record<string, string>`, `name: string`, `mode: 'guess' \| 'graded'`, `hideExplanation?: boolean`, `askConfidence?: boolean` (default `true`, `false` in the exit quiz), `taughtIn?: TaughtIn`, `onDone?: (result: Result) => void` | inside the quiz islands |
 | `Reveal` | Plain Preact | `prompt: string`, `model: string`, `modelLabel?: string` | inside `ExplainBack`, `ExamPrompts`, `Predict` |
 | `Inline` | Plain Preact | `text: string`. Shows backtick parts as `<code>`. | inside the islands and the review page |
 
@@ -149,16 +151,22 @@ How the check blocks behave:
 - The exit quiz shows each pretest guess of this page view. A reload clears
   the guesses.
 - A wrong pick names its misconception with the statement from the
-  curriculum file, then the ID.
+  curriculum file. The ID never shows. A misconception with no statement
+  shows no line.
 - A "sure" answer that is wrong goes to the review queue, due tomorrow.
-- Planned for v2, "Taught in": after an answer, `Check`, `Predict` and
-  `ExitQuiz` show "Taught in: Part N, <title>" as a link. The wrapper finds
-  the quiz entry that holds the item. Its entry ID is the module ID. The
-  wrapper reads the raw MDX body of that module and turns `taughtIn` into
-  the island prop `taughtIn: { href: string; label: string }`. For a part,
-  the label has the part number and the part title. For a `KeyIdea`, it has
-  the number of the part that holds it and the `KeyIdea` title. The
-  `Pretest` shows no link, because it shows no answer.
+- "Taught in": after a graded answer, `Check`, `Predict` and `ExitQuiz`
+  show "Taught in: Part N, <title>" as a link. The wrapper finds the quiz
+  entry that holds the item. Its entry ID is the module ID. The wrapper
+  reads the raw MDX body of that module (`taughtInOf()` in `items.ts`) and
+  turns `taughtIn` into the island prop `TaughtIn`,
+  `{ href: string; label: string }` from `check/taught.ts`. The `href` is
+  the module page, then `#` and the anchor, so the link also works on
+  another page. For a part, the label has the part number and the part
+  title. For a `KeyIdea`, it has the number of the part that holds it (the
+  count of `<Segment` tags before it) and the `KeyIdea` title. A `KeyIdea`
+  before the first part gives the title only. An item with no `taughtIn`,
+  or a quiz pack with no module page, shows no link. The `Pretest` shows no
+  link, because it shows no answer.
 
 ---
 
@@ -169,7 +177,7 @@ All in `src/components/diagram/`.
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
 | `ByteView` | Astro | `caption: string`, `messages: ByteMessage[]`, `view?: 'bytes' \| 'text'`. `ByteMessage` is `{ name?: string; fields: { hex?: string; text?: string; label?: string; kind?: 'length' \| 'delimiter' \| 'pad' }[] }`. A field has `hex` or `text`, not both. Offsets count from 0 across all messages. | both |
-| `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. Planned for v2: a long line wraps, or scrolls with a visible scroll bar. | both |
+| `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. A long command wraps at a space only, with the next lines indented under the command. An output line keeps its columns. A word or an output line longer than the box scrolls, with a scroll bar that stays visible. A copy of a command leaves out the `$`. Selected text uses the button colors, so it reads in both themes. | both |
 | `SequenceDiagram` | Astro | `title: string`, `actors: string[]`, `messages: { from: string; to: string; label: string }[]`. A message with `from` equal to `to` is a note. | m12 |
 | `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. The wrapper uses `client:visible`. | m08, m12 |
 
@@ -256,7 +264,7 @@ The store writes through to one `localStorage` key, `na-progress`.
 
 | Export | Type | What it does |
 |---|---|---|
-| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3. A module also has the optional `pretestDoneAt`. A version 1 file with no `pretestDoneAt` stays valid. Planned for v2: `confidence` in an answer is optional, and `parseProgress` accepts an answer with no `confidence`. |
+| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3. A module also has the optional `pretestDoneAt`. A version 1 file with no `pretestDoneAt` stays valid. `confidence` in an answer is optional: an exit answer has none. `parseProgress` accepts an answer with no `confidence`, and the version stays 1. |
 | `Confidence` | type | `'sure' \| 'think' \| 'guess'` |
 | `$progress` | `atom<Progress>` | The progress. It reads storage on the first subscriber, never at import. |
 | `$progressProblem` | `atom<string \| null>` | The reason why the stored data is not in use: bad data, a newer version, or blocked storage. While it is set, changes stay in memory. |
@@ -293,7 +301,7 @@ narrow the item before the call.
 
 | Export | What it does |
 |---|---|
-| `addAnswer(progress, itemId, correct, confidence, now)` | Adds one graded answer. A sure wrong answer puts the item ID in `cards`. Planned for v2: `confidence` can be `null` for an exit answer, and the record then has no `confidence`. |
+| `addAnswer(progress, itemId, correct, confidence, now)` | Adds one graded answer. A sure wrong answer puts the item ID in `cards`. `confidence` is `null` for an exit answer, and the record then has no `confidence` field. |
 | `save(change)` | Calls `updateProgress`. Gives the reason when the change is not saved, or `null`. |
 | `pretestGuesses` | The pretest guesses of this page view, for the exit quiz |
 

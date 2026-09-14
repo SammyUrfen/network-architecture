@@ -126,6 +126,7 @@ describe('import', () => {
     ['a JSON array', '[]', /no progress version/],
     ['a card in box 6', JSON.stringify({ ...saved, cards: { x: { box: 6, due: '2026-09-17', lapses: 0 } } }), /cards\.x/],
     ['a due date with a time', JSON.stringify({ ...saved, cards: { x: { box: 1, due: '2026-09-17T00:00', lapses: 0 } } }), /cards\.x/],
+    ['a confidence of null', JSON.stringify({ ...saved, answers: { q: [{ at: '2026-09-14T10:05:00Z', correct: true, confidence: null }] } }), /answers\.q/],
     ['a wrong confidence', JSON.stringify({ ...saved, answers: { q: [{ at: '2026-09-14T10:05:00Z', correct: true, confidence: 'maybe' }] } }), /answers\.q/],
     ['a pretest with more right than total', JSON.stringify({ ...saved, modules: { m: { startedAt: '2026-09-14T10:00:00Z', pretest: { right: 4, total: 3 } } } }), /modules\.m/],
     ['a pretestDoneAt that is not a time', JSON.stringify({ ...saved, modules: { m: { startedAt: '2026-09-14T10:00:00Z', pretestDoneAt: true } } }), /modules\.m/],
@@ -154,6 +155,19 @@ describe('parseProgress', () => {
     const old = p.parseProgress(savedJson);
     expect(old).toEqual(saved);
     expect(old.modules['s01-m08-framing']).not.toHaveProperty('pretestDoneAt');
+  });
+
+  it('reads an exit answer with no confidence next to an answer with one, and adds no field', () => {
+    const answers = {
+      's01-m08-q01': [
+        { at: '2026-09-14T10:05:00.000Z', correct: false, confidence: 'sure' },
+        { at: '2026-09-14T10:20:00.000Z', correct: true },
+      ],
+    };
+    const read = p.parseProgress(JSON.stringify({ ...saved, answers }));
+    expect(read.version).toBe(1);
+    expect(read.answers).toEqual(answers);
+    expect(read.answers['s01-m08-q01'][1]).not.toHaveProperty('confidence');
   });
 
   it('reads a recall-only pretest: pretestDoneAt with no score', () => {
