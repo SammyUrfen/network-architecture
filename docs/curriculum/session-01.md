@@ -435,20 +435,16 @@ Expected: `ss` shows the new server on a random high port, not 2026, and `nc -z`
 - **Prereqs:** s01-m01-seven-syscalls.
 - **Threads:** T-network-not-function.
 
-**Pretest.**
-1. Your server writes to a client that reset the connection. What is the default result? *Answer: on Linux the first write fails with ECONNRESET, and the next write raises SIGPIPE, which ends the process.*
-2. Which signal can no program catch: SIGTERM or SIGKILL? *Answer: SIGKILL.*
-3. A shell prints exit status 141. Which signal ended the process? *Answer: 141 - 128 = 13, SIGPIPE.*
+**Pretest.** In plain words, because the pretest comes before the lesson (learner review, 2026-09-14).
+1. A server program sends data to a client that already cut the connection, and it asked for no special setting. What happens to the server? *Answer: the operating system ends it, and it prints no error. On Linux the first write fails with ECONNRESET, and the next write raises SIGPIPE, which ends the process.*
+2. Which signal can no program catch: SIGTERM, "please stop", or SIGKILL, "stop now"? *Answer: SIGKILL.*
+3. A server ends with no error message, and the shell shows the exit status 141. What does the number tell you? *Answer: most likely a signal ended it. 141 - 128 = 13, SIGPIPE.*
 
-**Rung 1, the picture.**
-
-| The picture | The real thing |
-|---|---|
-| You talk into a phone after the other side hung up. | write() on a socket that the peer reset. |
-| By default, the phone company cuts the power to your whole house. | The kernel sends SIGPIPE, and the process ends. |
-| You can ask the phone company for a busy tone instead. | Ignore SIGPIPE or pass MSG_NOSIGNAL. write() returns ECONNRESET or EPIPE. |
-
-Where this breaks: on Linux the power cut does not come on the first try. The first write reports "connection reset", and the second write brings the signal.
+**Rung 1, the picture.** The page replaced the phone table: a child cannot picture a phone company that cuts the power for talking. One playground scene runs through the four parts (learner review, 2026-09-14).
+- Part 1: you and a friend play catch over a low wall. Your friend throws the ball over, then runs off without a word. You pick up the ball (read), count to ten (the 1-second sleep), and throw back two times (two writes). Where this breaks: when the friend runs off, nobody stays behind the wall, but the kernel of the client stays and still answers for the connection.
+- Part 2: a teacher has calls, and a child can have a plan for a call (a handler) or take no notice (ignore). "Recess is over" is SIGTERM, "Freeze!" pauses, being carried inside is SIGKILL, and the rule for a child who keeps throwing to nobody is SIGPIPE. Where this breaks: a child can ask why, but a process with no handler gets the default at once.
+- Part 3: a friend leaves the nice way ("bye", FIN) or the hard way (runs off, RST). The first throw gets a shout from a neighbor (ECONNRESET), and the second sends you inside (SIGPIPE). Where this breaks: a ball flies on each throw, but on the first write the kernel sends no byte at all.
+- Part 4: a note from home, "just say so, do not send my child inside", is SIG_IGN, and an ask for one throw is MSG_NOSIGNAL. Where this breaks: in the story you stop after one shout, but a server keeps writing until its code checks the error.
 
 **Rung 2, how it works.**
 1. The client writes `hello`.
@@ -499,7 +495,7 @@ write(4, "hello", 5)    = -1 EPIPE (Broken pipe)
 **Interactives.**
 - *SIGPIPE timeline* (P2). Inputs: close with FIN or RST, SIGPIPE default or ignored, MSG_NOSIGNAL on or off. The learner sees each write result and the exit status. The learner discovers which setting keeps the server alive.
 
-**Predict, observe, explain.** Run `./04_sigpipe_server & pid=$!; sleep 0.3; ./05_sigpipe_client; wait $pid; echo $?`. Predict the number. Observe: 141. Then run the server under `strace -e trace=read,write` and predict which write returns EPIPE. Observe: the second one. The captured output is the verification run in rung 3.
+**Predict, observe, explain.** Part 1 asks in plain words what happens to the server when it writes two times after the client hangs up the hard way (check 2). Observe: the server prints nothing, and bash prints `[1]+  Broken pipe  ./04_sigpipe_server`, then `wait $pid; echo $?` prints 141 (interactive bash, Linux 7.1.8, loopback, 2026-09-14). On one computer, the RST usually arrives before the server reads, and the read still returns the 5 bytes.
 
 **Worked example, faded example, your turn.**
 - *Worked:* SIGTERM ends a process. Exit status = 128 + 15 = 143.
@@ -508,11 +504,12 @@ write(4, "hello", 5)    = -1 EPIPE (Broken pipe)
 
 **Checks.**
 1. `numeric`: exit status 141. Which signal number? Answer: 13. Feedback: subtract 128.
-2. `mcq`: the server keeps writing after the peer reset, SIGPIPE left at its default. Result on Linux? Answer: a later write raises SIGPIPE, and the process ends. Distractor: every write only returns an error, and the program goes on (S01-M10). Distractor: every write succeeds, because it only fills a buffer (S01-M53). Feedback: the first write reports ECONNRESET, and the next one brings the signal.
+2. `predict` in Part 1, in plain words: the server writes two times after the client hangs up the hard way. Result on Linux? Answer: a later write raises SIGPIPE, and the process ends. Distractor: every write only returns an error, and the program goes on (S01-M10). Distractor: every write succeeds, because it only fills a buffer (S01-M53). Feedback: the first write reports ECONNRESET, and the next one brings the signal.
 3. `mcq`: in the demo on Linux, which call raises SIGPIPE? Answer: the second write. Distractor: the first write (S01-M11). Distractor: the read before the writes (S01-M54). Feedback: the first write returns ECONNRESET. The slide 13 comment puts SIGPIPE on the first write. On the quiz, expect the slide wording.
 4. `mcq`: which signal can a handler catch? Answer: SIGTERM. Distractor: SIGKILL (S01-M12). Distractor: SIGSTOP (S01-M55). Feedback: SIGKILL and SIGSTOP cannot be caught.
-5. `spot-bug`: "I ran the demo with a plain `wait`, got 0, so SIGPIPE never fired." Answer: a plain `wait` returns 0. Use `wait $pid` (S01-M56). Feedback: also run the server first, or the client dies with 141 on its own.
+5. `spot-bug`: "I ran the demo with a plain `wait`, got 0, so SIGPIPE never fired." Answer: a plain `wait` returns 0. Use `wait $pid` (S01-M56). Feedback: also run the server first, or the client dies with 141 on its own. The page has room for six checks, so this item is practice only.
 6. `mcq`: you run only `./05_sigpipe_client`, with no server, and the shell shows 141. What does that prove? Answer: the client died by SIGPIPE on its own. Distractor: the server demo worked (S01-M13). Distractor: the failed connect() raised the signal (S01-M57). Feedback: connect() returned -1, and the unchecked write() raised SIGPIPE.
+7. `mcq`, added by the page for linger 0 in Part 3: the client sets SO_LINGER to {1, 0} and calls close(). What does its kernel do? Answer: it sends RST, drops unsent bytes, and nobody waits in TIME_WAIT. Distractor: a fast polite FIN close that delivers every byte (S02-M18). Distractor: FIN, then both sides wait in TIME_WAIT (S01-M60).
 
 **Review cards.**
 - Q: Signal number of SIGPIPE? A: 13.
@@ -521,7 +518,7 @@ write(4, "hello", 5)    = -1 EPIPE (Broken pipe)
 - Q: What does SO_LINGER {1, 0} make close() send? A: RST instead of FIN.
 - Q: Which side keeps TIME_WAIT after a linger-0 close? A: neither side.
 - Q: Which send() flag stops SIGPIPE for one call? A: MSG_NOSIGNAL.
-- Q: Which write does the slide 13 code comment blame for SIGPIPE? A: the first write.
+- Q: On Linux, a server writes two times to a connection that the client reset. What does each write get? A: the first gets ECONNRESET, the second gets EPIPE and SIGPIPE. (The page asks this in place of "which write does the slide 13 comment blame", because a question about a slide breaks lesson contract rule 11.)
 
 ### s01-m04-clients
 
