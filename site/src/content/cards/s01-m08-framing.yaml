@@ -20,3 +20,7 @@ items:
     front: What is the cost of a length prefix?
     back: The sender must know the size of the message before it sends the first byte.
     covers: [S01-C96]
+  - id: s01-m08-c06
+    front: Why can a message with a length prefix hold any byte?
+    back: The reader counts the bytes and never scans the data for an end marker.
+    covers: [S01-C96]

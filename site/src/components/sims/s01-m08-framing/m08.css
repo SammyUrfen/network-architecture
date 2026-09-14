@@ -1,0 +1,72 @@
+/* The SVG shapes of the two animations of s01-m08-framing. An island cannot use scoped Astro styles, so every class has the m08- prefix. */
+.m08-row {
+  font-size: 13px;
+  fill: var(--text-2);
+}
+.m08-note {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--warn);
+}
+.m08-string {
+  stroke: var(--border-strong);
+  stroke-width: 2;
+}
+.m08-tick {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-dasharray: 4 3;
+}
+.m08-bead circle {
+  fill: var(--surface-2);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+.m08-bead text,
+.m08-cell text {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.m08-cell rect {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+/* The shape says the role as well as the color: a dashed edge for pad, a thick edge for a delimiter. */
+.m08-cell.pad rect {
+  fill: var(--surface-2);
+  stroke-dasharray: 3 2;
+}
+.m08-cell.pad text {
+  fill: var(--text-3);
+}
+.m08-cell.delimiter rect {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.m08-cell.delimiter text {
+  font-size: 12px;
+}
+.m08-swap rect {
+  fill: var(--warn-soft);
+  stroke: var(--warn);
+}
+.m08-cut {
+  stroke: var(--accent-2);
+  stroke-width: 3;
+}
+.m08-extra {
+  stroke: var(--warn);
+}
+.m08-warn rect {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 2.5;
+}
+.m08-marker {
+  fill: var(--info);
+}

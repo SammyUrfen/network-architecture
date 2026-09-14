@@ -17,34 +17,36 @@ items:
         correct: false
         misconception: S01-M04
         feedback: TCP keeps no edges between writes. A read returns the bytes that wait, which can be part of a message or parts of two.
-      - text: Always two reads, one for each packet.
+      - text: Always two reads, because TCP sends each write as its own segment.
         correct: false
         misconception: S01-M32
-        feedback: TCP can split or merge writes. One write is not one packet, and one packet is not one read.
-    explanation: A read returns the bytes that wait, from 1 byte up to the buffer size. So the application must find where a message ends.
+        feedback: TCP picks the segment sizes. It can split one write or merge two writes, and a read can hold bytes from several segments.
+    explanation: A read returns the bytes that wait, from 1 byte up to the buffer size. So the program must find where a message ends.
     covers: [S01-C92]
     tags: []
+    taughtIn: tcp-keeps-order-not-edges
 
   - id: s01-m08-q02
     use: [check, practice]
     segment: 2
     type: mcq
-    prompt: A protocol says that every message is exactly 100 bytes. What is that fixed length, underneath?
+    prompt: A protocol says that every message is exactly 100 bytes. How does the reader know where a message ends?
     options:
-      - text: A third rule that has no length in it.
-        correct: false
-        misconception: S01-M30
-        feedback: A fixed length is a length. Both sides agreed on it ahead of time.
-      - text: 100 bytes, and then an end marker.
+      - text: It looks for an end marker after the 100 bytes.
         correct: false
         misconception: S01-M74
         feedback: The reader counts 100 bytes, so it needs no marker.
-      - text: A length that both sides agreed on before the connection started.
+      - text: It counts 100 bytes. Both sides agreed on that length before they started.
         correct: true
-        feedback: The length lives in the protocol spec, not in each message.
-    explanation: 'Slide 39 gives three rules. Later decks say "length or delimiter", with no third option. Both hold, because a fixed length is a length agreed ahead of time.'
+        feedback: The length lives in the rules of the protocol, not in each message.
+      - text: It uses no length at all, because a fixed size is a different kind of rule from a length.
+        correct: false
+        misconception: S01-M30
+        feedback: The 100 is a length. Both sides agreed on it ahead of time, so no message needs to carry it.
+    explanation: The number 100 is in the rules of the protocol, so the reader knows the length before the first byte arrives. A fixed length is a length rule, agreed ahead of time.
     covers: [S01-C93, S01-C94, S01-C97]
     tags: []
+    taughtIn: fixed-length-is-an-agreed-length
 
   - id: s01-m08-q03
     use: [check, practice]
@@ -62,10 +64,11 @@ items:
       - text: The sender must know the message size first.
         correct: false
         misconception: S01-M75
-        feedback: That cost belongs to a length prefix. A delimiter lets the sender stream.
+        feedback: That cost belongs to a length prefix. A delimiter lets the sender start before it knows the size.
     explanation: The reader scans for the delimiter. If the data holds the same bytes, the reader stops too early, unless the sender escapes them. SMTP adds a dot to a body line that starts with a dot.
     covers: [S01-C95]
     tags: []
+    taughtIn: a-delimiter-marks-the-end
 
   - id: s01-m08-q04
     use: [check, practice]
@@ -76,6 +79,7 @@ items:
     explanation: One byte holds 256 values, from 0 to 255. So the largest length that it can say is 255, and a 1-byte length caps a message at 255 bytes. Two bytes cap it at 65,535.
     covers: [S01-C96]
     tags: []
+    taughtIn: seg-a-length-before-the-bytes
 
   - id: s01-m08-q05
     use: [check, practice]
@@ -83,14 +87,14 @@ items:
     type: multi
     prompt: Which of these mark the end of a message with a length? Pick every one that does.
     options:
-      - text: The CR LF CR LF at the end of the HTTP headers
+      - text: The CR LF CR LF at the end of the HTTP header lines
         correct: false
         misconception: S01-M76
         feedback: The empty line is a delimiter. The reader learns the count only after it scans to the empty line.
       - text: '`Content-Length: 219` in an HTTP response'
         correct: true
         feedback: The reader reads exactly 219 body bytes.
-      - text: The newline at the end of a homework 3 chat line
+      - text: The newline at the end of each message of a chat app
         correct: false
         misconception: S01-M76
         feedback: The newline is a delimiter. The reader learns the count only after it scans to the newline.
@@ -100,6 +104,7 @@ items:
     explanation: A length gives the reader the count before it reads. The reader finds a delimiter with a scan. Content-Length and the 2-byte prefix are lengths. The empty line and the newline are delimiters.
     covers: [S01-C95, S01-C96]
     tags: []
+    taughtIn: a-length-prefix-says-how-many
 
   - id: s01-m08-q06
     use: [check, practice]
@@ -118,53 +123,58 @@ items:
       - text: One or more, as TCP decides.
         correct: true
         feedback: TCP can send the 10 bytes in one segment, split them, or merge them with other writes.
-    explanation: TCP owns the send buffer and picks the segment sizes. So the edges of a write do not reach the receiver.
+    explanation: TCP picks the segment sizes, not the program. So the edges of a write do not reach the receiver.
     covers: [S01-C92]
     tags: []
+    taughtIn: seg-a-byte-stream-has-no-edges
 
   - id: s01-m08-q07
     use: [pretest, exit]
     type: recall
-    prompt: 'A sender writes "hello", then "world". Can one read() return "helloworld"?'
-    model: Yes. TCP keeps no edges between writes, so one read can return both words.
-    explanation: A read returns the bytes that wait. The two writes can arrive as one read of 10 bytes.
+    prompt: 'A program sends "hello", and right after that it sends "world". Can the other program get "helloworld" in one read?'
+    model: Yes. TCP keeps no mark between the two sends, so one read can return both words.
+    explanation: A read returns the bytes that wait. The two sends can arrive as one read of 10 bytes.
     covers: [S01-C92]
     tags: []
+    taughtIn: tcp-keeps-order-not-edges
 
   - id: s01-m08-q08
     use: [pretest, exit]
     type: recall
-    prompt: What ends the HTTP header block?
-    model: An empty line, CR LF. With the CR LF that ends the last header line, the bytes are CR LF CR LF.
-    explanation: The empty line is a delimiter. The reader scans for it to find where the headers stop.
+    prompt: A web server answers with a few header lines, then the page itself. How does the reader know where the header lines stop?
+    model: An empty line ends the header lines. Each line ends with the two bytes CR LF, so the reader looks for CR LF CR LF.
+    explanation: The empty line is a delimiter. The reader scans for it to find where the header lines stop.
     covers: [S01-C95]
     tags: []
+    taughtIn: a-delimiter-marks-the-end
 
   - id: s01-m08-q09
     use: [pretest, exit]
     type: recall
-    prompt: 'What does `Content-Length: 219` tell the reader?'
-    model: Read exactly 219 body bytes after the headers.
-    explanation: Content-Length is a length prefix for the body. The reader counts the bytes, so it needs no scan.
+    prompt: 'An answer from a web server holds the line `Content-Length: 219`. What does that line tell the reader?'
+    model: The body has exactly 219 bytes. The reader takes 219 bytes after the header lines, then stops.
+    explanation: Content-Length is a length for the body. The reader counts the bytes, so it needs no scan.
     covers: [S01-C96]
     tags: []
+    taughtIn: a-length-prefix-says-how-many
 
   - id: s01-m08-q10
     use: [practice]
     type: predict
-    prompt: 'The persistent echo server runs under strace, over loopback. A client calls send(b"hello"), then send(b"world"), on one connection. How many read() calls does the server make for the two sends?'
+    prompt: 'A small echo server runs on your computer and reports each read. A client on the same computer sends "hello", then "world", on one connection. How many reads does the server make for the two sends?'
     options:
       - text: Two reads of 5 bytes, one for each send.
         correct: false
         misconception: S01-M32
-        feedback: TCP can split or merge writes. On this loopback run, the two sends arrived as one read.
+        feedback: TCP can split or merge writes. In this run on one computer, the two sends arrived as one read.
       - text: One read that returns all 10 bytes.
         correct: true
-        feedback: That is what this loopback run showed. A real network can split the bytes another way.
+        feedback: That is what this run on one computer showed. A real network can split the bytes another way.
       - text: No read, until the send buffer fills.
         correct: false
         misconception: S01-M77
         feedback: TCP sends small writes soon, and it can split or merge them.
-    explanation: 'The run on loopback logged one `read(4, "helloworld", 4096) = 10`. TCP kept no edge between the two sends. A real network can give other splits.'
+    explanation: On one computer, the server made one read that returned all 10 bytes. TCP kept no edge between the two sends. A real network can give other cuts.
     covers: [S01-C92]
     tags: [measured]
+    taughtIn: tcp-keeps-order-not-edges

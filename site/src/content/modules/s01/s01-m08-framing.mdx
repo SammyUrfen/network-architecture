@@ -9,34 +9,36 @@ covers: [S01-C89, S01-C90, S01-C91, S01-C92, S01-C93, S01-C94, S01-C95, S01-C96,
 prereqs: [s01-m01-seven-syscalls, s01-m07-see-the-bytes-tls]
 threads: [T-framing, T-skip-unknown]
 confidence: high
-status: draft
+status: ready
 terms:
+  - term: byte
+    meaning: one small unit of data. In plain English text, one letter is one byte.
   - term: byte stream
     meaning: bytes in order, with no marks between writes
+  - term: segment
+    meaning: one piece of the byte stream that TCP sends over the network. TCP picks its size, not the program.
   - term: framing
     meaning: the rule that tells the reader where each message ends
-  - term: fixed length
-    meaning: every message is N bytes, and both sides agree on N ahead of time
   - term: delimiter
-    meaning: a byte, or a short run of bytes, that marks the end of a message
+    meaning: an agreed byte, or a short run of bytes, that marks the end of a message
   - term: length prefix
     meaning: the byte count of a message, sent before its bytes
-  - term: escape
-    meaning: a change to a delimiter byte inside the data, so that the reader does not take it as an end
 ---
 
 import ByteView from '../../../components/diagram/ByteView.astro';
-import Stepper from '../../../components/diagram/Stepper.astro';
 import Terminal from '../../../components/diagram/Terminal.astro';
 import Beyond from '../../../components/lesson/Beyond.astro';
 import CardsAdded from '../../../components/lesson/CardsAdded.astro';
 import ExamDepth from '../../../components/lesson/ExamDepth.astro';
 import InventFirst from '../../../components/lesson/InventFirst.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
 import Lab from '../../../components/lesson/Lab.astro';
 import ModuleLink from '../../../components/lesson/ModuleLink.astro';
 import Picture from '../../../components/lesson/Picture.astro';
 import Segment from '../../../components/lesson/Segment.astro';
 import WordCard from '../../../components/lesson/WordCard.astro';
+import ScrollStep from '../../../components/motion/ScrollStep.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
 import Check from '../../../components/check/Check.astro';
 import ExamPrompts from '../../../components/check/ExamPrompts.astro';
 import ExitQuiz from '../../../components/check/ExitQuiz.astro';
@@ -44,119 +46,101 @@ import ExplainBack from '../../../components/check/ExplainBack.astro';
 import FadedExample from '../../../components/check/FadedExample.astro';
 import Predict from '../../../components/check/Predict.astro';
 import Pretest from '../../../components/check/Pretest.astro';
+import Animation from '../../../components/sims/s01-m08-framing/Animation.astro';
 import FramingSandbox from '../../../components/sims/s01-m08-framing/FramingSandbox.astro';
 
+Your program sends "hello" and then "world" over TCP. The other program can get "helloworld" in one read, or "hel" and then "loworld". So how does it know where one message ends? This lesson answers that question.
+
+TCP is the part of the operating system that carries bytes between two programs, complete and in order. A protocol is the set of rules that the two programs follow. Without a rule for the end of a message, a server mixes two requests into one, or it waits for bytes that never come. The calculator assignment turns on this idea, and so does the binary HTTP project. From the lesson <ModuleLink id="s01-m01-seven-syscalls" />, you know that a program sends bytes with `write()` and gets bytes with `read()`. That is all you need to start.
+
+**The path through this lesson.** Part 1 shows that TCP keeps every byte in order but forgets where each message stopped. Part 2 gives two different answers to that problem: make every message the same size, or put a marker after each message. Part 3 gives the answer that most modern protocols use: send the length before the bytes. At the end, you watch a real server read two sends, and you check what you learned.
+
 <Pretest module="s01-m08-framing" />
-
-<InventFirst prompt="Design a chat app where a message can hold any byte, even a newline. How does the receiver know where one message stops?">
-
-Three rules work. Part 2 of this page shows that the first rule is a length rule too.
-
-1. **Fixed length.** Every message has the same size, N bytes. A short message gets padding.
-2. **Delimiter.** A special byte ends each message. When the data holds that byte, the sender must escape it.
-3. **Length prefix.** The sender writes the byte count first, then the bytes.
-
-</InventFirst>
 
 <WordCard terms={frontmatter.terms} />
 
 <Segment title="A byte stream has no edges">
 
-<Picture
-  rows={[
-    { picture: 'You pour the pages of a letter into a water pipe.', real: 'A program calls write() on a TCP socket.' },
-    { picture: 'Your friend gets one long flow. The pipe keeps no gap between pages.', real: 'read() returns bytes with no gap between writes.' },
-    { picture: 'So you agree: 100 words a page, or a page ends at STOP, or the first word gives the count.', real: 'Fixed length, delimiter, or length prefix.' },
-  ]}
-  breaks="a real pipe can spill or mix water. TCP never loses, reorders or mixes bytes. It only forgets where each write stopped."
-/>
+**In this part.** You learn why the program that reads cannot see where one message ends and the next one starts. Every later part of this lesson solves this one problem, so it comes first.
+
+<Animation slot="visual" name="stream" title="Two writes, one stream, and reads that cut anywhere" />
+
+<Picture breaks="a real string can snap and drop beads, but TCP never loses a byte and never changes their order.">
+
+Your friend makes two bead bracelets for you and sends them in a thin tube. To fit the tube, your friend puts all the beads on one long string, one bead after the other. At home, you take the beads from the string a handful at a time. One handful can hold the last beads of the first bracelet and the first beads of the second. Nothing on the string shows where the first bracelet stopped.
+
+In TCP, each bead is a byte, and each bracelet is a message. The long string is the connection. Your friend is the program that sends, and each call to `write()` adds beads to the string. You are the program that receives, and each call to `read()` takes one handful. A read can return any number of bytes, from 1 up to the space that the program gives it. So the two programs must agree on a rule before they start, and Part 2 gives the first two rules.
+
+</Picture>
 
 ### How it works
 
-1. The sender writes `hello`, then `world`.
-2. TCP puts the 10 bytes in its send buffer. It can send them in one segment or in several.
-3. The receiver reads. It can get `hel` and then `loworld`, or all 10 bytes at once.
-4. Nothing in TCP marks the edge between the two writes.
-5. So the protocol adds the edge: a length that it knows, a delimiter that it scans for, or a length prefix that it reads first.
+The animation follows these steps as you scroll. You can also press Play, or step with the buttons.
 
-<Stepper slot="visual"
-  title="Two writes, three segments, two reads"
-  steps={[
-    {
-      caption: 'The sender calls write() with 5 bytes: hello. TCP copies them into its send buffer.',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello'] },
-        { label: 'Send buffer', chunks: ['hello'] },
-        { label: 'Segments sent', chunks: [] },
-        { label: 'read() returns', chunks: [] },
-      ],
-    },
-    {
-      caption: 'The sender calls write() again, with world. The buffer holds 10 bytes, with no mark between the two writes.',
-      ask: 'How many segments does TCP use for these 10 bytes?',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello', 'world'] },
-        { label: 'Send buffer', chunks: ['helloworld'] },
-        { label: 'Segments sent', chunks: [] },
-        { label: 'read() returns', chunks: [] },
-      ],
-    },
-    {
-      caption: 'TCP picks the segment sizes, not the program. In this picture it sends 3, 4 and 3 bytes. A real connection can pick other sizes.',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello', 'world'] },
-        { label: 'Send buffer', chunks: ['helloworld'] },
-        { label: 'Segments sent', chunks: ['hel', 'lowo', 'rld'] },
-        { label: 'read() returns', chunks: [] },
-      ],
-    },
-    {
-      caption: 'The first segment arrives, and the receiver calls read(). It gets the 3 bytes that wait: hel.',
-      ask: 'The other two segments arrive before the next read(). What does that read() return?',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello', 'world'] },
-        { label: 'Send buffer', chunks: ['helloworld'] },
-        { label: 'Segments sent', chunks: ['hel', 'lowo', 'rld'] },
-        { label: 'read() returns', chunks: ['hel'] },
-      ],
-    },
-    {
-      caption: 'The next read() returns all 7 bytes that wait: loworld. One read holds bytes from two segments and from both writes.',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello', 'world'] },
-        { label: 'Send buffer', chunks: ['helloworld'] },
-        { label: 'Segments sent', chunks: ['hel', 'lowo', 'rld'] },
-        { label: 'read() returns', chunks: ['hel', 'loworld'] },
-      ],
-    },
-    {
-      caption: 'The writes were 5 and 5 bytes. The reads were 3 and 7 bytes. Nothing marks where hello ended, so the protocol must add that edge.',
-      lanes: [
-        { label: 'write() calls', chunks: ['hello', 'world'] },
-        { label: 'Send buffer', chunks: ['helloworld'] },
-        { label: 'Segments sent', chunks: ['hel', 'lowo', 'rld'] },
-        { label: 'read() returns', chunks: ['hel', 'loworld'] },
-      ],
-    },
-  ]}
-/>
+<ScrollStep step={1}>
+
+The sender calls `write()` with the five bytes of hello. Each letter of hello is one byte.
+
+</ScrollStep>
+
+<ScrollStep step={2}>
+
+The sender calls `write()` again, with world. The animation still shows a gap after hello, but that gap exists only inside the program that sends.
+
+</ScrollStep>
+
+<ScrollStep step={3}>
+
+TCP puts all ten bytes on one stream, in order, like beads on the string. The gap is gone. From here on, nothing marks where hello ended.
+
+</ScrollStep>
+
+<ScrollStep step={4}>
+
+TCP sends the stream over the network in pieces called segments. TCP picks the size of each segment, and the program has no say. A segment can hold part of one write, or the end of one write and the start of the next. TCP also sends a small write soon, and it does not wait until its buffer is full.
+
+</ScrollStep>
+
+<ScrollStep step={5}>
+
+The receiver calls `read()` to take bytes, one handful at a time. A read returns the bytes that wait at that moment. Here the first read gets hel, and the second read gets loworld.
+
+</ScrollStep>
+
+<ScrollStep step={6}>
+
+Run the same two programs again, and the cuts can land in other places. This time the reads get hellow and orld.
+
+</ScrollStep>
+
+<ScrollStep step={7}>
+
+When both programs run on one computer, one read can get all ten bytes: helloworld. In every run, the bytes arrive complete and in order. In no run can the receiver see where hello ended.
+
+</ScrollStep>
+
+<KeyIdea id="tcp-keeps-order-not-edges" title="TCP keeps the order, not the edges">
+
+TCP delivers every byte, in order. It keeps no mark where one write stopped. So one read can hold part of a message, or parts of two, and the program must find where each message ends.
+
+</KeyIdea>
 
 ### The real thing
 
-The persistent echo server of Session 1, `02_echo_server_persistent.c`, calls `read()` again and again on one connection. Each call asks for up to 4096 bytes and returns the count that it got. The server writes that many bytes back.
+The echo server of Session 1 shows the loop that every reader has. The lab at the end of this lesson shows where to get its code. The server calls `read()` again and again on one connection. Each call gives `read()` a buffer, a space of 4096 bytes, so one call can return up to 4096 bytes. The call returns the count of bytes that it got, and the server writes that many bytes back.
 
-An echo server needs no framing, because it only copies bytes back. A chat server or a calculator must know where each message ends. After Part 3, a predict block asks what this server reads.
+An echo server needs no framing, because it only copies bytes back. A chat server or a calculator must know where each message ends.
 
 <Beyond source="read(2), Linux man page" url="https://man7.org/linux/man-pages/man2/read.2.html">
 
-The man page says that a short count is not an error. `read()` can return fewer bytes than the buffer holds, for example when fewer bytes wait on a socket.
+The man page says that a count smaller than the buffer is not an error. It can happen because fewer bytes are available at that moment.
 
 </Beyond>
 
 <ExamDepth>
 
 - **The reader keeps leftovers.** A read can stop in the middle of a message. It can also hold the end of one message and the start of the next. So the reader keeps the unused bytes for the next message.
-- **The buffer size is not a message size.** The echo server asks for 4096 bytes. A read gives what waits, from 1 byte up to 4096 bytes. Only end of file gives 0.
+- **The buffer size is not a message size.** The echo server asks for up to 4096 bytes. A read gives what waits, from 1 byte up to 4096 bytes. A read that returns 0 means that the other side closed the connection.
 
 </ExamDepth>
 
@@ -166,75 +150,106 @@ The man page says that a short count is not an error. `read()` can return fewer 
 
 </Segment>
 
-<Segment title="Fixed length and delimiters">
+<Segment title="Two answers: fixed length or a delimiter">
 
-<Picture
-  rows={[
-    { picture: 'You and your friend agree: every page has exactly 100 words. A short page gets filler words.', real: 'Fixed length: every message is N bytes. A short message gets pad bytes.' },
-    { picture: 'Or a page ends at the word STOP.', real: 'Delimiter: an agreed byte, such as a newline, ends each message.' },
-  ]}
-  breaks="your friend can guess that a STOP in the middle of a sentence belongs to the letter. A reader cannot guess. It ends the message at the first delimiter byte."
-/>
+**In this part.** Part 1 left one question: where does a message end? This part gives two different answers to it: make every message the same size, or put an end marker after each message. Each answer has a cost, and Part 3 gives the answer that most modern protocols pick.
+
+<Animation slot="visual" name="rules" title="The same three messages, framed two ways" />
+
+<InventFirst prompt="Before you read on, try it. You build a chat app, and a message can hold any byte, even the newline byte that ends a line of text. How does the receiver know where one message stops?">
+
+Two kinds of rule work. The first kind marks the end: an agreed byte, the delimiter, follows each message. A chat message can hold that byte, so the sender must change that byte in the data. The second kind gives the size. Every message can have the same agreed size, a fixed length. Or the sender can write the size before each message, a length prefix. This part covers the fixed length and the delimiter. Part 3 covers the length prefix.
+
+</InventFirst>
+
+<Picture breaks="a person can see that a red bead in the middle of a pattern belongs to the pattern. A program cannot guess, so it ends the message at the first delimiter byte.">
+
+Your friend sends more bracelets on one string, and this time you agree on a rule first. One rule is this: every bracelet has exactly 10 beads. For a short bracelet, your friend adds plain wooden beads at the end to make 10. You count 10 beads, and that is one bracelet. The other rule is this: a big red bead ends each bracelet. You slide beads off the string until you meet a red bead.
+
+In framing, the count of 10 is the fixed length, which a protocol calls N bytes. The wooden beads are pad bytes, filler that means nothing. The red bead is the delimiter, an agreed byte such as a newline. The first rule counts, and the second rule looks for a marker. So they are two different answers to one question.
+
+</Picture>
 
 ### How it works
 
-**Fixed length.**
+<ScrollStep step={1}>
 
-1. Both sides agree on N before the connection starts. The protocol spec holds N, not each message.
-2. The sender pads a short message to N bytes.
-3. The reader counts N bytes. Those bytes are one message.
+**Fixed length.** Both sides agree on a size N before the connection starts. The rules of the protocol hold N, so no message needs to carry it. In the animation, N is 5. The sender adds pad bytes to hi and to abc, so each message is exactly 5 bytes.
 
-**Delimiter.**
+</ScrollStep>
 
-1. Both sides agree on an end byte, such as a newline.
-2. The sender writes the message, then the end byte.
-3. The reader scans for the end byte. The bytes before it are one message.
+<ScrollStep step={2}>
 
-<ByteView slot="visual"
-  caption="Fixed length, N = 5. The reader counts 5 bytes. The pad fills a short message."
-  messages={[
-    { name: 'Message 1', fields: [{ text: 'hi' }, { hex: '00 00 00', kind: 'pad', label: 'pad' }] },
-    { name: 'Message 2', fields: [{ text: 'hello' }] },
-    { name: 'Message 3', fields: [{ text: 'abc' }, { hex: '00 00', kind: 'pad', label: 'pad' }] },
-  ]}
-/>
+The reader counts 5 bytes, and those bytes are one message. Then it counts the next 5 bytes. It never looks at what the bytes say.
 
-<ByteView slot="visual"
-  caption="Delimiter: a newline ends each message"
-  messages={[
-    { name: 'Message 1', fields: [{ text: 'hi' }, { text: '\n', kind: 'delimiter', label: 'end' }] },
-    { name: 'Message 2', fields: [{ text: 'hello' }, { text: '\n', kind: 'delimiter', label: 'end' }] },
-    { name: 'Message 3', fields: [{ text: 'abc' }, { text: '\n', kind: 'delimiter', label: 'end' }] },
-  ]}
-/>
+</ScrollStep>
+
+<KeyIdea id="fixed-length-is-an-agreed-length" title="A fixed length is a length agreed ahead of time">
+
+With a fixed length, every message is N bytes, and both sides agree on N before they start. The reader counts N bytes, so it needs no end marker. The length is still there. It lives in the rules of the protocol, not in each message.
+
+</KeyIdea>
+
+<ScrollStep step={3}>
+
+**Delimiter.** This time, both sides agree on an end byte, such as a newline. A newline is the invisible byte that ends a line of text, written `\n`. The sender writes each message, then a newline. No message needs pad.
+
+</ScrollStep>
+
+<ScrollStep step={4}>
+
+The reader checks one byte at a time. When it meets a newline, the bytes before it are one message. So the reader learns the size of a message only when it finds the end.
+
+</ScrollStep>
+
+<ScrollStep step={5}>
+
+Each answer has a cost. A fixed length spends bytes on pad: in the animation, 5 of the 15 bytes are pad. A message longer than N does not fit. N also can never change, because every reader already counts N bytes.
+
+</ScrollStep>
+
+<ScrollStep step={6}>
+
+A delimiter breaks when a message holds the delimiter byte. In the animation, message 3 becomes a, then a newline, then c. The reader cuts at that newline, so it finds four messages, not three. The usual fix is to escape the byte. The sender writes each newline in the data as two other bytes, such as a backslash and an n, and the reader turns them back into a newline.
+
+</ScrollStep>
 
 ### The real thing
 
-HTTP uses a delimiter for its head. CR LF ends each header line, and an empty line ends the head. This is the end of the head of the 301 response from Google on slide 17. Offsets count from the first byte shown.
+HTTP, the protocol of the web, uses a delimiter. A web server answers with header lines first, one fact on each line, such as the date or the size of the body. Two bytes, CR and LF, end each line: that is how HTTP writes a newline. An empty line, one more CR LF, ends the header lines. Then the body follows.
 
-<ByteView slot="visual"
-  caption="The last two header lines and the empty line of the 301 on slide 17"
+On <SlideLink session={1} page={17} />, the instructor typed a request to google.com by hand. Google answered with a 301 response, which says that the page moved. The bytes below are the end of its header lines, with `\r\n` for CR LF.
+
+<ByteView
+  caption="The last two header lines of the 301 response, then the empty line"
   view="text"
   messages={[
     {
       fields: [
         { text: 'X-XSS-Protection: 0\r\n', label: 'header line' },
         { text: 'X-Frame-Options: SAMEORIGIN\r\n', label: 'header line' },
-        { text: '\r\n', kind: 'delimiter', label: 'empty line: the head ends' },
+        { text: '\r\n', kind: 'delimiter', label: 'empty line: the header lines end' },
       ],
     },
   ]}
 />
 
-Homework 3 of slide 47 asks you to make the echo server do more than echo, and to notice which framing you pick. If you pick a newline, test it with a message that holds a newline.
+So the reader of a response scans for four bytes, CR LF CR LF: the end of the last header line, then the empty line.
+
+<KeyIdea id="a-delimiter-marks-the-end" title="A delimiter marks the end, until the data holds it">
+
+A delimiter is an agreed byte, or a short run of bytes, after each message. The reader checks the bytes until it finds it. HTTP ends its header lines with an empty line, so the reader scans for CR LF CR LF. If the data holds the delimiter, the reader ends the message too early, unless the sender escapes that byte.
+
+</KeyIdea>
+
+Homework 3 on <SlideLink session={1} page={47} /> asks you to make the echo server do more than echo, and to notice which framing you pick. If you pick a newline, test it with a message that holds a newline.
 
 <ExamDepth>
 
-- **Three answers or two?** Slide 39 gives three rules. Session 2 slide 41, Session 3 slide 18 and Session 5 slide 16 say "length or delimiter", with no third option. Both statements hold. A fixed length is a length that both sides agreed on before the connection started. It lives in the spec, not in each message.
-- **The cost of a fixed length.** The parse is trivial, and nothing is ambiguous. But every short message pays for padding, and N can never change.
-- **The cost of a delimiter.** A delimiter is readable, and the sender needs no size up front. But the sender must escape the delimiter when the data holds it. SMTP adds a dot to a body line that starts with a dot (<ModuleLink id="s02-m07-smtp-mime" />).
-- **Text or binary.** Slide 38 says text won: a person can read it with telnet, tcpdump and logs, and that is most of why HTTP won. The class notes add that text is easy to debug, and that SMTP splits a mail with delimiters. Text is also verbose, ambiguous at the edges and slow to parse. Binary is compact and cheap to parse, with no whitespace rules and no case-sensitivity arguments. The notes say binary suits places where speed and efficiency matter. Its cost is tools: you need a hex dump to read it. HTTP/1.1 is text, and HTTP/2 is binary.
-- **Are TCP/IP headers fixed length?** The class notes call them fixed size, and say that variable-length messages are more common today. The headers have a fixed part plus a length field. So even a "fixed" header carries a length.
+- **Two rules or three?** <SlideLink session={1} page={39} /> lists three rules: fixed length, delimiter and length prefix. Later decks say "length or delimiter", for example <SlideLink session={2} page={41} />. Both hold, because a fixed length is a length that both sides agreed on ahead of time.
+- **The cost of a fixed length.** The parse is trivial, and nothing is ambiguous. But every short message pays for pad, and N can never change.
+- **The cost of a delimiter.** A delimiter is readable, and the sender needs no size up front. But the sender must escape the delimiter in the data. The escape byte then needs an escape too: if a backslash starts an escape, a real backslash in the data becomes two backslashes. SMTP, the mail protocol, adds a dot to a body line that starts with a dot (<ModuleLink id="s02-m07-smtp-mime" />).
+- **Are TCP/IP headers fixed length?** Notes from the class call them fixed size, and say that messages of variable length are more common today. In fact each header has a fixed part plus a length field. So even a "fixed" header carries a length.
 
 <Beyond source="RFC 791 §3.1 (IPv4 IHL), RFC 9293 §3.1 (TCP Data Offset)" url="https://www.rfc-editor.org/rfc/rfc9293#section-3.1">
 
@@ -252,47 +267,32 @@ The IPv4 header and the TCP header each have a fixed part of 20 bytes. Options c
 
 <Segment title="A length before the bytes">
 
-<Picture
-  rows={[
-    { picture: 'The first word of each page gives the count: "seven". Then seven words follow.', real: 'Length prefix: the first bytes give the size. Then that many bytes follow.' },
-    { picture: 'Your friend counts seven words and knows that the next word is a new count.', real: 'The reader takes exactly that many bytes. The next byte is the next length.' },
-  ]}
-  breaks="your friend sees that a count of 9,000 words is silly and stops. A reader trusts the length. A wrong length makes it take the wrong bytes, and every later message breaks too."
-/>
-
-### How it works
-
-1. The sender counts the bytes of the message.
-2. It writes the count in a field of fixed width, such as 1 byte. Then it writes the bytes.
-3. The reader reads the count first. Then it takes exactly that many bytes as one message.
-
-<ByteView slot="visual"
-  caption="Length prefix: 1 byte of length before each message"
-  messages={[
-    { name: 'Message 1', fields: [{ hex: '02', kind: 'length', label: 'length: 2' }, { text: 'hi' }] },
-    { name: 'Message 2', fields: [{ hex: '05', kind: 'length', label: 'length: 5' }, { text: 'hello' }] },
-    { name: 'Message 3', fields: [{ hex: '03', kind: 'length', label: 'length: 3' }, { text: 'abc' }] },
-  ]}
-/>
-
-The reader never scans the data, so the data can hold any byte. That is why slide 39 calls the length prefix binary-safe.
-
-Use the sandbox below. Predict each result before you press Next.
-
-1. Pick "No rule" and "Random reads". Step to the end. Does the reader find hello and world?
-2. Pick "Delimiter", and type `a\nb` as the only message. How many messages does the reader find?
-3. Pick "Length prefix". Press "New random cut" a few times. Can any cut break the messages?
+**In this part.** Part 2 gave two answers, and each one had a cost: pad and a size that never changes, or escapes. This part gives the answer that most modern protocols use: send the length before the bytes. Then you test all the rules in a sandbox and see which ones break.
 
 <FramingSandbox slot="visual" title="Framing sandbox" messages={['hello', 'world']} rule="length" />
 
+<Picture breaks="you would stop at a card that says 9,000 on a small parcel. A reader trusts the number. A wrong length makes it take the wrong bytes, and every later message breaks too.">
+
+This time, your friend puts a small card on the string before each bracelet. The card says how many beads follow, such as 7. You read the card, then you slide off exactly 7 beads. The next thing on the string is the next card. Now a bracelet can hold beads of any color, even red, because you never look for an end bead.
+
+In framing, the card is the length prefix, and its number is the byte count of the message. The beads after the card are the bytes of the message. The reader reads the length first, then takes exactly that many bytes. It never checks the data for an end marker, so the data can hold any byte.
+
+</Picture>
+
+### How it works
+
+The sender counts the bytes of a message. It writes the count in a field of an agreed width, such as 1 byte, and then it writes the bytes. The reader reads the count first. Then it takes exactly that many bytes as one message, and the byte after them is the next count.
+
+A read can still cut anywhere, as in Part 1. So the reader keeps the bytes of a message that is not complete yet, and it reads again until it has them all.
+
 ### The real thing
 
-The same 301 response on slide 17 carries `Content-Length: 219`. After the empty line, the reader takes exactly 219 bytes of body and stops. The body of that response is exactly 219 bytes.
+The same 301 response on <SlideLink session={1} page={17} /> holds the header line `Content-Length: 219`. It says that the body has exactly 219 bytes. After the empty line, the reader takes 219 bytes of body and stops. The body of that response is exactly 219 bytes.
 
-A binary protocol puts the length in bytes, not in text. Here a 2-byte length, big-endian, says 5, and then `hello` follows.
+HTTP writes that length as text, in a header line. A binary protocol writes the length as raw bytes. The view below shows each byte in hex, as two characters from 00 to FF, with its letter under it. The two bytes 00 05 give the length 5, high byte first, and then the 5 bytes of hello follow.
 
-<ByteView slot="visual"
-  caption="A 2-byte big-endian length, 5, then hello"
+<ByteView
+  caption="A 2-byte length, 5, then the 5 bytes of hello"
   messages={[
     {
       fields: [
@@ -303,7 +303,21 @@ A binary protocol puts the length in bytes, not in text. Here a 2-byte length, b
   ]}
 />
 
-Slide 39 calls the length prefix robust, binary-safe, and "what most modern protocols do".
+One length byte can say at most 255, so it caps a message at 255 bytes. Two bytes can say up to 65,535. <SlideLink session={1} page={39} /> calls the length prefix binary-safe, and says that most modern protocols use it. Binary-safe means that the data can hold any byte at all.
+
+<KeyIdea id="a-length-prefix-says-how-many" title="A length prefix says how many bytes follow">
+
+The sender writes the size of each message before its bytes. The reader reads the size, then takes exactly that many bytes, with no search for an end. So the data can hold any byte. `Content-Length: 219` in an HTTP response is a length for the body.
+
+</KeyIdea>
+
+### Try the rules in the sandbox
+
+The sandbox runs a sender and a reader with one rule. It cuts the bytes into random reads, as TCP can. Predict each result before you press Next.
+
+1. Pick "No rule" and "Random reads". Step to the end. Does the reader find hello and world?
+2. Pick "Delimiter", and type `a\nb` as the only message. How many messages does the reader find?
+3. Pick "Length prefix". Press "New random cut" a few times. Can any cut break the messages?
 
 <ExamDepth>
 
@@ -312,19 +326,20 @@ Slide 39 calls the length prefix robust, binary-safe, and "what most modern prot
 
 | Rule | Good | Cost |
 |---|---|---|
-| Fixed length | trivial parse | padding, and N can never change |
+| Fixed length | trivial parse | pad, and N can never change |
 | Delimiter | readable, no size needed up front | escape the delimiter in the data |
 | Length prefix | binary-safe, no scan | the sender must know the size first, and the field width caps it |
-| Both | readable control lines, a safe binary payload | two parsers, two ways to fail, and request smuggling in the gap (Session 2 slide 36, Session 5) |
+| Both | readable control lines, a safe binary payload | two parsers, two ways to fail, and request smuggling in the gap (<SlideLink session={2} page={36} />) |
 
-- **Redis in two decks.** Slide 47 calls RESP "text and length-prefixed". Session 2 slide 36 lists Redis under delimiter. Both decks hold, because RESP uses both rules.
+- **Text or binary.** HTTP/1.1 is text, and HTTP/2 is binary (<SlideLink session={1} page={38} />). A person can read text with telnet, tcpdump and logs, and the slide says that this is most of why HTTP won. Text is also verbose, ambiguous at the edges and slow to parse. Binary is compact and cheap to parse, with no whitespace rules and no arguments about upper and lower case. Its cost is tools: you need a hex dump to read it. Notes from the class add that binary suits places where speed and efficiency matter.
+- **Redis uses both rules.** Homework 1 on <SlideLink session={1} page={47} /> calls Redis traffic text and length-prefixed. The Session 2 table on <SlideLink session={2} page={36} /> lists Redis under delimiter. Both hold, because each part of a Redis message has a length and ends with CR LF.
 
 <Beyond source="Redis serialization protocol specification, sections Bulk strings, Arrays and Sending commands" url="https://redis.io/docs/latest/develop/reference/protocol-spec/">
 
-The command `LLEN mylist` crosses the wire as `*2\r\n`, then `$4\r\nLLEN\r\n`, then `$6\r\nmylist\r\n`, with no gaps. `*2` says that two elements follow. In each element, `$N` gives the byte count of the data after it, and CR LF ends each line. The diagram frames the three messages of Part 2 in the same way.
+The command `LLEN mylist` crosses the wire as `*2\r\n`, then `$4\r\nLLEN\r\n`, then `$6\r\nmylist\r\n`, with no gaps. `*2` says that two elements follow. In each element, `$N` gives the byte count of the data after it, and CR LF ends each line. The view frames the three messages of Part 2 in the same way.
 
 <ByteView
-  caption="Both rules, as RESP bulk strings: a text length, CR LF, the bytes, CR LF"
+  caption="Both rules, as Redis bulk strings: a text length, CR LF, the bytes, CR LF"
   view="text"
   messages={[
     {
@@ -369,38 +384,58 @@ The command `LLEN mylist` crosses the wire as `*2\r\n`, then `$4\r\nLLEN\r\n`, t
 
 </Segment>
 
+## Watch a real server
+
+The parts used pictures, animations and a sandbox. Now test the idea of Part 1 on a real server. Predict first, then open the result.
+
 <Predict id="s01-m08-q10">
 
-The server log under strace, on loopback. This is the read of the two sends:
+The server made one read, and that read returned all 10 bytes. A Linux tool called strace printed each system call of the server. This is the line of that read:
 
 ```
 read(4, "helloworld", 4096) = 10
 ```
 
-A real network can split the same bytes in another way. So a reader must never count on one read for each send.
+Read it from left to right. The server read from connection number 4, and it gave a buffer of 4096 bytes. It got helloworld, and the call returned 10, the byte count. On a real network, the same bytes can arrive in other cuts. So a reader must never count on one read for each send.
 
 </Predict>
 
-<Lab title="Watch the server read two sends">
-  <Terminal
-    title="Terminal 1: the persistent echo server under strace, in lesson1 of the instructor repo"
-    runs={[
-      { cmd: 'cd cn-at-scaler/lesson1' },
-      { cmd: 'gcc -o 02_echo_server_persistent 02_echo_server_persistent.c' },
-      { cmd: 'strace -e trace=read,write ./02_echo_server_persistent' },
-    ]}
-  />
-  <Terminal
-    title="Terminal 2: a client that sends hello, then world, on loopback"
-    runs={[
-      { cmd: `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'` },
-    ]}
-  />
+<Lab title="Watch the server read two sends" folder="lesson1">
+
+The folder `lesson1` holds the C code of Session 1. The file `02_echo_server_persistent.c` is the echo server from Part 1. It waits for a connection on port 2026, and it writes back every byte that it reads. strace is a Linux tool that prints each system call that a program makes, so it shows each `read()` and `write()` of the server. If your system has no strace, install it with your package manager first.
+
+In terminal 1, build the server and start it under strace. Port 2026 must be free.
+
+<Terminal
+  title="Terminal 1, in cn-at-scaler/lesson1: build the server, then run it under strace (Fedora, 2026-09-14)"
+  runs={[
+    { cmd: 'gcc -o 02_echo_server_persistent 02_echo_server_persistent.c' },
+    {
+      cmd: 'strace -e trace=read,write ./02_echo_server_persistent',
+      out: `read(4, "helloworld", 4096)             = 10\nwrite(4, "helloworld", 10)              = 10`,
+    },
+  ]}
+/>
+
+In terminal 2, run a short Python program. It connects to port 2026 on the same computer, sends hello, sends world, waits 0.3 seconds, and prints the echo.
+
+<Terminal
+  title="Terminal 2: a client that sends hello, then world, on the same computer"
+  runs={[
+    {
+      cmd: `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'`,
+      out: "b'helloworld'",
+    },
+  ]}
+/>
+
+What you should see: terminal 2 prints `b'helloworld'`. In terminal 1, find the line with helloworld: one read of 10 bytes, then one write of 10 bytes. strace also prints reads of other files while the server starts, so skip the lines before it. Press Ctrl+C in terminal 1 to stop the server.
+
 </Lab>
 
 <FadedExample
   worked={{
-    problem: 'A 1-byte length prefix. The stream `03 61 62 63 02 68 69` arrives in three reads: `03 61`, then `62 63 02 68`, then `69`.',
+    problem: 'A 1-byte length prefix. Each byte is written in hex: `03` is the number 3, and `61 62 63` are the letters abc. The stream `03 61 62 63 02 68 69` arrives in three reads: `03 61`, then `62 63 02 68`, then `69`.',
     steps: [
       'Read 1 starts with `03`, so message 1 has 3 bytes. Keep `61`, its first byte.',
       'Read 2 gives `62 63 02 68`. Its first two bytes, `62 63`, complete message 1: `61 62 63`, the text "abc", across two reads.',
@@ -409,7 +444,7 @@ A real network can split the same bytes in another way. So a reader must never c
     ],
   }}
   faded={{
-    problem: 'The same rule. The stream is `05 68 65 6c 6c 6f 01 21`.',
+    problem: 'The same rule. The stream is `05 68 65 6c 6c 6f 01 21`. The bytes `68 65 6c 6c 6f` are the letters hello, and `21` is the character !.',
     blanks: [
       { label: 'Message 1 length', answer: '5' },
       { label: 'Message 1 text', answer: 'hello' },
@@ -418,14 +453,14 @@ A real network can split the same bytes in another way. So a reader must never c
     ],
   }}
   yourTurn={{
-    problem: 'A newline delimiter. The user sends the text `a\\nb` as one message. How many messages does the receiver see?',
-    answer: 'Two, "a" and "b", unless the sender escapes the newline.',
+    problem: 'A newline delimiter. The user sends the text `a\\nb` as one message, and the sender does not escape the newline. How many messages does the receiver see?',
+    answer: 'Two, "a" and "b". The reader ends a message at each newline.',
   }}
 />
 
 <ExplainBack
-  prompt="Slide 39 gives three framing rules. Later decks say that there are two: length or delimiter. Why do both statements hold?"
-  model="A fixed length is a length that both sides agreed on before the connection started. It lives in the protocol spec, not in each message. So it is a length rule, and the two lists agree."
+  prompt="A length prefix lets a message hold any byte, even a newline. A newline delimiter does not. Why?"
+  model="The length reader reads the count first, then takes exactly that many bytes. It never checks the data for an end marker, so no byte in the data can end the message early. A delimiter reader checks every byte, so a newline in the data ends the message there."
 />
 
 <ExamPrompts
@@ -440,7 +475,7 @@ A real network can split the same bytes in another way. So a reader must never c
     },
     {
       prompt: 'HTTP/1.1 is a text protocol, and HTTP/2 is binary. Give one reason for each choice.',
-      model: 'Text: a person can read it with telnet, tcpdump and logs, and slide 38 says that this is most of why HTTP won. Binary: it is compact and cheap to parse, with no whitespace rules and no case-sensitivity arguments. The cost of binary is that you need tools to read it.',
+      model: 'Text: a person can read it with telnet, tcpdump and logs, and that is most of why HTTP won. Binary: it is compact and cheap to parse, with no whitespace rules and no arguments about upper and lower case. The cost of binary is that you need tools to read it.',
     },
   ]}
 />
