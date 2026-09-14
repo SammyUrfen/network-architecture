@@ -73,8 +73,9 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
         <textarea rows={3} spellcheck={false} value={text} onInput={(e) => change(setText)(e.currentTarget.value)} />
       </label>
       <p class="hint">
-        Each box shows one byte as a hex number from 00 to FF, with its letter under it. Write <code>\n</code> for a newline
-        byte inside a message, and <code>\xNN</code> for any byte in hex.
+        Each box shows one byte as a hex number from 00 to FF, with its letter under it, or a dot for a byte that is not a
+        letter. Hex counts in 16s, so FF is 255. Write <code>\n</code> for a newline byte inside a message, and{' '}
+        <code>\xNN</code> for any byte in hex.
       </p>
       <fieldset>
         <legend>The rule that the sender and the reader share</legend>

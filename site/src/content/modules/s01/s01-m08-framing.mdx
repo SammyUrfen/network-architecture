@@ -51,7 +51,7 @@ import FramingSandbox from '../../../components/sims/s01-m08-framing/FramingSand
 
 Two programs can talk over TCP, the part of the operating system that carries bytes between them, complete and in order. A byte is a small piece of data, such as one letter of text. Your program sends "hello" and then "world". The other program takes the bytes that arrived each time it reads. It can get "helloworld" in one read, or "hel" and then "loworld". So how does it know where one message ends? This lesson answers that question.
 
-A protocol is the set of rules that two programs follow when they talk. Without a rule for the end of a message, a server mixes two requests into one, or it waits for bytes that never come. The calculator assignment, a small calculator server that you write with no framework, turns on this idea. So does the project, a binary version of HTTP that you build in pairs. The idea also comes back in later lessons, in two threads: "Framing", the question of this lesson, and "Skip unknown", a reader that jumps over a message it does not know. From the lesson <ModuleLink id="s01-m01-seven-syscalls" />, you know that a program sends bytes with `write()` and gets bytes with `read()`. That is all you need to start.
+A protocol is the set of rules that two programs follow when they talk. Without a rule for the end of a message, a server mixes two requests into one, or it waits for bytes that never come. The calculator assignment, a small calculator server that you write yourself, turns on this idea. So does the project, a version of HTTP that sends raw byte values instead of readable text, which you build in pairs. The idea also comes back in later lessons, in two threads: "Framing", the question of this lesson, and "Skip unknown", a reader that jumps over a message it does not know. From the lesson <ModuleLink id="s01-m01-seven-syscalls" />, you know that a program sends bytes with `write()` and gets bytes with `read()`. That is all you need to start.
 
 **The path through this lesson.** Part 1 shows that TCP keeps every byte in order but forgets where each message stopped. Part 2 gives two different answers to that problem: make every message the same size, or put a marker after each message. Part 3 gives the answer that most modern protocols use: send the length before the bytes. At the end, you watch a real server read two sends, and you check what you learned.
 
@@ -162,11 +162,11 @@ Two kinds of rule work. The first kind marks the end: an agreed byte, the delimi
 
 </InventFirst>
 
-<Picture breaks="a person can see that wooden beads are filler, and that a red bead in a pattern belongs to the pattern. A program cannot guess. It needs a rule for pad bytes, and it ends the message at the first delimiter byte.">
+<Picture breaks="a person can see which beads are wooden filler, but a program cannot. In this lesson, the reader keeps the pad bytes as part of each message.">
 
 Your friend sends more bracelets on one string, and this time you agree on a rule first. One rule is this: every bracelet has exactly 10 beads. For a short bracelet, your friend adds plain wooden beads at the end to make 10. You count 10 beads, and that is one bracelet. The other rule is this: a big red bead ends each bracelet. You slide beads off the string until you meet a red bead. But one day, your friend makes a bracelet with a red bead in its pattern. You stop at that red bead, and one bracelet becomes two.
 
-In framing, the count of 10 is the fixed length, which a protocol calls N bytes. The wooden beads are pad bytes, filler that means nothing. The red bead is the delimiter, an agreed byte such as a newline. The first rule counts, and the second rule looks for a marker. So they are two different answers to one question.
+In framing, the count of 10 is the fixed length, which a protocol calls N bytes. The wooden beads are pad bytes, filler that means nothing. The red bead is the delimiter, an agreed byte such as a newline. A red bead in the pattern is a newline inside a message, and the two halves are two messages. The first rule counts, and the second rule looks for a marker. So they are two different answers to one question.
 
 </Picture>
 
@@ -291,7 +291,7 @@ The same 301 response on <SlideLink session={1} page={17} /> holds the header li
 
 The 301 example uses HTTP/1.1, a text version of HTTP, so it writes that length as text. As text, 219 is three characters, 2, 1 and 9, and it takes three bytes. A binary protocol writes the length as the value of raw bytes. HTTP/2, the newer version of HTTP, is binary.
 
-The view below shows each byte in hex, as two characters from 00 to FF. A byte that is a letter shows the letter under it, and any other byte shows a dot. The first length byte counts in 256s and the second in 1s. So 00 05 gives the length 0 × 256 + 5 = 5, and then the 5 bytes of hello follow.
+The view below shows each byte in hex. Hex counts in 16s, with the digits 0 to 9 and A to F. So FF is 255, and one byte has 256 values, from 0 to 255. A byte that is a letter shows the letter under it, and any other byte shows a dot. The first length byte counts in 256s and the second in 1s. So 00 05 gives the length 0 × 256 + 5 = 5, and then the 5 bytes of hello follow.
 
 <ByteView
   caption="A 2-byte length, 5, then the 5 bytes of hello"
@@ -431,7 +431,7 @@ In terminal 2, run a short Python program. It connects to port 2026 on the same 
   ]}
 />
 
-What you should see: terminal 2 prints `b'helloworld'`. In terminal 1, find the line with helloworld. In the runs for this lesson, the server made one read of 10 bytes, then one write of 10 bytes. Your run can show two reads of 5 bytes, because the result depends on timing. The last read returns 0 when the client closes the connection. strace also prints reads of other files while the server starts, so skip the lines before it. Press Ctrl+C in terminal 1 to stop the server.
+What you should see: terminal 2 prints `b'helloworld'`, where the b shows that Python got raw bytes. In terminal 1, find the line with helloworld. In the runs for this lesson, the server made one read of 10 bytes, then one write of 10 bytes. Your run can show two reads of 5 bytes, because the result depends on timing. The last read returns 0 when the client closes the connection. strace also prints reads of other files while the server starts, so skip the lines before it. Press Ctrl+C in terminal 1 to stop the server.
 
 </Lab>
 

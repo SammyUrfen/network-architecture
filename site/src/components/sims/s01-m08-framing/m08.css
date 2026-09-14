@@ -1,10 +1,11 @@
 /* The SVG shapes of the two animations of s01-m08-framing. An island cannot use scoped Astro styles, so every class has the m08- prefix. */
+/* 15 px in a 400-unit view box stays readable when a phone draws the SVG about 320 px wide. */
 .m08-row {
-  font-size: 13px;
+  font-size: 15px;
   fill: var(--text-2);
 }
 .m08-note {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   fill: var(--warn);
 }
