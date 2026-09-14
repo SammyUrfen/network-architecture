@@ -1,0 +1,185 @@
+# The items of s01-m02-ports-and-queue in docs/curriculum/session-01.md.
+# q01 to q06 are checks 1 to 6. The section has no segment plan, so each
+# segment holds one group of related checks: 1 ports (check 5), 2 refused or a
+# silent wait (checks 1, 2), 3 the accept queue (checks 3, 6), 4 the restart
+# trap (check 4). q07 to q09 are the pretest, asked again in the exit quiz.
+# q10 is the POE, on the class server.
+items:
+  - id: s01-m02-q01
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A server program sets port 2026 in its code, but it never calls bind(). Then it calls listen(), and listen() succeeds. On which port does the program listen?
+    options:
+      - text: On no port at all, because it never called bind().
+        correct: false
+        misconception: S01-M07
+        feedback: Linux does not leave the socket with no port. listen() gives an unbound socket a random free port.
+      - text: On a random free port that the kernel picked.
+        correct: true
+        feedback: listen() picked a port for the program, so the program listens where no client looks.
+      - text: On port 2026, because the code sets that number.
+        correct: false
+        misconception: S01-M48
+        feedback: The number in the code takes effect only through bind(). With no bind(), listen() picks another port.
+    explanation: On Linux, listen() on a socket with no port picks a random free port. A client that aims at port 2026 still gets "Connection refused".
+    covers: [S01-C15]
+    tags: [beyond]
+    taughtIn: seg-refused-or-a-silent-wait
+
+  - id: s01-m02-q02
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A server program calls bind() and listen(), but it never calls accept(). A client connects and sends some bytes. What does the client see?
+    options:
+      - text: A reset, when the kernel gives up on the program.
+        correct: false
+        misconception: S01-M49
+        feedback: The kernel sets no deadline for accept(). The connection stays in the queue.
+      - text: A TCP timeout after a few seconds.
+        correct: false
+        misconception: S01-M08
+        feedback: The kernel sent an ACK for the handshake and for the bytes, so TCP sees nothing wrong and does not time out.
+      - text: It connects, then waits with no reply.
+        correct: true
+        feedback: The kernel finished the handshake and took the bytes. Only the program can send a reply, and it never takes the connection.
+    explanation: The kernel completes the handshake, puts the connection in the accept queue, and sends an ACK for the bytes. With no accept(), no program replies, so the client waits until its own timeout, if it has one.
+    covers: [S01-C17, S01-C18]
+    tags: []
+    taughtIn: refused-or-a-silent-wait
+
+  - id: s01-m02-q03
+    use: [check, practice]
+    segment: 3
+    type: numeric
+    prompt: On Linux, a server calls listen() with a backlog of 1, and it never calls accept(). Clients keep coming. How many of them complete the handshake?
+    answer: { value: 2, tolerance: 0, unit: connections }
+    distractors:
+      - value: 1
+        misconception: S01-M50
+        feedback: Linux calls the queue full only when it holds more than the backlog. So a backlog of 1 holds 2 connections.
+    explanation: Linux holds backlog + 1 finished connections in the accept queue. With a backlog of 1, two clients connect, and the rest get no answer.
+    covers: [S01-C20, S01-C25]
+    tags: [beyond]
+    taughtIn: seg-the-accept-queue-has-a-size
+
+  - id: s01-m02-q04
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: What does the socket option SO_REUSEADDR fix?
+    options:
+      - text: A bind() that fails while an old connection on the port sits in TIME_WAIT.
+        correct: true
+        feedback: With the option set, bind() works next to the old connection.
+      - text: It lets two server programs listen on the same port.
+        correct: false
+        misconception: S01-M09
+        feedback: Two listeners on one port need SO_REUSEPORT. With SO_REUSEADDR alone, the second program still gets "Address already in use".
+      - text: It removes the old connections from TIME_WAIT.
+        correct: false
+        misconception: S01-M51
+        feedback: The old connections stay in TIME_WAIT for their full time. Only the bind() failure goes away.
+    explanation: A connection that the server closed first stays in TIME_WAIT for about 60 seconds and holds the port. SO_REUSEADDR lets a new bind() work anyway. The old connection keeps its TIME_WAIT.
+    covers: [S01-C83]
+    tags: []
+    taughtIn: a-restart-can-lose-the-port
+
+  - id: s01-m02-q05
+    use: [check, practice]
+    segment: 1
+    type: multi
+    prompt: A Linux computer has the default settings. Which of these statements are true? Pick every one that is.
+    options:
+      - text: Any user can bind port 8080.
+        correct: true
+        feedback: 8080 is above the line at 1024, so no privilege is needed.
+      - text: Port 8080 needs root, because web servers use it.
+        correct: false
+        misconception: S01-M52
+        feedback: Only the number matters. 8080 is above 1024, so any user can bind it.
+      - text: Only root can ever bind port 80. No other way exists.
+        correct: false
+        misconception: S01-M05
+        feedback: A program with the capability CAP_NET_BIND_SERVICE can bind port 80 without root.
+      - text: A program with the capability CAP_NET_BIND_SERVICE can bind port 80 without root.
+        correct: true
+        feedback: The capability gives one program the right to bind low ports, and no other root power.
+    explanation: The line is at 1024. Root may bind a port below it, and so may a program with the capability CAP_NET_BIND_SERVICE. The slide says "root only", so expect that wording on a quiz.
+    covers: [S01-C09, S01-C10]
+    tags: []
+    taughtIn: seg-ports-numbered-doors-and-who-may-open-them
+
+  - id: s01-m02-q06
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: A server calls listen() with a backlog of 1. It calls accept() for each client as soon as the client arrives, and it keeps each connection open. A third client connects. What happens?
+    options:
+      - text: It waits, because each open connection still fills the queue.
+        correct: false
+        misconception: S01-M06
+        feedback: A connection leaves the queue when accept() takes it. Open connections that the program works with do not count.
+      - text: It connects, because accept() emptied the queue.
+        correct: true
+        feedback: The backlog counts only the connections that wait for accept().
+      - text: It gets "Connection refused", because the backlog allows one client in total.
+        correct: false
+        misconception: S01-M06
+        feedback: The backlog is the size of the waiting line, not a limit on clients.
+    explanation: The backlog sets how many finished connections can wait for accept(). This server takes each one at once, so the queue stays empty and every client connects.
+    covers: [S01-C21, S01-C25]
+    tags: []
+    taughtIn: the-backlog-sizes-the-line
+
+  - id: s01-m02-q07
+    use: [pretest, exit]
+    type: recall
+    prompt: A server program claims a port and tells the operating system to take connections for it. But the program itself never picks up a connection. A client tries to connect. Does the connection succeed?
+    model: Yes. The kernel, the core of the operating system, finishes the connection for the program and puts it in a waiting line. Then the client waits, because the program never answers.
+    explanation: The kernel does the handshake before the program calls accept(). With no accept(), the connection waits in the accept queue, and the client hangs.
+    covers: [S01-C17, S01-C18]
+    tags: []
+    taughtIn: refused-or-a-silent-wait
+
+  - id: s01-m02-q08
+    use: [pretest, exit]
+    type: recall
+    prompt: No program on a computer waits for connections on port 2026. A client tries to connect to that port. What does the client see, and how fast?
+    model: '"Connection refused", at once. The kernel answers with a reset, because no program owns the port.'
+    explanation: The kernel answers the SYN with an RST. The failure is fast and loud, so it is easy to debug.
+    covers: [S01-C15, S01-C16]
+    tags: []
+    taughtIn: refused-or-a-silent-wait
+
+  - id: s01-m02-q09
+    use: [pretest, exit]
+    type: recall
+    prompt: A server program tells the operating system that its line of new connections has room for 1. Can the server serve only one client in total?
+    model: No. The 1 is the size of the line of connections that wait for the program. Each connection that the program takes leaves the line, so the server can serve many clients.
+    explanation: The backlog, the number in listen(), sets the depth of the accept queue. It is not a limit on clients.
+    covers: [S01-C20, S01-C25]
+    tags: []
+    taughtIn: the-backlog-sizes-the-line
+
+  - id: s01-m02-q10
+    use: [practice]
+    type: predict
+    prompt: The class server serves one client at a time, and it calls listen() with a backlog of 1. Client 1 connects and sends nothing, so the server waits for its bytes and does not call accept() again. Three more clients connect, one after the other. How many of those three complete the handshake?
+    options:
+      - text: None, because the server does not call accept() for them.
+        correct: false
+        misconception: S01-M03
+        feedback: The kernel finishes a handshake before accept(). accept() only takes a finished connection from the queue.
+      - text: One, because the backlog is 1.
+        correct: false
+        misconception: S01-M50
+        feedback: Linux calls the queue full only when it holds more than the backlog, so a backlog of 1 holds 2.
+      - text: Two. The queue holds backlog + 1 connections on Linux.
+        correct: true
+        feedback: Clients 2 and 3 wait in the queue, and client 4 gets no answer.
+    explanation: accept() took client 1 out of the queue. Clients 2 and 3 fill the queue, which holds 2 on Linux, and client 4 gets no answer. The run for this lesson showed exactly this.
+    covers: [S01-C17, S01-C20]
+    tags: [measured]
+    taughtIn: seg-the-accept-queue-has-a-size
