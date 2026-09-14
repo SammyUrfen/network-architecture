@@ -194,7 +194,7 @@ Program outputs for the samples, re-run 2026-09-13: `08_bcd` prints `12 34 56 78
 
 **S01-Q01. What breaks if you skip bind()?** (slide 9, thought experiment) The client gets "Connection refused" at once. Nothing listens on 2026, so the kernel answers the SYN with an RST. A Linux detail sharpens the answer: listen() on an unbound socket picks a random ephemeral port. So the server does listen, on a port nobody knows (verified: `0.0.0.0:54601`). The failure is fast and loud, so it is easy to debug.
 
-**S01-Q02. What breaks with bind() but no accept()?** (slide 9, thought experiment) The kernel finishes the handshake, and connect() succeeds. Bytes from the client get an ACK and wait in the server buffer. No reply comes, so the client waits for its own timeout. TCP sees nothing wrong. On Linux, backlog N holds N + 1 connections. After that, new SYNs get no answer, and connect() retries for about 127 s. From outside, it looks like an overloaded server.
+**S01-Q02. What breaks with bind() but no accept()?** (slide 9, thought experiment) The kernel finishes the handshake, and connect() succeeds. Bytes from the client get an ACK and wait in the server buffer. No reply comes, so the client waits for its own timeout. TCP sees nothing wrong. On Linux, backlog N holds N + 1 connections. After that, new SYNs get no answer, and connect() retries until it fails. `man 7 tcp` gives about 127 s for the default `tcp_syn_retries` of 6. Two runs on 2026-09-14 failed after 133 and 136 s (Linux 7.1, loopback, default settings with `tcp_syn_linear_timeouts=4`, no client timeout). From outside, it looks like an overloaded server.
 
 **S01-Q03. Why does it matter who binds port 80?** (slide 8) Binding 80 needs root or the CAP_NET_BIND_SERVICE capability. A parser bug in a root process hands the attacker root. So the app binds 8080 as a normal user, and a small front proxy owns 80 and 443. Session 4 shows the same split inside nginx.
 
@@ -280,12 +280,13 @@ With the one-read server, the same client gets `one` back and never `two` (verif
 
 **Misconceptions.**
 - S01-M01: "A framework talks to the network in some other way." Wrong: it wraps the same calls. Distractor in check 2.
-- S01-M02: "socket() is a server-only call." Wrong: the client calls it first. Distractor in check 3.
+- S01-M02: "socket() is a server-only call." Wrong: the client calls it first. Check 3 teaches it: socket() is the right option.
 - S01-M03: "accept() does the TCP handshake." Wrong: the kernel finishes the handshake before accept() returns. Distractor in check 4.
 - S01-M04: "One read() returns one whole message." Wrong: a read returns the bytes that wait, which can be part of a message or parts of two. Distractor in check 5.
 - S01-M45: "A client calls listen() to wait for the reply." Wrong: listen() only prepares a socket to take new connections. The reply comes to the connected socket through read(). Distractor in check 3.
 - S01-M46: "The kernel speaks HTTP, and a framework asks it for requests." Wrong: the kernel moves TCP bytes, and the framework parses the HTTP text itself. Distractor in check 2.
 - S01-M47: "Bytes that arrive before the server calls read() are lost." Wrong: the kernel keeps them in the receive buffer until a read takes them. Distractor in check 5.
+- S01-M91: "A client calls accept() to connect to a server." Wrong: a client calls connect(). Only a server calls accept(), to take a connection that already waits in its queue. Distractor in check 3.
 
 **Diagrams.**
 - Static: seven boxes in call order. listen and accept carry a "server only" mark, bind carries "server, client optional", and connect sits beside them for the client.
@@ -306,7 +307,7 @@ Two quick sends to the persistent server on loopback, verified 2026-09-14: when 
 **Checks.**
 1. `numeric` (the site shows no `order` item yet, so the order moves to card 1 and the pretest): the one-read server gets `hi` and a newline. What does read() return? Answer: 3 bytes. Distractor: 2, the newline is a byte too.
 2. `mcq`: how does Flask reach the network? Answer: through the same kind of system calls, such as accept(). Distractor: a private network stack of its own (S01-M01). Distractor: it asks the kernel for HTTP requests (S01-M46). Feedback: Flask parses the HTTP text itself. Under strace, Python's server shows accept4, recvfrom and sendto, not read and write.
-3. `mcq`: which call do both the client and the echo server make? Answer: socket(). Distractor: accept() (S01-M02). Distractor: listen() (S01-M45). Feedback: every endpoint starts with socket(). The slide says socket is among "the four that only a server makes". The client calls it too. On the quiz, expect the slide wording.
+3. `mcq`: which call do both the client and the echo server make? Answer: socket(). Distractor: accept() (S01-M91). Distractor: listen() (S01-M45). Feedback: every endpoint starts with socket(). The slide says socket is among "the four that only a server makes". The client calls it too. On the quiz, expect the slide wording.
 4. `mcq`: when accept() returns, the handshake is? Answer: already complete. Distractor: about to start (S01-M03). Distractor: halfway, and accept() waits for the last ACK (S01-M03). Feedback: the kernel did it while the client waited in the queue.
 5. `predict`: a client sends `one\n` and `two\n` back to back, with no pause, to the persistent server on loopback. What can the first read() return? Answer: `one\n` or both lines (8 bytes), as the bytes happen to wait. Distractor: always exactly `one\n`, because a read returns one message (S01-M04). Distractor: only bytes sent after read() started, because earlier bytes are dropped (S01-M47). Feedback: a read takes every byte that waits, up to the buffer size.
 6. `numeric`: the one-read server gets `one`, then `two` half a second later, then the client quits. How many lines come back? Answer: 1. Distractors: 2 (the one read returns before `two` arrives) and 0 (the one read gets `one` and writes it back).

@@ -4,7 +4,7 @@ import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type RenderTas
 import workerSrc from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { clampPage } from './decks';
+import { clampPage, pageLabel, printedNumber } from './decks';
 import './slides.css';
 
 GlobalWorkerOptions.workerSrc = workerSrc;
@@ -91,7 +91,10 @@ export default function SlideViewer({ url, session, page: first, pages, onClose 
   };
 
   const loading = drawn !== page && !problem;
-  const status = problem ?? (loading ? `Loading slide ${page}` : `Slide ${page} of ${pages}`);
+  // "Slide 20 (page 21 of 48)": the number printed on the slide, and the PDF page.
+  const place = (p: number) => pageLabel(session, p).replace(/^./, (c) => c.toUpperCase());
+  const slide = printedNumber(session, page);
+  const status = problem ?? (loading ? `Loading ${pageLabel(session, page)}` : place(page));
 
   return (
     <dialog
@@ -117,7 +120,7 @@ export default function SlideViewer({ url, session, page: first, pages, onClose 
         </div>
 
         <div class="sv-frame" aria-busy={loading}>
-          <canvas ref={canvas} width={960} height={540} role="img" aria-label={`Slide ${drawn || page} of ${pages}`} />
+          <canvas ref={canvas} width={960} height={540} role="img" aria-label={place(drawn || page)} />
           {(loading || problem) && (
             <p class={problem ? 'sv-note sv-problem' : 'sv-note'} aria-hidden="true">
               {status}
@@ -140,11 +143,12 @@ export default function SlideViewer({ url, session, page: first, pages, onClose 
               commit(event.currentTarget.elements.namedItem('page') as HTMLInputElement);
             }}
           >
+            {/* The field takes the PDF page, so a printed number that differs sits outside it. */}
             <label>
-              Slide{' '}
+              {slide === undefined ? 'Page' : `Slide ${slide} (page`}{' '}
               <input
                 name="page"
-                aria-label={`Slide number, 1 to ${pages}`}
+                aria-label={`Page number, 1 to ${pages}`}
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -153,6 +157,7 @@ export default function SlideViewer({ url, session, page: first, pages, onClose 
                 onChange={(event) => commit(event.currentTarget)}
               />{' '}
               of {pages}
+              {slide !== undefined && ')'}
             </label>
           </form>
           <button type="button" class="btn" onClick={() => go(page + 1)} aria-disabled={page === pages}>

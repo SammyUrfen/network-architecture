@@ -1,15 +1,16 @@
 ---
-import { decks, slideHref } from './decks';
+import { decks, slideHref, slideLabel } from './decks';
 
-// A slide citation: "slide 39". Cite a slide with this link, never with bare
-// text. With no JavaScript, or a click with a modifier key, it is a plain
-// link that opens the PDF at its page in the browser PDF viewer. A plain
-// click opens the in-page viewer instead, because a phone browser often
-// cannot open a PDF at one page. The viewer and the PDF code load on the
+// A slide citation: "slide 38", the number printed on the slide, for the PDF
+// page 39. A page with no printed number shows "page 1". Cite a slide with
+// this link, never with bare text. With no JavaScript, or a click with a
+// modifier key, it is a plain link that opens the PDF at its page in the
+// browser PDF viewer. A plain click opens the in-page viewer instead, because
+// a phone browser often cannot open a PDF at one page. The viewer and the PDF code load on the
 // first click, so a page that nobody clicks loads no PDF code.
 export interface Props {
   session: number;
-  /** The PDF page, from 1. A page outside the deck fails the build. */
+  /** The PDF page, from 1, not the printed number. A page outside the deck fails the build. */
   page: number;
   /** Replaces the inline citation look, for a link that looks like a button. */
   class?: string;
@@ -23,7 +24,7 @@ const { session, page, class: className } = Astro.props;
   data-slide-session={session}
   data-slide-page={page}
   data-slide-pages={decks[session].pages}
-  ><slot>slide {page}</slot><span class="sr-only">, Session {session} deck</span></a
+  ><slot>{slideLabel(session, page)}</slot><span class="sr-only">, Session {session} deck</span></a
 >
 
 <script>
