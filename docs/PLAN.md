@@ -9,14 +9,14 @@ A living document. Update the status table when a phase changes state.
 | 0 | Foundation: repo, sources, pedagogy, curriculum maps for sessions 1–5 | done 2026-09-14 | — |
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
-| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | Steps 1 to 3 done 2026-09-14: Bibek read both pages. Now at steps 4 and 5: 15 feedback items recorded, lesson contract v2 written, both pages `draft` until their rebuild. | 1–2 sessions for the rebuild |
+| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | v2 done 2026-09-14: both pilots rebuilt to lesson contract v2, and all 15 feedback items fixed. Session 1 lessons 1 to 3 also built. All five lessons are `ready`. Next: Bibek reviews the five lessons. | Bibek's review |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
-| 5 | Sessions 1 and 2, remaining modules (20) | not started | 40–80 h of packets, 3–6 sessions |
+| 5 | Sessions 1 and 2, remaining modules (20) | Session 1 m01 to m03 built 2026-09-14, ahead of the hard gate (section 10). 17 modules wait for Bibek's review of the format. | 34–68 h of packets for the 17 |
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
 | 7 | Session 5, remaining modules and project studio (10) | not started | 20–40 h of packets, 2–3 sessions |
 | 8 | Threads, practice exam, glossary, end-term pack | not started | 1–2 sessions |
 | R | Each new session (6, 7, 8): run `docs/ADD-A-SESSION.md` | recurring | within 48 h of the class |
-| D | Public GitHub repo, CI/CD and GitHub Pages deploy | Bibek decided on 2026-09-14: everything goes public (section 10). Checklist in section 4. | 1–2 h |
+| D | Public GitHub repo, CI/CD and GitHub Pages deploy | Live on 2026-09-14: the repo is public, and CI and the Pages deploy pass on each merge to main. The site is at https://sammyurfen.github.io/network-architecture/. | — |
 
 A "session" in the Estimate column is one Claude Code working session of 3
 to 4 hours. Phases 5 to 7 assume 2 to 4 hours for each packet and 4 packets

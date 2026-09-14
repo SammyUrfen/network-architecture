@@ -20,7 +20,7 @@ arrive each week, so the site grows one session at a time.
 | Part | State |
 |---|---|
 | Curriculum maps | Sessions 1–5 written and reviewed on 2026-09-14: 57 modules, 894 claims. Sessions 6–8 not taught yet. |
-| Site | Phases 1 and 2 done on 2026-09-14: skeleton, theme, schemas, gate scripts, components (`docs/COMPONENTS.md`), review and progress pages. Phase 3 pilot pages `s01-m08-framing` and `s05-m12-assignment-prep` built on 2026-09-14. Bibek read them and gave 15 feedback items (`docs/feedback.md`). Phase 3 is at steps 4 and 5: lesson contract v2 is in `docs/PEDAGOGY.md`, and both pilots are `draft` until their rebuild. Session 1 lessons 1 to 3 start in parallel. |
+| Site | Phases 1 and 2 done on 2026-09-14: skeleton, theme, schemas, gate scripts, components (`docs/COMPONENTS.md`), review and progress pages. Phase 3 v2 done on 2026-09-14: both pilots, `s01-m08-framing` and `s05-m12-assignment-prep`, rebuilt to lesson contract v2 (`docs/PEDAGOGY.md`), and the 15 feedback items fixed (`docs/feedback.md`). Session 1 lessons 1 to 3 also built. All five lessons are `ready`. The site is public, with CI and GitHub Pages at https://sammyurfen.github.io/network-architecture/. Next: Bibek reviews the five lessons. |
 | Sources | All five decks complete. No transcripts. See `sources/MANIFEST.md`. |
 
 Update this table when a phase ends.
