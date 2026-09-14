@@ -39,7 +39,8 @@ print dialog gave a complete file for Session 1.
 4. Record the slide count and the status in `sources/MANIFEST.md`. For a
    salvaged deck, write "salvaged, page order not checked".
 5. Copy the deck to `site/public/slides/session-0N.pdf`. Add its page count
-   and size to `site/src/components/slides/decks.ts`, then run
+   and size, and the `numbered` map of printed slide numbers, to
+   `site/src/components/slides/decks.ts`, then run
    `npm run test` in `site/`. Add a row to "Published decks" in
    `sources/MANIFEST.md`.
 6. A slide citation uses the PDF page number. Check the printed slide number

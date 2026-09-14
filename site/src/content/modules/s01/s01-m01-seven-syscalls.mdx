@@ -136,7 +136,7 @@ A client makes a shorter list. It calls `socket()` too, then `connect()`, which 
 
 ### The real thing
 
-The first class opened with this list. A link marked "slide" on this page opens the slides of the first class, the Session 1 deck, at that page. The title slide promised 7 system calls and one port for the whole class, 2026 <SlideLink session={1} page={1} />. A later slide shows the seven calls in a row <SlideLink session={1} page={5} />. It says that Express, Flask and net/http are each "a wrapper around this sequence".
+The first class opened with this list. A link with a slide number (or a page number, for a slide with no number) opens the slides of the first class, the Session 1 deck, at that page. The title slide promised 7 system calls and one port for the whole class, 2026 <SlideLink session={1} page={1} />. A later slide shows the seven calls in a row <SlideLink session={1} page={5} />. It says that Express, Flask and net/http are each "a wrapper around this sequence".
 
 A framework such as Flask is a toolkit that does the common work of a server for you. It saves you from writing these calls, but it still makes them. The kernel gives the framework plain bytes. The framework then reads the web request out of those bytes by itself, because the kernel knows nothing about web pages.
 
