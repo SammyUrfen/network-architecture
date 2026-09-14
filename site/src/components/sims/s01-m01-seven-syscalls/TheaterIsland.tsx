@@ -118,7 +118,7 @@ export default function TheaterIsland({ title, kind: firstKind, choose = false }
 
       <div class="s1m1-log">
         <p class="s1m1-sub">The calls of the server, as strace prints them</p>
-        <p class="s1m1-muted">strace is a Linux tool that prints each system call of a program, then its result after the = sign.</p>
+        <p class="s1m1-simplifies">strace is a Linux tool that prints each system call of a program, then its result after the = sign.</p>
         {log.length === 0 ? (
           <p class="s1m1-empty">No call yet.</p>
         ) : (
