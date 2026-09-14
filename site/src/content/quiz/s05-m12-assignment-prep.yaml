@@ -35,7 +35,7 @@ items:
     options:
       - text: 200 OK, with an error message in the body
         correct: false
-        misconception: S05-M45
+        misconception: S05-M53
         feedback: A 200 says that the request worked. The client sent bad input, so 400.
       - text: 400 Bad Request
         correct: true
@@ -61,12 +61,12 @@ items:
         feedback: The path exists. Only the method is wrong for it.
       - text: 501 Not Implemented
         correct: false
-        misconception: S05-M46
-        feedback: 501 means that the server does not know the method for any path. This server knows POST, and only this path refuses it.
+        misconception: S05-M54
+        feedback: 501 means that the server does not support what the request needs, such as a method that it knows for no path. This server knows POST, and only this path refuses it.
       - text: 405 Method Not Allowed
         correct: true
         feedback: The path exists and the server knows POST, so 405, with an Allow header that lists GET.
-    explanation: 'Pick the status by what is wrong. Bad input gives 400, a path that does not exist gives 404, and a known method on the wrong path gives 405. RFC 9110 §15.5.6 also asks for an Allow header in a 405.'
+    explanation: 'Pick the status by what is wrong. Bad input gives 400, a path that does not exist gives 404, and a known method on a path that does not allow it gives 405. RFC 9110 §15.5.6 also asks for an Allow header in a 405.'
     covers: [S05-C07]
     tags: [beyond]
     taughtIn: status-by-what-is-wrong
@@ -87,7 +87,7 @@ items:
       - text: All bytes until the client closes the connection.
         correct: false
         misconception: S05-M47
-        feedback: On a kept connection, the client does not close between requests. Take exactly the Content-Length bytes.
+        feedback: A client that closes cannot get its answer. So a request body always ends after its Content-Length bytes.
     explanation: 'Content-Length: 5 gives a body of exactly 5 bytes. The byte after them starts the next request. RFC 9112 §6.3 gives the same rule.'
     covers: [S05-C09]
     tags: []

@@ -134,7 +134,7 @@ export interface Cell {
 }
 
 /** Cell widths in SVG units. CR and LF show as two characters, so they get a wider cell. */
-export const CELL = { char: 10, control: 14 } as const;
+export const CELL = { char: 9, control: 14 } as const;
 
 /** Places each byte on a row. A row ends after LF only, so a body with no LF runs into the next request, as on the wire. */
 export function layoutCells(text: string, x0 = 0): Cell[] {
@@ -161,7 +161,7 @@ export const STATUSES: { code: Status; name: string; means: string }[] = [
   { code: 404, name: 'Not Found', means: '404 says that the server has no such path.' },
   { code: 405, name: 'Method Not Allowed', means: '405 says that the path exists, but it does not allow this method.' },
   { code: 500, name: 'Internal Server Error', means: '500 says that something unexpected broke inside the server.' },
-  { code: 501, name: 'Not Implemented', means: '501 says that the server does not know this method for any path.' },
+  { code: 501, name: 'Not Implemented', means: '501 says that the server does not support what the request needs, such as a method that it knows for no path.' },
 ];
 
 export interface RequestCard {

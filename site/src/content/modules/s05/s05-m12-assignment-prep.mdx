@@ -51,7 +51,7 @@ The question matters because of how the marker tests your server. The marker ope
 
 You already know two things that this lesson uses. From <ModuleLink id="s01-m08-framing" />, you know that TCP keeps every byte in order but keeps no mark where one message stops. From <ModuleLink id="s05-m02-keepalive-host" />, you know that an HTTP/1.1 connection stays open for many requests.
 
-**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the body bytes that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, and what it does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why an error answer must leave the connection open.
+**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the body bytes that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, and what it does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why the error answers of the marking run must leave the connection open.
 
 <Pretest module="s05-m12-assignment-prep" />
 
@@ -73,7 +73,7 @@ In HTTP, the pile is the connection, and the homework of one kid is one request.
 
 ### How it works
 
-Now read like the teacher, but with real bytes. The picture shows the two requests of this lesson: a POST with the 5-byte body `hello`, then a GET for `/style.css`. Each row is one line. The number at the start of a row is the byte number of its first byte.
+Now read like the teacher, but with real bytes. The picture shows the two requests of this lesson: a POST with the 5-byte body `hello`, then a GET for `/style.css`. A row ends after each `\r\n`, so the body `hello` shares a row with the request line of request 2. The number at the start of a row is the byte number of its first byte.
 
 <ScrollStep step={1}>
 
@@ -83,7 +83,7 @@ The connection brings 114 bytes. Nothing between the two requests marks an edge.
 
 <ScrollStep step={2}>
 
-First, find the end of the head. Every line of the head ends in the two bytes CR and LF, written `\r\n`. The head ends at the first line that holds nothing before its `\r\n`. In request 1, that empty line is bytes 60 and 61.
+First, find the end of the head. Every line of the head ends in the two bytes CR and LF, written `\r\n`. After the request line and the header lines, the head ends at a line that holds nothing before its `\r\n`. In request 1, that empty line is bytes 60 and 61.
 
 </ScrollStep>
 
@@ -107,7 +107,7 @@ Request 2 has no Content-Length line. A request with no body size has no body. S
 
 <KeyIdea id="empty-line-then-content-length" title="The empty line ends the head, Content-Length ends the body">
 
-A request head ends at the first empty line. If the head says `Content-Length: n`, exactly n body bytes follow. The byte after them starts the next request.
+A request head ends at the empty line after its header lines. If the head says `Content-Length: n`, exactly n body bytes follow. The byte after them starts the next request.
 
 </KeyIdea>
 
@@ -210,15 +210,15 @@ The sender does not choose where your reads stop. TCP and the timing of the pack
 
 <Segment title="Pick the status and keep the line open">
 
-**In this part.** Parts 1 and 2 found where each request ends. Now the server answers each request, and the status code at the start of the answer must fit. This part sorts the requests of the assignment by what is wrong with them. It also shows why an error answer keeps the connection open.
+**In this part.** Parts 1 and 2 found where each request ends. Now the server answers each request, and the status code at the start of the answer must fit. This part sorts the requests of the assignment by what is wrong with them. It also shows why the error answers of the marking run leave the connection open.
 
 <StatusPicker slot="visual" />
 
 <Picture breaks="a kid reads the words on the slip. A program acts on the number, so the number must be right, whatever the words say.">
 
-At a school snack counter, kids ask for things one after another. A kid asks for 2 apples, gets them, and gets a slip that says "done". A kid asks for "x" apples, and the slip says "that is not a number". A kid asks to share 1 apple among 0 friends, and the slip says "that cannot be done". A kid asks for pizza, and the slip says "we have no pizza". A kid tries to sell an apple to the counter, and the slip says "this counter only gives out apples". After each slip, the counter stays open for the next kid.
+At a school snack counter, kids ask for things one after another. A kid asks for 2 apples, gets them, and gets a slip that says "done". A kid asks for "x" apples, and the slip says "that is not a number". A kid asks to share 1 apple among 0 friends, and the slip says "that cannot be done". A kid asks for pizza, and the slip says "we have no pizza". A kid tries to sell an apple to the counter, and the slip says "this counter only gives out apples". After each of these slips, the counter stays open for the next kid.
 
-The counter is your server, and the line of kids is the requests on one connection. Each slip is an answer, and the word at its top is the status code. A bad order, such as "x" apples or a share among 0 friends, is bad input: 400. Pizza is a path that does not exist: 404. Selling to a counter that only gives out apples is a method that the path does not allow: 405. That slip also says what the counter does. The counter never closes because one kid made a mistake.
+The counter is your server, and the line of kids is the requests on one connection. Each slip is an answer, and the word at its top is the status code. A bad order, such as "x" apples or a share among 0 friends, is bad input: 400. Pizza is a path that does not exist: 404. Selling to a counter that only gives out apples is a method that the path does not allow: 405. That slip also says what the counter does. The counter does not close after a wrong order, and your server keeps the connection open after these errors.
 
 </Picture>
 
@@ -260,13 +260,13 @@ The assignment slide gives the whole feature set. Build the server on a plain so
 
 <KeyIdea id="six-answers-on-one-connection" title="Six answers on one connection">
 
-The marker sends six requests on one connection: rows 1, 2, 3, 5, 7 and 8, in that order. Three of them are errors. Then the marker checks that the connection is still open: one TCP handshake, six answers.
+The marker connects to port 8080 on your machine. It sends six requests on one connection: rows 1, 2, 3, 5, 7 and 8, in that order. Three of them are errors. Then the marker checks that the connection is still open: one TCP handshake, six answers.
 
 </KeyIdea>
 
-The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". An error answer is still an answer, so the server sends it and waits for the next request.
+The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". So the 400, the 404 and the 405 of the marking run are normal answers. The server sends each one and waits for the next request on the same connection.
 
-The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend. Accept a chunked body. Answer six requests that arrive at once, in order.
+The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend. Support chunked encoding. The slide does not say whether that means requests, answers or both. Answer six requests that arrive at once, in order.
 
 <Beyond source="RFC 9110 §15.5.6, RFC 9112 §3.2" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6">
 
@@ -390,7 +390,7 @@ The Session 5 deck announces the assignment and says that it is due before Sessi
 
 ### Local test plan
 
-Run these tests against your own server, on a spare port.
+Run these tests against your own server. The marker on the slide connects to localhost, port 8080, so test on that port too.
 
 1. Open one connection with a short client of your own. Send the six requests of the marking run in its order: add, sub, mul, div by zero, pow, POST /add. Check each answer, and then check that the connection still works.
 2. Test rows 4, 6 and 9 of the checklist (div 9/3, a=x, no Host) on separate connections.
@@ -422,28 +422,28 @@ A single `recv()` can return any number of bytes. Keep a buffer between reads.
 <details>
 <summary>Hint 3</summary>
 
-Search the buffer for the empty line before you parse anything.
+Which bytes tell you that a head is complete? Look for them in the buffer.
 
 </details>
 
 <details>
 <summary>Hint 4</summary>
 
-Every answer needs a length, or the client cannot find its end.
+Look at an answer from your server as the client sees it. How does the client know where that answer ends?
 
 </details>
 
 <details>
 <summary>Hint 5</summary>
 
-After you answer, remove only the bytes that you used from the buffer.
+After an answer, look at the bytes that stay in your buffer. Which request do they belong to?
 
 </details>
 
 <details>
 <summary>Hint 6</summary>
 
-Stretch: when many requests wait in the buffer, answer each of them before you call `recv()` again.
+Stretch: one read can hold two whole requests. What does your server do with the second one?
 
 </details>
 

@@ -36,7 +36,7 @@ const [R1, R2] = STREAM.requests;
 const BODY = { start: R1.headEnd + 1, end: R1.end };
 /** Where each label sits: just after the last cell of a row. */
 const afterRow = (row: number) => Math.max(...CELLS.filter((c) => c.row === row).map((c) => c.x + c.width)) + 8;
-/** The byte of the Content-Length line and the length of its text, with no \r\n. */
+/** The first and the last byte of the text "Content-Length: 5", with no \r\n. */
 const CL_START = STREAM.text.indexOf('Content-Length');
 const CL_END = STREAM.text.indexOf('\r', CL_START) - 1;
 
@@ -86,7 +86,7 @@ export default function ReadingAnimationIsland(_: Props) {
       <svg
         ref={svg}
         class="m12-reading"
-        viewBox={`0 0 420 ${rowTop(ROWS) + 4}`}
+        viewBox={`0 0 366 ${rowTop(ROWS) + 4}`}
         role="img"
         aria-label="The 114 bytes of two requests, one row for each line, with the byte number at the start of each row"
       >

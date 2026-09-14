@@ -33,13 +33,13 @@
 }
 .m12-offset {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   text-anchor: end;
   fill: var(--text-2);
 }
 .m12-note {
   font-family: var(--font-body);
-  font-size: 10.5px;
+  font-size: 11px;
   font-style: italic;
   fill: var(--text-2);
 }

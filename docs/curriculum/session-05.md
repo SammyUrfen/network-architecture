@@ -1089,6 +1089,8 @@ References for status choices: RFC 9110 §15.5.1 (400), §15.5.5 (404), §15.5.6
 - S05-M45: "Division by zero is a server error, so 500." Wrong. The client sent bad input, so 400. Distractor in check 2.
 - S05-M46: "A wrong method on a known path is 404." Wrong. The resource exists, so 405. Distractor in check 3.
 - S05-M47: "Read the body until the client closes." Wrong. On a kept connection, read exactly Content-Length. Distractor in check 4.
+- S05-M53: "An error can go in the body of a 200 answer." Wrong. A 200 says that the request worked, so a client that acts on the status code takes the error as a result. Distractor in check 2.
+- S05-M54: "501 fits a method that one path does not allow." Wrong. 501 is for what the server does not support at all, such as a method that it knows for no path. A known method that one path refuses gets 405. Distractor in check 3.
 
 **Diagrams.** (1) Static: a byte ruler of two pipelined requests, with the empty lines and the boundary marked. (2) Step-by-step: the persistent loop. Wait for the header end, maybe read a body, respond, back to wait.
 
