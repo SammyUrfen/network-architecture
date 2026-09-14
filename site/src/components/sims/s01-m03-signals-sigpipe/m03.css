@@ -1,0 +1,311 @@
+/* The visuals of s01-m03-signals-sigpipe. An island cannot use scoped Astro
+   styles, so every class has the s1m3- prefix. Inputs and option edges use
+   --border-strong, the edge of a control in the theme. A color never carries
+   meaning alone: each state also has a word or an icon. */
+
+.s1m3-figure {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+}
+.s1m3-figure > figcaption {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* SVG parts. The SVG grows with the rail only up to 30rem, so its labels stay near the size of the prose. */
+.s1m3-figure svg {
+  max-width: 30rem;
+  margin-inline: auto;
+}
+.s1m3-card {
+  fill: var(--surface-2);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+.s1m3-card-gone {
+  fill: var(--wrong-bg);
+  stroke: var(--wrong);
+  stroke-dasharray: 5 4;
+}
+.s1m3-status,
+.s1m3-status-start {
+  font-size: 11px;
+  fill: var(--text);
+}
+.s1m3-status {
+  text-anchor: middle;
+}
+.s1m3-strong {
+  font-weight: 700;
+}
+.s1m3-big {
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.s1m3-bad {
+  fill: var(--wrong);
+  font-weight: 700;
+}
+.s1m3-warn-text {
+  fill: var(--warn);
+  font-weight: 700;
+}
+.s1m3-link {
+  stroke: var(--border-strong);
+  stroke-width: 3;
+}
+.s1m3-cut {
+  fill: none;
+  stroke: var(--wrong);
+  stroke-width: 3;
+}
+.s1m3-chip {
+  fill: var(--key-bg);
+  stroke: var(--key);
+  stroke-width: 1.5;
+}
+.s1m3-chip-warn {
+  fill: var(--warn-soft);
+  stroke: var(--warn);
+}
+.s1m3-chip-bad {
+  fill: var(--wrong-bg);
+  stroke: var(--wrong);
+}
+.s1m3-chip-label,
+.s1m3-tag-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--text);
+}
+.s1m3-term {
+  fill: var(--bg-subtle);
+  stroke: var(--border-strong);
+}
+.s1m3-term-title {
+  font-size: 10px;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  fill: var(--text-muted);
+}
+.s1m3-cmd,
+.s1m3-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text);
+}
+.s1m3-out {
+  fill: var(--text-2);
+}
+.s1m3-mid {
+  text-anchor: middle;
+}
+.s1m3-note {
+  font-size: 11px;
+  font-style: italic;
+  fill: var(--text-muted);
+}
+.s1m3-hit {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.s1m3-hit-bad {
+  fill: var(--wrong-bg);
+  stroke: var(--wrong);
+}
+.s1m3-call {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+.s1m3-tag {
+  stroke-width: 1.5;
+}
+.s1m3-tag-warn {
+  fill: var(--warn-soft);
+  stroke: var(--warn);
+}
+.s1m3-tag-bad {
+  fill: var(--wrong-bg);
+  stroke: var(--wrong);
+}
+
+/* The signal board and the SIGPIPE simulator */
+.s1m3-board {
+  display: grid;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+.s1m3-board p {
+  margin: 0;
+}
+.s1m3-group {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.s1m3-group legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+.s1m3-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-1);
+}
+.s1m3-signals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--space-1);
+}
+.s1m3-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-2);
+  line-height: 1.3;
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.s1m3-choice:has(input:checked) {
+  background: var(--accent-soft);
+  border-width: 2px;
+}
+.s1m3-choice input {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--interactive);
+}
+.s1m3-result {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+}
+.s1m3-sub {
+  font-size: 0.8rem;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.s1m3-flag {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  font-variant: normal;
+  letter-spacing: 0;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-s);
+}
+.s1m3-verdict {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid var(--correct);
+  background: var(--correct-bg);
+  border-radius: var(--radius);
+}
+.s1m3-verdict-ends {
+  border-left-color: var(--wrong);
+  background: var(--wrong-bg);
+}
+.s1m3-verdict-stops {
+  border-left-color: var(--warn);
+  background: var(--warn-soft);
+}
+.s1m3-verdict-head {
+  font-weight: 700;
+}
+.s1m3-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+}
+.s1m3-field {
+  display: grid;
+  gap: var(--space-1);
+}
+.s1m3-field input {
+  width: 7rem;
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  font-family: var(--font-mono);
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.s1m3-run {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.s1m3-line {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr;
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-s);
+}
+.s1m3-line-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.s1m3-line-body code {
+  overflow-wrap: anywhere;
+  background: none;
+  padding: 0;
+}
+.s1m3-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.s1m3-line-ok {
+  border-left-color: var(--correct);
+}
+.s1m3-line-error {
+  border-left-color: var(--warn);
+}
+.s1m3-line-error .s1m3-kind {
+  color: var(--warn);
+}
+.s1m3-line-signal,
+.s1m3-line-end {
+  border-left-color: var(--wrong);
+}
+.s1m3-line-signal .s1m3-kind {
+  color: var(--wrong);
+}
+.s1m3-muted {
+  color: var(--text-muted);
+}
+.s1m3-simplifies {
+  color: var(--text-muted);
+}
