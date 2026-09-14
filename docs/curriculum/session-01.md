@@ -326,27 +326,23 @@ With the one-read server, the same client gets `one` back and never `two` (verif
 
 - **Title:** Ports and the accept queue: refused, queued or hung.
 - **Minutes:** 22.
-- **Big idea:** Before your code runs, the port and the accept queue decide what a client sees: a refusal, a wait in line, or a silent hang.
+- **Big idea:** Before your code runs, the port number and a waiting line for new connections decide what a client sees: a refusal, a wait in line, or a silent hang.
 - **Covers:** S01-C09, S01-C10, S01-C11, S01-C12, S01-C13, S01-C14, S01-C15, S01-C16, S01-C17, S01-C18, S01-C20, S01-C21, S01-C22, S01-C23, S01-C24, S01-C25, S01-C80, S01-C83.
 - **Prereqs:** s01-m01-seven-syscalls.
 - **Threads:** T-honest-benchmarks (full-queue behavior differs by system, so a local result can mislead).
 - **Note:** slide 34 (INADDR_ANY, SO_REUSEADDR) moved here from s01-m06. See Open questions 2.
 
-**Pretest.**
-1. A server calls bind() and listen() but never accept(). Does the client connect() succeed? *Answer: yes. The kernel finishes the handshake.*
-2. No process listens on port 2026. What does the client see, and how fast? *Answer: "Connection refused", at once.*
-3. listen(fd, 1). Is 1 the limit on total clients? *Answer: no. It is the depth of the accept queue.*
+**Pretest.** Plain words, because the pretest comes before the lesson (learner review, 2026-09-14).
+1. A server program claims a port number, which clients use to find it. It tells the operating system to take connections for it, but it never picks up a connection. A client tries to connect. Does the connection succeed? *Answer: yes. The kernel finishes the connection and puts it in a waiting line. The client then waits.*
+2. A port number tells a computer which program gets a connection. No program waits for connections on port number 2026. A client tries to connect. What does the client see, and how fast? *Answer: "Connection refused", at once.*
+3. A server program says that its line of new connections has room for 1. Can the server serve only one client in total? *Answer: no. The 1 is the size of the line of connections that wait for the program.*
 
-**Rung 1, the picture.**
+**Rung 1, the picture.** One clinic building, told in four scenes, one for each part of the page. Rewritten as story paragraphs for the v2 lesson contract and the learner review, 2026-09-14.
 
-| The picture | The real thing |
-|---|---|
-| Each door in a street has a number. Doors below 1024 need a master key. | A port. Ports below 1024 need root. |
-| No clinic behind a door: a guard says "nobody here" at once. | No listener: the kernel sends RST. |
-| The doctor never calls a name. The nurse seats you and you wait in silence. | bind and listen, no accept: the queue. |
-| The waiting room is full. The nurse ignores your knock, so you knock again. | A full queue on Linux drops the SYN. |
-
-Where this breaks: a Linux waiting room of size N seats N + 1 people. A patient who already sits in the room waits forever, because TCP sees nothing wrong.
+- *Ports.* A big clinic building has many numbered rooms. Each doctor rents one room, and a patient asks for a doctor by the room number. The rooms from 1 to 1023 open only with the master key. Any doctor can rent a room from 1024 up. A careful building does not give the master key to a busy doctor. A greeter with the key stands in room 80 and sends each patient up to the doctor in room 8080. Mapping: the building is one computer, a room number is a port, a doctor is a server program, a patient is a client, renting a room is bind(), the master key is root, the greeter is a front proxy. Where this breaks: root can do far more than open doors. It can read every file and change every program.
+- *Refused or a silent wait.* On the first day, no doctor rents room 2026, and the front desk says at once that nobody works there. On the second day, a doctor rents the room and tells the desk to seat patients. The desk writes your name and seats you, but the doctor never calls a name. Mapping: the front desk is the kernel, renting is bind(), telling the desk to seat patients is listen(), "nobody works there" is RST and "Connection refused", being seated is the finished handshake in the accept queue, calling a name is accept(). Where this breaks: a real desk notices after an hour. The kernel never tells the client.
+- *The accept queue.* The waiting room has chairs, and the doctor tells the desk how many. A called patient leaves the chair, so one chair serves many patients in a day. When every chair is full, this desk does not look up, and the patient knocks again and again, then goes home. Another building hangs a "full" sign. Mapping: the chairs are the accept queue, their number is the backlog, calling a name is accept(), the desk that does not look up is Linux dropping the SYN, knocking again is SYN retries, the sign is a system that refuses. Where this breaks: the Linux desk seats one more patient than the doctor asked for.
+- *The restart trap.* The doctor leaves and comes back at once. The clinic keeps a room locked for one minute after each visit, because a late letter for the last patient could reach a new patient. The desk says that the room is in use. The doctor does not listen and sits in any free room, so patients who ask for room 2026 hear that nobody works there. The fix is a note on every visit: give me my room anyway. Mapping: leaving and coming back is a quick restart, the locked minute is TIME_WAIT, the late letter is a late packet, the desk's answer is EADDRINUSE, the doctor who does not listen is the unchecked bind(), the free room is the port that listen() picks, the note is SO_REUSEADDR. Where this breaks: the lock belongs to the old visit, not the room, and Linux accepts the note only if the earlier visit also gave it.
 
 **Rung 2, how it works.**
 1. A SYN arrives for port 2026.
@@ -354,20 +350,20 @@ Where this breaks: a Linux waiting room of size N seats N + 1 people. A patient 
 3. A listener exists and its queue has room: the kernel completes the handshake and queues it.
 4. The client connect() returns success. Its data gets an ACK and waits in a buffer.
 5. accept() removes one connection from the queue.
-6. The queue is full: Linux drops the SYN, and the client retries for about 127 s.
+6. The queue is full: Linux drops the SYN. The client sends it again and again, and connect() times out after about two minutes: 133 and 136 s in two runs on 2026-09-14 (Linux 7.1, loopback, default settings, no client timeout).
 
 **Rung 3, the real thing.** Verified runs, Linux 7.1, loopback, 2026-09-13:
 - listen(1), no accept, four clients: two connect at once, two stay in `SYN-SENT`. `ss -ltn` shows `Recv-Q 2` and `Send-Q 1` on the listener. With listen(3), four clients connect.
 - A queued client sends 3 bytes. The server side shows `Recv-Q 3`. The client read waits.
 - No bind(): listen() still returns 0, and the kernel picks `0.0.0.0:54601`. A connect to the intended port fails with "refused".
-- The restart trap: TIME_WAIT is a waiting state. The side that closes a connection first keeps it for 60 s on Linux, so late packets from the old connection die out. The one-read echo server closes first, so its port sits in TIME_WAIT. A quick restart gets `EADDRINUSE` from bind(). The code does not check (S01-C127), listen() picks port 51821, and every client to the real port gets "refused". SO_REUSEADDR fixes the bind.
+- The restart trap: TIME_WAIT is a waiting state. The side that closes a connection first keeps it for 60 s on Linux, so late packets from the old connection die out. The one-read echo server closes first, so its port sits in TIME_WAIT. A quick restart gets `EADDRINUSE` from bind(). The code does not check (S01-C127), listen() picks port 51821, and every client to the real port gets "refused". SO_REUSEADDR fixes the bind only when the old socket also had it: a run on 2026-09-14 showed bind() fail when the old listener had no SO_REUSEADDR, even with the option on the new socket. TIME_WAIT ended after 63 and 64 s in two runs.
 - `/proc/sys/net/core/somaxconn` holds 4096 on this machine. `ip_unprivileged_port_start` holds 1024.
 - `01_echo_server.c` line 9 binds INADDR_ANY: every interface, including the LAN. Binding 127.0.0.1 keeps the port on this machine.
 
 **Rung 4, exam depth.**
 - *Refused versus hung.* A refusal costs one round trip and names the problem. A hang costs the whole client timeout and looks like load (S01-C16, S01-C18).
 - *Why the queue exists.* The kernel finishes handshakes while the app works on another client. The queue absorbs a burst. The backlog sets its depth, not the number of clients (S01-C25).
-- *Portability.* Linux always drops a SYN that finds the accept queue full. `tcp_abort_on_overflow=1` only makes Linux reset a handshake whose final ACK arrives when the queue is full. macOS also drops silently. Some other stacks refuse. Do not build logic on the behavior you saw locally (S01-C22).
+- *Portability.* Linux always drops a SYN that finds the accept queue full. `tcp_abort_on_overflow=1` only makes Linux reset a handshake whose final ACK arrives when the queue is full. Some other stacks refuse. (The page dropped a macOS claim that had no reference, accuracy review 2026-09-14.) Do not build logic on the behavior you saw locally (S01-C22).
 - *Root and port 80.* The rule is a privilege: root, the CAP_NET_BIND_SERVICE capability, or a lower `ip_unprivileged_port_start`. The safe design keeps the parser unprivileged behind a proxy (S01-C13, S01-C14).
 - *SO_REUSEADDR is not SO_REUSEPORT.* REUSEADDR lets bind() succeed next to TIME_WAIT sockets. It does not let two servers listen on one port. That job belongs to SO_REUSEPORT.
 
@@ -390,42 +386,34 @@ Where this breaks: a Linux waiting room of size N seats N + 1 people. A patient 
 **Interactives.**
 - *Break-it toggles* (P1). Inputs: skip bind, skip accept, restart without SO_REUSEADDR, backlog 1 to 8, client count. The learner sees each client state (refused, in the queue, SYN-SENT) and the matching `ss` line. The learner discovers that a missing call rarely crashes. It changes what the client sees.
 
-**Predict, observe, explain.** Run `python3 -c 'import socket,time; s=socket.socket(); s.bind(("127.0.0.1",2038)); s.listen(1); time.sleep(60)'`. In a second terminal, run `(sleep 30 | nc 127.0.0.1 2038 &)` three times, then `ss -tn state all '( sport = :2038 or dport = :2038 )'`. Predict: how many clients reach ESTAB? Observe: two, and one `SYN-SENT`. The listener shows `Recv-Q 2` and `Send-Q 1`. The captured output is the verification run above.
+**Predict, observe, explain.** On the class server, so the demo comes from the instructor code. Build and run `01_echo_server.c`. In a second terminal, run `for i in 1 2 3 4; do (sleep 30 | nc 127.0.0.1 2026 &); sleep 0.2; done`, then `ss -tan '( dport = :2026 )'` and `ss -ltn '( sport = :2026 )'`. Predict, in plain words: client 1 keeps the server in its read(), so how many of the next three clients complete the handshake? Observe: two. The client lines show three ESTAB and one SYN-SENT, and the listener shows `Recv-Q 2` and `Send-Q 1`. Verified on 2026-09-14 with a copy on a spare port. Ncat prints "Ncat: TIMEOUT." for the fourth client after about 10 s.
 
 **Worked example, faded example, your turn.**
-- *Worked:* Backlog 1, the server never accepts, four clients. The Linux queue holds backlog + 1 = 2. Clients 1 and 2: ESTAB. Clients 3 and 4: SYN-SENT, then failure after about 127 s.
+- *Worked:* Backlog 1, the server never accepts, four clients. The Linux queue holds backlog + 1 = 2. Clients 1 and 2: ESTAB. Clients 3 and 4: SYN-SENT, then failure after about two minutes with Linux defaults and no client timeout.
 - *Faded:* Backlog 3, six clients. In the queue: ____. In SYN-SENT: ____. *(4, 2.)*
 - *Your turn:* listen(fd, 10000) on a machine with somaxconn 4096. How many connections can wait? *(The backlog becomes 4096, so 4097 fit.)*
 
-**Checks.**
-1. `mcq`: the code sets port 2026 but never calls bind(). listen() returns 0. What does `ss -ltn` show for the process? Answer: a listener on a random high port, such as `0.0.0.0:54601`. Distractor: no listener at all (S01-M07). Distractor: a listener on 2026 (S01-M48). Feedback: Linux binds an unbound socket to an ephemeral port at listen().
-2. `mcq`: bind and listen, no accept. The client connected and sent data. What does it see? Answer: it waits with no reply. Distractor: a TCP timeout after a few seconds (S01-M08). Distractor: a reset when the kernel gives up on the app (S01-M49). Feedback: the kernel sent an ACK for its bytes, so TCP sees nothing wrong. Slide 9 says the client "waits until TCP times out". A queued connection has no such timeout. On the quiz, expect the slide wording.
-3. `numeric`: Linux, listen(fd, 1), no accept. How many handshakes complete? Answer: 2. Distractor value: 1 (S01-M50). Feedback: beyond the slides, Linux calls the queue full only above the backlog. Slide 11 only says the backlog sizes a queue.
-4. `mcq`: what does SO_REUSEADDR fix? Answer: a bind() failure while old sockets sit in TIME_WAIT. Distractor: two servers on one port (S01-M09). Distractor: it removes TIME_WAIT (S01-M51). Feedback: two listeners need SO_REUSEPORT, and TIME_WAIT stays.
-5. `multi`: which statements hold on Linux by default? Answer: port 80 needs privilege. Any user can bind 8080. A process with CAP_NET_BIND_SERVICE can bind 80 without root. Wrong picks: only root can ever bind 80 (S01-M05). Port 8080 needs root, because web servers use it (S01-M52). Feedback: the line is 1024, and a capability or a sysctl can lift it. Slide 8 says "root only". On the quiz, expect the slide wording.
-6. `mcq`: listen(fd, 1). The server accepts each client at once and keeps it open. A third client connects. Result? Answer: it connects, because accept() emptied the queue. Distractor: refused, because the backlog allows one client in total (S01-M06). Distractor: it waits, because each open client still fills the queue (S01-M06). Feedback: the backlog counts only connections that wait for accept().
+**Checks.** Reworded on the page so that no check needs a tool that the page did not teach first (learner review, 2026-09-14).
+1. `mcq`: the code sets port 2026 but never calls bind(). listen() succeeds. On which port does the program listen? Answer: a random free port that the kernel picked. Distractor: no port at all (S01-M07). Distractor: port 2026, because the code sets it (S01-M48). Feedback: Linux binds an unbound socket to a random port at listen() (ip(7)).
+2. `mcq`: bind and listen, no accept. The client connected and sent data. What does it see? Answer: it connects, then waits with no reply. Distractor: a TCP timeout after a few seconds (S01-M08). Distractor: a reset when the kernel gives up on the app (S01-M49). Feedback: the kernel sent an ACK for its bytes, so TCP sees nothing wrong. Slide 9 says the client "waits until TCP times out". On the quiz, expect the slide wording.
+3. `numeric`: Linux, listen with a backlog of 1, no accept. Clients connect one after the other and stay. How many complete the handshake? Answer: 2. Distractor value: 1 (S01-M50). Feedback: beyond the slides, Linux calls the queue full only above the backlog.
+4. `mcq`: what does SO_REUSEADDR fix? Answer: a bind() failure while an old connection sits in TIME_WAIT. Distractor: two servers on one port (S01-M09). Distractor: it removes TIME_WAIT (S01-M51). Feedback: the new bind() works when the old run and the new run both set the option. Two listeners need SO_REUSEPORT, and TIME_WAIT stays.
+5. `multi`: which statements hold on Linux by default? Right picks: any user can bind 8080. A program with CAP_NET_BIND_SERVICE can bind 80 without root. Wrong picks: only root can ever bind 80 (S01-M05). Port 8080 needs root, because web servers use it (S01-M52). Feedback: the line is 1024, and a capability or a sysctl can lift it. Slide 8 says "root only". On the quiz, expect the slide wording.
+6. `mcq`: listen with a backlog of 1. The server accepts each client at once and keeps it open. A third client connects. Result? Answer: it connects, because accept() emptied the queue. Distractor: refused, because the backlog allows one client in total (S01-M06). Distractor: it waits, because each open client still fills the queue (S01-M06). Feedback: the backlog counts only connections that wait for accept().
 
-**Review cards.**
-- Q: What does a client see when no process listens on the port? A: connection refused (RST).
-- Q: What does the listen() backlog size? A: the accept queue.
-- Q: Which sysctl caps the backlog on Linux? A: net.core.somaxconn.
-- Q: Default net.core.somaxconn since Linux 5.4? A: 4096.
-- Q: Per slide 9, how long does the client of a server with no accept() wait? A: "until TCP times out", in the slide's words.
-- Q: What does Linux do with a SYN when the accept queue is full? A: it drops it.
-- Q: Why bind 8080 behind a proxy instead of 80? A: so the parser does not run as root.
-- Q: Why does a quick restart fail with "address already in use"? A: TIME_WAIT sockets hold the port.
+**Review cards.** The card that asked what slide 9 says went away (no questions about the documents), and the two somaxconn cards became one.
+- Q: What does a client see when no program listens on the port? A: "Connection refused" at once. The kernel answers the SYN with an RST.
+- Q: bind() and listen(), but never accept(). What does a client see? A: connect() succeeds, then it waits with no reply. It looks like an overloaded server.
+- Q: What does the second argument of listen() set? A: the size of the accept queue, not a limit on clients.
+- Q: When accept() returns, what has already happened? A: the handshake is complete. Then the connection waited in the accept queue.
+- Q: Which Linux setting caps the backlog of listen()? A: net.core.somaxconn, 4096 by default since Linux 5.4.
+- Q: What does Linux do with a new SYN when the accept queue is full? A: it drops it. The client sends it again and later times out. Some other systems refuse.
+- Q: Why run the program on 8080 and not on 80? A: by default port 80 needs root, and a bug in request code that runs as root gives an attacker root. A front proxy owns 80 and 443.
+- Q: Why can a quick restart fail with "Address already in use"? A: a connection that the server closed first sits in TIME_WAIT. A server that sets SO_REUSEADDR before bind() on every start can bind anyway.
 
-**Lab.** The restart trap.
-```sh
-cd sources/cn-at-scaler/lesson1 && gcc -o 01_echo_server 01_echo_server.c
-./01_echo_server & pid=$!; sleep 0.3
-python3 -c 'import socket; s=socket.create_connection(("127.0.0.1",2026)); s.sendall(b"x\n"); s.recv(9); s.recv(9)'
-kill $pid; ./01_echo_server & pid=$!; sleep 0.3
-ss -ltnp | grep 01_echo_server
-nc -z 127.0.0.1 2026; echo $?
-kill $pid
-```
-Expected: `ss` shows the new server on a random high port, not 2026, and `nc -z` prints 1. The server closed first, so its old connection holds 2026 in TIME_WAIT for 60 s. A copy on a spare port gave `0.0.0.0:60777` and `1` (verified).
+**Lab.** Two experiments on `01_echo_server.c`, with nc and ss. The page gives the full commands and the verified output.
+1. Fill the queue: four `nc` clients that send nothing, then `ss`. Expected: three ESTAB, one SYN-SENT, `Recv-Q 2` and `Send-Q 1` on the listener.
+2. Stop the server, wait about 70 s (TIME_WAIT lasts a little over 60 s), start it again, and run `(echo hello; sleep 1) | nc 127.0.0.1 2026`. `ss -tan state time-wait '( sport = :2026 )'` shows TIME_WAIT on the server side. Stop and start the server at once. Expected: `ss -ltnp | grep 01_echo_server` shows a random high port, and `nc 127.0.0.1 2026` prints "Ncat: Connection refused.". Verified on 2026-09-14 with a copy on a spare port: `0.0.0.0:52053`.
 
 ### s01-m03-signals-sigpipe
 
