@@ -965,7 +965,7 @@ Expected: the three handshake packets, then the payload bytes `68 65 6c 6c 6f 0a
 - S01-M74: "A fixed-length message needs an end marker too." Wrong: the reader counts N bytes, so no marker is needed. Distractor in check 2.
 - S01-M75: "A delimiter needs the message size up front." Wrong: that cost belongs to a length prefix. A delimiter lets the sender stream. Distractor in check 3.
 - S01-M76: "A delimiter is a kind of length, because the reader counts the bytes before it." Wrong: the reader learns the count only after it scans to the delimiter. Distractor in check 5.
-- S01-M77: "TCP sends nothing until the send buffer is full." Wrong: TCP sends small writes soon, and it can split or merge them. Distractor in check 6.
+- S01-M77: "TCP sends nothing until the send buffer is full." Wrong: TCP does not wait for a full buffer, and it can split or merge writes. Distractor in check 6.
 
 **Diagrams.**
 - Step-by-step: two writes enter a send buffer, leave as segments of random size, and arrive as reads of other sizes. The v2 page draws it as an animation of beads: two writes, one stream with segment edges, then reads whose cuts move on each run (3 and 7, 6 and 4, then 10).

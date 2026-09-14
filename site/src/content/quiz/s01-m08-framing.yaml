@@ -119,11 +119,11 @@ items:
       - text: None, until the send buffer is full.
         correct: false
         misconception: S01-M77
-        feedback: TCP sends small writes soon, and it can split or merge them.
+        feedback: TCP does not wait for a full buffer. It can split or merge writes.
       - text: One or more, as TCP decides.
         correct: true
         feedback: TCP can send the 10 bytes in one segment, split them, or merge them with other writes.
-    explanation: TCP picks the segment sizes, not the program. So the edges of a write do not reach the receiver.
+    explanation: TCP picks the segment sizes, and the program cannot set them directly. So the edges of a write do not reach the receiver.
     covers: [S01-C92]
     tags: []
     taughtIn: seg-a-byte-stream-has-no-edges
@@ -161,20 +161,20 @@ items:
   - id: s01-m08-q10
     use: [practice]
     type: predict
-    prompt: 'A small echo server runs on your computer and reports each read. A client on the same computer sends "hello", then "world", on one connection. How many reads does the server make for the two sends?'
+    prompt: 'In a test run, a small echo server runs on a computer and reports each read. A client on the same computer sends "hello", then "world", on one connection. How many reads did the server make for the two sends?'
     options:
       - text: Two reads of 5 bytes, one for each send.
         correct: false
         misconception: S01-M32
-        feedback: TCP can split or merge writes. In this run on one computer, the two sends arrived as one read.
+        feedback: In this run, the two sends arrived as one read. Another run can give two reads, but TCP does not promise one read for each send.
       - text: One read that returns all 10 bytes.
         correct: true
-        feedback: That is what this run on one computer showed. A real network can split the bytes another way.
+        feedback: That is what this run on one computer showed. Another run or a real network can split the bytes another way.
       - text: No read, until the send buffer fills.
         correct: false
         misconception: S01-M77
-        feedback: TCP sends small writes soon, and it can split or merge them.
-    explanation: On one computer, the server made one read that returned all 10 bytes. TCP kept no edge between the two sends. A real network can give other cuts.
+        feedback: TCP does not wait for a full buffer. It can split or merge writes.
+    explanation: In this run on one computer, the server made one read that returned all 10 bytes. TCP kept no edge between the two sends. Another run or a real network can give other cuts.
     covers: [S01-C92]
     tags: [measured]
     taughtIn: tcp-keeps-order-not-edges

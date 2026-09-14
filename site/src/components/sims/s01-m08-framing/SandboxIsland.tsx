@@ -112,8 +112,8 @@ export default function SandboxIsland({ title, messages, rule: firstRule, n: fir
   const simplifies = (
     <p class="simplifies">
       <strong>What this simplifies:</strong> a random number picks the read sizes here. Real TCP sizes come from segments,
-      timing and buffer space. Each message leaves in one write(), and fixed length pads with zero bytes. Like real TCP,
-      the model never loses, reorders or changes a byte.
+      timing and buffer space. Each message leaves in one write(), and fixed length pads with zero bytes. The model
+      never loses, reorders or changes a byte. Real TCP makes the same promise, or the connection fails with an error.
     </p>
   );
 

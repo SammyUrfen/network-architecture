@@ -16,7 +16,7 @@ terms:
   - term: byte stream
     meaning: bytes in order, with no marks between writes
   - term: segment
-    meaning: one piece of the byte stream that TCP sends over the network. TCP picks its size, not the program.
+    meaning: one piece of the byte stream that TCP sends over the network. TCP picks its size, and the program cannot set it directly.
   - term: framing
     meaning: the rule that tells the reader where each message ends
   - term: delimiter
@@ -65,7 +65,7 @@ TCP is the part of the operating system that carries bytes between two programs,
 
 <Animation slot="visual" name="stream" title="Two writes, one stream, and reads that cut anywhere" />
 
-<Picture breaks="a real string can snap and drop beads, but TCP never loses a byte and never changes their order.">
+<Picture breaks="a real string can snap and drop beads with no sign. TCP never gives the reader a gap or a wrong order. If it cannot deliver the bytes, the connection fails with an error.">
 
 Your friend makes two bead bracelets for you and sends them in a thin tube. To fit the tube, your friend puts all the beads on one long string, one bead after the other. At home, you take the beads from the string a handful at a time. One handful can hold the last beads of the first bracelet and the first beads of the second. Nothing on the string shows where the first bracelet stopped.
 
@@ -97,7 +97,7 @@ TCP puts all ten bytes on one stream, in order, like beads on the string. The ga
 
 <ScrollStep step={4}>
 
-TCP sends the stream over the network in pieces called segments. TCP picks the size of each segment, and the program has no say. A segment can hold part of one write, or the end of one write and the start of the next. TCP also sends a small write soon, and it does not wait until its buffer is full.
+TCP sends the stream over the network in pieces called segments. TCP picks the size of each segment, and the program cannot set it directly. A segment can hold part of one write, or the end of one write and the start of the next. TCP does not wait until its buffer is full. It usually sends a small write at once, but it can hold one for a moment while earlier bytes wait for a reply from the other side (<SlideLink session={5} page={28} />).
 
 </ScrollStep>
 
@@ -140,7 +140,7 @@ The man page says that a count smaller than the buffer is not an error. It can h
 <ExamDepth>
 
 - **The reader keeps leftovers.** A read can stop in the middle of a message. It can also hold the end of one message and the start of the next. So the reader keeps the unused bytes for the next message.
-- **The buffer size is not a message size.** The echo server asks for up to 4096 bytes. A read gives what waits, from 1 byte up to 4096 bytes. A read that returns 0 means that the other side closed the connection.
+- **The buffer size is not a message size.** The echo server asks for up to 4096 bytes. A read gives what waits, from 1 byte up to 4096 bytes. A read that returns 0 means that the other side closed its sending side: the stream has ended.
 
 </ExamDepth>
 
@@ -216,7 +216,7 @@ A delimiter breaks when a message holds the delimiter byte. In the animation, me
 
 ### The real thing
 
-HTTP, the protocol of the web, uses a delimiter. A web server answers with header lines first, one fact on each line, such as the date or the size of the body. Two bytes, CR and LF, end each line: that is how HTTP writes a newline. An empty line, one more CR LF, ends the header lines. Then the body follows.
+HTTP, the protocol of the web, ends its header lines with a delimiter. A web server answers with a status line first, then header lines, one fact on each line, such as the date or the size of the body. Two bytes, CR and LF, end each line: that is how HTTP writes a newline. An empty line, one more CR LF, ends the header lines. Then the body follows, and Part 3 shows how HTTP marks the end of the body.
 
 On <SlideLink session={1} page={17} />, the instructor typed a request to google.com by hand. Google answered with a 301 response, which says that the page moved. The bytes below are the end of its header lines, with `\r\n` for CR LF.
 
@@ -248,7 +248,7 @@ Homework 3 on <SlideLink session={1} page={47} /> asks you to make the echo serv
 
 - **Two rules or three?** <SlideLink session={1} page={39} /> lists three rules: fixed length, delimiter and length prefix. Later decks say "length or delimiter", for example <SlideLink session={2} page={41} />. Both hold, because a fixed length is a length that both sides agreed on ahead of time.
 - **The cost of a fixed length.** The parse is trivial, and nothing is ambiguous. But every short message pays for pad, and N can never change.
-- **The cost of a delimiter.** A delimiter is readable, and the sender needs no size up front. But the sender must escape the delimiter in the data. The escape byte then needs an escape too: if a backslash starts an escape, a real backslash in the data becomes two backslashes. SMTP, the mail protocol, adds a dot to a body line that starts with a dot (<ModuleLink id="s02-m07-smtp-mime" />).
+- **The cost of a delimiter.** A delimiter is readable, and the sender needs no size up front. But the sender must escape the delimiter in the data. SMTP, the mail protocol, adds a dot to a body line that starts with a dot (<ModuleLink id="s02-m07-smtp-mime" />).
 - **Are TCP/IP headers fixed length?** Notes from the class call them fixed size, and say that messages of variable length are more common today. In fact each header has a fixed part plus a length field. So even a "fixed" header carries a length.
 
 <Beyond source="RFC 791 §3.1 (IPv4 IHL), RFC 9293 §3.1 (TCP Data Offset)" url="https://www.rfc-editor.org/rfc/rfc9293#section-3.1">
@@ -331,8 +331,8 @@ The sandbox runs a sender and a reader with one rule. It cuts the bytes into ran
 | Length prefix | binary-safe, no scan | the sender must know the size first, and the field width caps it |
 | Both | readable control lines, a safe binary payload | two parsers, two ways to fail, and request smuggling in the gap (<SlideLink session={2} page={36} />) |
 
-- **Text or binary.** HTTP/1.1 is text, and HTTP/2 is binary (<SlideLink session={1} page={38} />). A person can read text with telnet, tcpdump and logs, and the slide says that this is most of why HTTP won. Text is also verbose, ambiguous at the edges and slow to parse. Binary is compact and cheap to parse, with no whitespace rules and no arguments about upper and lower case. Its cost is tools: you need a hex dump to read it. Notes from the class add that binary suits places where speed and efficiency matter.
-- **Redis uses both rules.** Homework 1 on <SlideLink session={1} page={47} /> calls Redis traffic text and length-prefixed. The Session 2 table on <SlideLink session={2} page={36} /> lists Redis under delimiter. Both hold, because each part of a Redis message has a length and ends with CR LF.
+- **Text or binary.** <SlideLink session={1} page={38} /> says that HTTP shows how far readable text can go, and that HTTP/2 is binary. A person can read text with telnet, tcpdump and logs, and the slide says that this is most of why HTTP won. Text is also verbose, ambiguous at the edges, and "slower to parse than it looks". Binary is compact and cheap to parse, with no whitespace rules and no arguments about upper and lower case. Its cost is tools: you need a hex dump to read it. Notes from the class add that binary suits places where speed and efficiency matter.
+- **Redis uses both rules.** Homework 1 on <SlideLink session={1} page={47} /> calls Redis traffic text and length-prefixed. The Session 2 table on <SlideLink session={2} page={36} /> lists Redis under delimiter. Both hold. A Redis command sends each argument as a length, CR LF, the bytes, then CR LF. Some replies, such as `+OK`, end with CR LF and carry no length.
 
 <Beyond source="Redis serialization protocol specification, sections Bulk strings, Arrays and Sending commands" url="https://redis.io/docs/latest/develop/reference/protocol-spec/">
 
@@ -390,7 +390,7 @@ The parts used pictures, animations and a sandbox. Now test the idea of Part 1 o
 
 <Predict id="s01-m08-q10">
 
-The server made one read, and that read returned all 10 bytes. A Linux tool called strace printed each system call of the server. This is the line of that read:
+In the run for this lesson, the server made one read, and that read returned all 10 bytes. A Linux tool called strace printed each system call of the server. This is the line of that read:
 
 ```
 read(4, "helloworld", 4096) = 10
@@ -412,7 +412,7 @@ In terminal 1, build the server and start it under strace. Port 2026 must be fre
     { cmd: 'gcc -o 02_echo_server_persistent 02_echo_server_persistent.c' },
     {
       cmd: 'strace -e trace=read,write ./02_echo_server_persistent',
-      out: `read(4, "helloworld", 4096)             = 10\nwrite(4, "helloworld", 10)              = 10`,
+      out: `read(4, "helloworld", 4096)             = 10\nwrite(4, "helloworld", 10)              = 10\nread(4, "", 4096)                       = 0`,
     },
   ]}
 />
@@ -429,7 +429,7 @@ In terminal 2, run a short Python program. It connects to port 2026 on the same 
   ]}
 />
 
-What you should see: terminal 2 prints `b'helloworld'`. In terminal 1, find the line with helloworld: one read of 10 bytes, then one write of 10 bytes. strace also prints reads of other files while the server starts, so skip the lines before it. Press Ctrl+C in terminal 1 to stop the server.
+What you should see: terminal 2 prints `b'helloworld'`. In terminal 1, find the line with helloworld. In the runs for this lesson, the server made one read of 10 bytes, then one write of 10 bytes. Your run can show two reads of 5 bytes, because the result depends on timing. The last read returns 0 when the client closes the connection. strace also prints reads of other files while the server starts, so skip the lines before it. Press Ctrl+C in terminal 1 to stop the server.
 
 </Lab>
 
