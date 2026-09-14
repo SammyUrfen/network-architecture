@@ -122,7 +122,7 @@ A program cannot send one byte over the network by itself. Only the kernel uses 
 
 <ScrollStep step={8}>
 
-A client makes a shorter list. It calls `socket()` too, then `connect()`, which asks the kernel to connect to a server at its address and port. Then the client uses `write()`, `read()` and `close()`. The lesson <ModuleLink id="s01-m04-clients" /> shows the client in full.
+A client makes a shorter list. It calls `socket()` too, then `connect()`, which asks the kernel to connect to a server at its address and port. Then it calls `write()` to send, `read()` if it wants an answer, and `close()`. The lesson <ModuleLink id="s01-m04-clients" /> shows the client in full.
 
 </ScrollStep>
 
@@ -141,7 +141,7 @@ A framework such as Flask saves you from writing these calls, but it still makes
 <details>
 <summary>The story: how the first class started</summary>
 
-The class runs for eight weeks, from network programming in week 1 to building for failures in week 8 <SlideLink session={1} page={2} />. The first session lasted 2.5 hours and went bottom-up. It started with the smallest program that can take a TCP connection. It ended with the design of a binary protocol of your own <SlideLink session={1} page={3} />. The last slide sent the class home with one task: find the `accept()` inside the framework that you use <SlideLink session={1} page={48} />.
+The class runs for eight weeks, from network programming in week 1 to building for failures in week 8 <SlideLink session={1} page={2} />. The first session lasted 2.5 hours and went bottom-up. It started with the smallest program that can take a TCP connection. It ended with the design of a binary protocol of your own <SlideLink session={1} page={3} />. The last slide ends with one line to take home: go and find the `accept()` inside the framework that you use <SlideLink session={1} page={48} />.
 
 </details>
 
@@ -152,7 +152,7 @@ The class runs for eight weeks, from network programming in week 1 to building f
 
 <Beyond source="accept4(2), Linux man page" url="https://man7.org/linux/man-pages/man2/accept4.2.html">
 
-On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection (Linux 7.1.8, loopback, 2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more argument for flags.
+On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection (Linux 7.1.8, loopback, 2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more argument for flags. To move the bytes, that server calls `recvfrom()` and `sendto()`, two close relatives of `read()` and `write()` for sockets.
 
 </Beyond>
 
@@ -261,7 +261,7 @@ The shopkeeper finishes the boxes and calls: next, please! One customer steps fr
 
 `read()` asks the kernel for the bytes that this client sent. The program gives it the number 4 and room for up to 4096 bytes. If no bytes wait, `read()` waits. When some bytes arrive, it returns at once with the bytes that wait, and its result is how many bytes it got.
 
-`write()` sends bytes to the client, and its result is how many bytes it sent. The echo server passes the same bytes and the same count that `read()` gave, so the client sees its own text come back.
+`write()` hands bytes to the kernel to send to the client, and its result is how many bytes the kernel took. The echo server passes the same bytes and the same count that `read()` gave, so the client sees its own text come back.
 
 `close()` ends the connection with this client and frees the number 4. The server goes back to `accept()`, and the next client gets the number 4 again.
 
@@ -291,7 +291,7 @@ close(4)                                = 0
 <ExamDepth>
 
 - **A client sends 10,000 bytes at once.** One `read()` takes at most 4,096 bytes, the size of the room that the server gives it. The server writes those bytes back and closes while more bytes still wait. A run on Linux over loopback gave 4,096 bytes back to the client, then the error "Connection reset by peer" (2026-09-14).
-- **Why no error checks?** The class code checks nothing, to stay short. A real server checks each result. For example, an unchecked `bind()` that fails leaves the server on a port that nobody knows.
+- **Why no error checks?** The class code checks nothing, to stay short. A real server checks each result, because any call can fail.
 
 <Beyond source="RFC 9293 §3.6.1, Half-Closed Connections" url="https://www.rfc-editor.org/rfc/rfc9293#section-3.6.1">
 
@@ -323,13 +323,19 @@ Opening the box is `read()`, which takes every byte that waits. Waiting next to 
 
 <Predict id="s01-m01-q05">
 
-Five runs on Linux over loopback, on 2026-09-14, each gave the same first read, with both lines in it:
+Two sets of runs on Linux over loopback, on 2026-09-14, gave both answers. In the first set, the client sent both lines right after it connected, before the server called `read()`. The first read got both lines in 5 runs of 5:
 
 ```
 read(4, "one\ntwo\n", 4096)             = 8
 ```
 
-On a real network, the bytes can arrive in other groups, so the first read can also return only `one`. A server must never count on one read for each line.
+In the second set, the client sent the lines while the server already waited inside `read()`. The first read got both lines in 7 runs of 10, and only `one` in 3 runs:
+
+```
+read(4, "one\n", 4096)                  = 4
+```
+
+So even on one computer, the first read can return one line or both. A server must never count on one read for each line.
 
 </Predict>
 
@@ -388,7 +394,7 @@ The folder `lesson1` holds the servers of this lesson as C files. You need a Lin
   ]}
 />
 
-In a second terminal, connect with `nc` and type one line. The server sends the line back one time and closes, so `nc` ends. Type a line again after a new `nc`, and it comes back again.
+In a second terminal, connect with `nc` and type one line. The server sends the line back one time and closes the connection. On Fedora, `nc` still waits for your typing after that, so press Control-C to end it. Each new `nc` gets one echo.
 
 <Terminal
   title="Terminal 2: you type hello, and the server sends it back"
@@ -448,7 +454,7 @@ With `strace`, the first few lines load the program, so look for the line that s
     },
     {
       prompt: 'A classmate says that a Flask app is not a TCP server, because its code never calls socket(). Is that right?',
-      model: 'No. Flask wraps the calls. The server code under Flask calls socket(), bind(), listen() and accept(), then reads and writes the bytes of each request. strace on Linux shows the calls: Python\'s built-in web server calls listen(3, 5), then accept4() for each connection.',
+      model: 'No. Flask wraps the calls. The server code under Flask calls socket(), bind(), listen() and accept(), then gets and sends the bytes of each request. strace on Linux shows the calls: Python\'s built-in web server calls listen(3, 5), then accept4() for each connection.',
     },
     {
       prompt: 'Which calls does only a server make? Which call does only a client make? Which calls do both make?',

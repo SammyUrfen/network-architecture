@@ -3,9 +3,9 @@
 // server kinds follow the instructor repo, lesson1: 01_echo_server.c reads
 // one time, and 02_echo_server_persistent.c reads in a loop.
 //
-// What this simplifies: one client at a time, a line arrives whole, no call
-// fails, and a client that writes to a closed connection sees nothing. A real
-// kernel can split bytes, and it answers such a write with a reset.
+// What this simplifies: one client at a time, a line arrives whole, and no
+// call fails. A reset ends the connection at once for both sides. A real
+// client learns about the reset only at its next read or write.
 
 export type ServerKind = 'one-read' | 'loop';
 export type Call = 'socket' | 'bind' | 'listen' | 'accept' | 'read' | 'write' | 'close';
@@ -33,6 +33,8 @@ export interface Connection {
   echoed: string;
   clientClosed: boolean;
   serverClosed: boolean;
+  /** The kernel of the server sent a reset, because bytes arrived that no read will ever take. */
+  reset: boolean;
 }
 
 export interface Theater {
@@ -69,8 +71,8 @@ export function start(kind: ServerKind): Theater {
   };
 }
 
-/** A connection is gone when both sides closed it. Then a new client can connect. */
-const gone = (conn: Connection | null) => !conn || (conn.clientClosed && conn.serverClosed);
+/** A connection is gone when both sides closed it, or after a reset. Then a new client can connect. */
+const gone = (conn: Connection | null) => !conn || conn.reset || (conn.clientClosed && conn.serverClosed);
 
 /** The open file descriptors of the server, with what each one names. */
 export function fds(s: Theater): { fd: number; what: string }[] {
@@ -201,9 +203,15 @@ function close(s: Theater): Theater {
   s.log.push(`close(${CLIENT_FD}) = 0`);
   conn.serverClosed = true;
   s.next = 'accept';
-  s.caption =
-    `close() ends the connection to this client, and the server goes back to accept() for the next one.` +
-    (conn.clientClosed ? '' : ' The client did not quit, so a line that it sends now gets no answer.');
+  const back = 'The server goes back to accept() for the next client.';
+  // RFC 9293 §3.6.1: a close while received bytes wait unread sends a reset, to show that data was lost.
+  if (conn.waiting) {
+    s.caption = `close() ends the connection while ${quoted(conn.waiting)} still waits unread. So the kernel throws those bytes away and sends a reset. ${back}`;
+    conn.waiting = '';
+    conn.reset = true;
+    return s;
+  }
+  s.caption = `close() ends the connection to this client. ${back}` + (conn.clientClosed ? '' : ' The client did not quit, so a line that it sends now gets no answer.');
   return s;
 }
 
@@ -212,7 +220,7 @@ function connect(s: Theater): Theater {
     s.caption = `The client calls connect(), but nothing listens on port ${PORT} yet. The kernel refuses the connection. Step the server through listen() first.`;
     return s;
   }
-  s.conn = { place: 'in-line', waiting: '', sent: 0, echoed: '', clientClosed: false, serverClosed: false };
+  s.conn = { place: 'in-line', waiting: '', sent: 0, echoed: '', clientClosed: false, serverClosed: false, reset: false };
   const queued = `The client calls connect(). The kernel of the server finishes the handshake at once, and the connection waits in the line.`;
   if (s.blocked) return { ...accept(s), caption: `${queued} accept() was waiting, so it returns ${CLIENT_FD} now.` };
   s.caption = `${queued} The program did not call accept() yet, so it does not know about this client.`;
@@ -224,7 +232,9 @@ function send(s: Theater): Theater {
   const line = LINES[conn.sent];
   conn.sent += 1;
   if (conn.serverClosed) {
-    s.caption = `The client sends ${quoted(line)}, but the server closed this connection. Nothing comes back.`;
+    // Linux answers bytes for a socket that the program closed with a reset.
+    s.caption = `The client sends ${quoted(line)}, but the server closed this connection. No echo comes back: the kernel of the server answers with a reset.`;
+    conn.reset = true;
     return s;
   }
   conn.waiting += line;

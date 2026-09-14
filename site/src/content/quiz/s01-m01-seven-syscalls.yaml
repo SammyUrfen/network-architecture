@@ -35,9 +35,9 @@ items:
         correct: false
         misconception: S01-M46
         feedback: The kernel moves plain bytes and knows nothing about web pages. Flask reads the request out of the bytes by itself.
-      - text: Through the same system calls, such as accept() and read(), that the echo server makes.
+      - text: Through the same kind of system calls that the echo server makes, such as accept().
         correct: true
-        feedback: Flask wraps the seven calls, then reads the web request out of the bytes that read() gives it.
+        feedback: Flask wraps the seven calls, then reads the web request out of the bytes that the kernel gives it.
     explanation: Express, Flask and net/http are wrappers around the seven calls. The kernel moves the bytes, and the framework reads the web request out of them.
     covers: [S01-C05, S01-C126]
     tags: []
@@ -60,7 +60,7 @@ items:
         correct: false
         misconception: S01-M45
         feedback: Only a server calls listen(), to take new clients. A client gets its reply through read().
-    explanation: A client calls socket(), then connect(), write(), read() and close(). Only a server calls listen() and accept(). A slide marks socket() among "the four that only a server makes", but the client calls it too.
+    explanation: A client calls socket(), then connect(), then write(), read() for an answer, and close(). Only a server calls listen() and accept(). A slide marks socket() among "the four that only a server makes", but the client calls it too.
     covers: [S01-C04, S01-C06]
     tags: []
     taughtIn: seg-seven-requests-to-the-kernel
@@ -104,7 +104,7 @@ items:
         correct: false
         misconception: S01-M47
         feedback: The kernel keeps bytes that arrive early, until a read takes them.
-    explanation: 'A read returns every byte that waits, up to 4096 bytes. Five runs on Linux over loopback each gave `read(4, "one\ntwo\n", 4096) = 8`. So one read can hold two lines, and a server must not count on one read for each line.'
+    explanation: 'A read returns every byte that waits, up to 4096 bytes. Runs on Linux over loopback gave both answers: `read(4, "one\ntwo\n", 4096) = 8` in most runs, and `read(4, "one\n", 4096) = 4` in some. So a server must not count on one read for each line.'
     covers: [S01-C19, S01-C92]
     tags: [measured]
     taughtIn: seg-one-read-is-not-a-conversation

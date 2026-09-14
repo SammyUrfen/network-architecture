@@ -55,14 +55,24 @@ close(4)                   = 0`);
 describe('the one-read server', () => {
   it('echoes only the first line when the second comes later, as the nc run showed', () => {
     // docs/curriculum/session-01.md, s01-m01 predict: lines 0.5 s apart, and only "one" comes back.
-    const s = run('one-read', [...setup, 'next', 'connect', 'next', 'send', 'next', 'next', 'send', 'quit']);
+    const s = run('one-read', [...setup, 'next', 'connect', 'next', 'send', 'next', 'next', 'send']);
     expect(short(String.raw`
 accept(3, NULL, NULL)                   = 4
 read(4, "one\n", 4096)                  = 4
 write(4, "one\n", 4)                    = 4
 close(4)                                = 0`)).toEqual(s.log.slice(3));
     expect(s.conn?.echoed).toBe('one\n');
-    expect(s.conn?.sent).toBe(2);
+    expect(s.conn).toMatchObject({ sent: 2, reset: true });
+    expect(can(s, 'connect')).toBe(true);
+  });
+
+  it('resets the connection when it closes while bytes still wait', () => {
+    // A verified run on 2026-09-14: 10,000 bytes gave 4096 bytes back, then "Connection reset by peer" (RFC 9293 §3.6.1).
+    const s = run('one-read', [...setup, 'next', 'connect', 'next', 'send', 'send', 'next', 'next']);
+    expect(s.log.slice(3)).toEqual(['accept(3) = 4', 'read(4, "one\\n", 4096) = 4', 'write(4, "one\\n", 4) = 4', 'close(4) = 0']);
+    expect(s.conn).toMatchObject({ waiting: '', reset: true, echoed: 'one\n' });
+    expect(s.caption).toMatch(/reset/);
+    expect(can(s, 'send')).toBe(false);
     expect(can(s, 'connect')).toBe(true);
   });
 

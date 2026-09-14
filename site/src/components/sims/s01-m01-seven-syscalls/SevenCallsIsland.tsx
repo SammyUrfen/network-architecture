@@ -19,7 +19,7 @@ const STEPS = [
   'read(): the program asks for the bytes that this client sent.',
   'write(): the program asks the kernel to send bytes to this client.',
   'close(): the program ends this connection, then goes back to accept() for the next client.',
-  'A client makes a shorter list: socket(), then connect() to reach the server, then write(), read() and close().',
+  'A client makes a shorter list: socket(), then connect() to reach the server, then write(), read() if it wants an answer, and close().',
 ];
 const MOVE_MS = 700;
 const TIMELINE = { durations: STEPS.map(() => MOVE_MS), hold: 1800 };

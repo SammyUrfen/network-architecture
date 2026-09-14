@@ -37,7 +37,9 @@ export default function TheaterIsland({ title, kind: firstKind, choose = false }
 
   const clientStatus = !conn
     ? 'Not connected.'
-    : conn.clientClosed && conn.serverClosed
+    : conn.reset
+      ? 'The kernel of the server sent a reset. The connection is gone.'
+      : conn.clientClosed && conn.serverClosed
       ? 'Both sides closed. The connection is gone.'
       : conn.clientClosed
         ? 'The client closed its side.'
@@ -136,7 +138,7 @@ export default function TheaterIsland({ title, kind: firstKind, choose = false }
         </button>
       </div>
       <p class="s1m1-simplifies">
-        What this simplifies: one client at a time, each line arrives whole, and no call fails. The log leaves out arguments that this lesson does not use.
+        What this simplifies: one client at a time, each line arrives whole, and no call fails. A real client learns about a reset only at its next read or write. The log leaves out arguments that this lesson does not use.
       </p>
     </div>
   );
