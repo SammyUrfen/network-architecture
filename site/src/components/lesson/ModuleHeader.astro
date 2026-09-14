@@ -7,9 +7,9 @@ import ModuleLink from './ModuleLink.astro';
 type Module = CollectionEntry<'modules'>['data'];
 
 // The lesson opening that the module page gives: the title, then one short
-// block with the big idea and one sentence that names the lessons before
-// this one and the threads. Titles only, never an ID. The outline and the
-// progress live in the sidebar.
+// block with the big idea, the lessons before this one and the threads. A new
+// reader does not know the word "thread", so the line says what a thread is.
+// Titles only, never an ID. The outline and the progress live in the sidebar.
 export interface Props extends Pick<
   Module,
   'session' | 'title' | 'minutes' | 'bigIdea' | 'status' | 'prereqs' | 'threads'
@@ -40,22 +40,23 @@ const sep = (i: number, length: number) => (i === 0 ? '' : i === length - 1 ? ' 
                   <ModuleLink id={id} />
                 </>
               ))}
+              .
             </>
           )}
-          {prereqs.length > 0 && threads.length > 0 && ', and its ideas come back in '}
-          {prereqs.length === 0 && 'The ideas of this lesson come back in '}
+          {prereqs.length > 0 && threads.length > 0 && ' '}
           {threads.length > 0 && (
             <>
-              {threads.length === 1 ? 'the thread ' : 'the threads '}
+              This idea comes back in:{' '}
               {threads.map((id, i) => (
                 <>
                   {sep(i, threads.length)}
                   <a href={href(`threads/${id}/`)}>{threadTitle(id)}</a>
                 </>
               ))}
+              . {threads.length === 1 ? 'The link opens a thread' : 'Each link opens a thread'}: one idea that runs
+              through several lessons.
             </>
           )}
-          .
         </p>
       )
     }

@@ -1,11 +1,11 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { clampStep, SPEEDS, stepForKey, type Speed } from './timeline';
+import { clampStep, SPEEDS, stepForKey, stepInBand, type Speed } from './timeline';
 import './motion.css';
 
 // The one control bar of every animation island. It holds the visual, so the
 // keys work when the learner focuses the visual. It also follows the ScrollStep
-// blocks of its part: a block that reaches the middle of the screen moves the
+// blocks of its part: the block nearest the middle of the screen moves the
 // visual to its step. The island owns the clock (useTimeline) and the visual.
 export interface Props {
   /** The accessible name of the visual. */
@@ -25,14 +25,15 @@ export interface Props {
   children: ComponentChildren;
 }
 
-/** The band in the middle of the screen where a ScrollStep block moves the visual. */
-const SCROLL_BAND = '-45% 0px -45% 0px';
+/** The band in the middle of the screen where a ScrollStep block moves the visual, as parts of the screen height. */
+const BAND_TOP = 0.45;
+const BAND_BOTTOM = 0.55;
 
 export default function AnimationControls(props: Props) {
   const { title, captions, step, playing, speed, onPlay, onPause, onStep, onSpeed, children } = props;
   const root = useRef<HTMLDivElement>(null);
   const marks = useRef<HTMLElement[]>([]);
-  // The observer lives for the whole mount, so it reads the newest props here.
+  // The listener lives for the whole mount, so it reads the newest props here.
   const latest = useRef(props);
   latest.current = props;
   const last = captions.length - 1;
@@ -40,17 +41,29 @@ export default function AnimationControls(props: Props) {
   useEffect(() => {
     marks.current = [...(root.current?.closest('section')?.querySelectorAll<HTMLElement>('[data-scroll-step]') ?? [])];
     if (marks.current.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const hit = entries.filter((e) => e.isIntersecting).at(-1);
-        const n = Number((hit?.target as HTMLElement | undefined)?.dataset.scrollStep) - 1;
-        const { step: now, captions: all, onStep: go } = latest.current;
-        if (Number.isInteger(n) && clampStep(n, all.length) !== now) go(clampStep(n, all.length));
-      },
-      { rootMargin: SCROLL_BAND },
-    );
-    marks.current.forEach((mark) => observer.observe(mark));
-    return () => observer.disconnect();
+    // Measure on every scroll, not only when a block enters or leaves the band.
+    // The next block can take the band center while both blocks stay in the
+    // band. Act only when the nearest block changes, so a small scroll inside
+    // one block does not undo a step that the learner chose with the buttons.
+    let nearest: number | null = null;
+    const follow = () => {
+      const blocks = marks.current.map((mark) => {
+        const { top, bottom } = mark.getBoundingClientRect();
+        return { step: Number(mark.dataset.scrollStep), top, bottom };
+      });
+      const hit = stepInBand(blocks, innerHeight * BAND_TOP, innerHeight * BAND_BOTTOM);
+      if (hit === nearest) return;
+      nearest = hit;
+      const { step: now, captions: all, onStep: go } = latest.current;
+      if (hit !== null && clampStep(hit - 1, all.length) !== now) go(clampStep(hit - 1, all.length));
+    };
+    follow();
+    addEventListener('scroll', follow, { passive: true });
+    addEventListener('resize', follow);
+    return () => {
+      removeEventListener('scroll', follow);
+      removeEventListener('resize', follow);
+    };
   }, []);
 
   // Mark the prose block of the current step, so the text and the picture stay linked.

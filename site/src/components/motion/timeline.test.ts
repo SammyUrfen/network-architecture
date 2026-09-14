@@ -8,6 +8,7 @@ import {
   play,
   starts,
   stepForKey,
+  stepInBand,
   tick,
   toKeyframes,
   type PlayerState,
@@ -36,6 +37,52 @@ describe('stepForKey', () => {
     for (const key of ['ArrowUp', 'ArrowDown', 'Tab', 'Enter', ' ', 'toString']) {
       expect(stepForKey(key, 2, 6)).toBeNull();
     }
+  });
+});
+
+// A screen 1000 px high: the band runs from 450 to 550 px, with its center at 500 px.
+describe('stepInBand', () => {
+  const band = [450, 550] as const;
+
+  it('picks the block nearest the center when two short blocks touch the band', () => {
+    const blocks = [
+      { step: 1, top: 380, bottom: 490 },
+      { step: 2, top: 520, bottom: 600 },
+    ];
+    expect(stepInBand(blocks, ...band)).toBe(1);
+    expect(stepInBand([blocks[0], { step: 2, top: 495, bottom: 560 }], ...band)).toBe(2);
+  });
+
+  it('picks the middle block after a jump scroll puts three blocks in the band', () => {
+    const blocks = [
+      { step: 1, top: -900, bottom: -100 },
+      { step: 2, top: 400, bottom: 460 },
+      { step: 3, top: 470, bottom: 530 },
+      { step: 4, top: 540, bottom: 600 },
+      { step: 5, top: 610, bottom: 900 },
+    ];
+    expect(stepInBand(blocks, ...band)).toBe(3);
+  });
+
+  it('keeps a tall block that holds the center, also when a short neighbor has a nearer center', () => {
+    const blocks = [
+      { step: 1, top: -400, bottom: 520 },
+      { step: 2, top: 530, bottom: 560 },
+    ];
+    expect(stepInBand(blocks, ...band)).toBe(1);
+  });
+
+  it('gives the earlier block on a tie', () => {
+    const blocks = [
+      { step: 1, top: 400, bottom: 490 },
+      { step: 2, top: 510, bottom: 600 },
+    ];
+    expect(stepInBand(blocks, ...band)).toBe(1);
+  });
+
+  it('gives null when a jump scroll leaves no block in the band', () => {
+    expect(stepInBand([{ step: 1, top: 100, bottom: 440 }, { step: 2, top: 560, bottom: 900 }], ...band)).toBeNull();
+    expect(stepInBand([], ...band)).toBeNull();
   });
 });
 

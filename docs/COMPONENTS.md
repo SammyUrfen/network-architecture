@@ -116,7 +116,7 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
-| `ModuleHeader` | Astro | `session: number`, `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, the fields of the module frontmatter. No slot. Shows a small line with the session link, the minutes and a "Draft" tag, then the title, then one block with the big idea and one sentence with the titles of the prereqs and the threads. The module page gives it. | both |
+| `ModuleHeader` | Astro | `session: number`, `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, the fields of the module frontmatter. No slot. Shows a small line with the session link, the minutes and a "Draft" tag, then the title, then one block with the big idea and a short line of links. The line says "This lesson builds on" with the prereq titles. Then it says "This idea comes back in:" with the thread titles as links, and it tells that a thread is one idea that runs through several lessons. The module page gives it. | both |
 | `WordCard` | Astro | `terms: { term: string; meaning: string }[]` | both |
 | `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. Named slot `visual`, for the one visual of the part. Put `slot="visual"` on the visual component, or on a `<div>` that holds it. The visual goes in the HTML after the first paragraph of the part, so the reading order and the Tab order match the screen. On a screen 1200 px wide or more, the visual is sticky in the rail next to the prose of its part, and a visual taller than the window scrolls inside the rail. On a narrower screen, it sits inline. | both |
 | `KeyIdea` | Astro | `id: string`, `title: string`, both plain string attributes, because verify rule 10 and the check wrappers read them from the raw MDX. Default slot: the idea in 1 to 3 sentences. Shows a "Key idea" label, the title as an `h3`, and a visible `#` link to itself. The `id` is the HTML anchor: lowercase words with hyphens, with no `seg-` prefix. Another `id` fails the build. A "Taught in" link that lands on it gives it an outline. 2 to 4 for each lesson. | none yet |
@@ -125,7 +125,7 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 | `ModuleLink` | Astro | `id: string`. A module with a page shows its title as a link. A module with no page shows its title from the curriculum file and "(planned)", never its ID. | both |
 | `InventFirst` | Astro | `prompt: string`. Default slot holds the full explanation. | m08 |
 | `Beyond` | Astro | `source: string`, `url?: string`. Default slot. Shows the "beyond the slides" badge. | m12 |
-| `Lab` | Astro | `title: string`, `folder?: string`, the folder in the instructor repo, such as `lesson1`. Every new lab gives `folder`. A source header says that the code comes from the course repo, with a link to https://github.com/jitendraag/cn-at-scaler. Then a `Terminal` shows `git clone https://github.com/jitendraag/cn-at-scaler.git` and `cd cn-at-scaler/<folder>`. With no `folder`, the pilot form, it shows the clone command only. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
+| `Lab` | Astro | `title: string`, `folder?: string`, the folder in the instructor repo, such as `lesson1`. Every new lab gives `folder`. A source header says that the code comes from the course repo, with a link to https://github.com/jitendraag/cn-at-scaler. Then a `Terminal` shows `git clone https://github.com/jitendraag/cn-at-scaler.git` and `cd cn-at-scaler/<folder>`. With no `folder`, the pilot form, it shows the clone command only. A line under the commands says that `git clone` downloads a copy of the instructor repo, and that `cd` moves into the lab folder inside it. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
 | `SlideLink` | Astro, with a script | In `src/components/slides/`. `session: number`, `page: number` (the PDF page, from 1), `class?: string`. Default slot: the link text, "slide N" when empty. It is a link to `slides/session-0N.pdf#page=N` under the base URL. A plain click opens `SlideViewer` at that page. With no JavaScript, or with a modifier key, the browser opens the PDF at that page. `class` replaces the inline citation look, for example `class="btn"`. An unknown session, or a page outside the deck, fails the build. The PDFs sit in `site/public/slides/`. A new deck also needs its page count and size in `decks.ts`, and `decks.test.ts` checks both. | none yet |
 | `SlideViewer` | Plain Preact | In `src/components/slides/`. `url: string` (the PDF, with no `#page`), `session: number`, `page: number`, `pages: number`, `onClose: () => void`. The script of `SlideLink` loads it on the first click and calls `openSlides(link)`, so a page loads no PDF code before a click. A modal `<dialog>` shows one page with `pdfjs-dist`: previous, next, a page number field, "Open the full deck" and "Download the PDF". Arrow keys change the page. Escape, the close button or a click on the backdrop closes it, and the focus goes back to the link. | none yet |
 | `CardsAdded` | Island with wrapper | Wrapper: `id: string`, the module ID. Island: `cards: string[]`. It adds the cards when the learner pushes the button, not on page load. | both |
@@ -205,7 +205,7 @@ copy: an SVG, three steps, and three `ScrollStep` blocks on the dev page
 
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
-| `AnimationControls` | Plain Preact | `title: string`, `captions: string[]` (one for each step), `step: number` (from 0), `playing: boolean`, `speed: Speed`, `onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`, `onSpeed: (speed: Speed) => void`, `children`: the visual. `Speed` is `0.5 \| 1 \| 2`. Spread the result of `useTimeline` into it. It also follows the `ScrollStep` blocks of its part. | the Stepper |
+| `AnimationControls` | Plain Preact | `title: string`, `captions: string[]` (one for each step), `step: number` (from 0), `playing: boolean`, `speed: Speed`, `onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`, `onSpeed: (speed: Speed) => void`, `children`: the visual. `Speed` is `0.5 \| 1 \| 2`. Spread the result of `useTimeline` into it. It also follows the `ScrollStep` blocks of its part, with `stepInBand` from `timeline.ts`. | the Stepper |
 | `useTimeline(timeline, tracks?)` | Preact hook | `timeline: { durations: number[]; hold: number; stops?: boolean[] }`, all in ms at 1×. `durations`: the motion of each step. `hold`: the pause between two steps while play runs. `stops`: play stops at the end of a step marked `true`. `tracks: () => Track[]` runs one time after the island mounts. | the Stepper, the demo |
 | `Track` | type | `{ step: number; el: Element; frames: Keyframe[]; from?: number; to?: number }`. One motion of one element in one step. The motion runs from `from` ms to `to` ms after the step starts. The default is the whole step. | the demo |
 | `ScrollStep` | Astro | `step: number`, from 1. Default slot: the prose of that step. Put blank lines inside the tag, so MDX makes paragraphs. A step that is not a whole number from 1 fails the build. | none yet |
@@ -244,8 +244,15 @@ How an animation behaves:
   `matchMedia`, a step jumps to its end frame with no motion. Play then
   shows the end frame of each step in turn. A change of the setting applies
   at once.
-- A `ScrollStep` block that enters the band from 45% to 55% of the screen
-  height moves the visual of its `<section>` to its step. If the visual
+- The band runs from 45% to 55% of the screen height. On each scroll and
+  resize, the island measures the `ScrollStep` blocks of its `<section>`. Of
+  the blocks that touch the band, it finds the block nearest the band
+  center. A block that holds the center has a distance of 0, so a tall block
+  wins over a short neighbor. On a tie, the earlier block wins. This also
+  holds after a jump scroll that puts two or three blocks in the band.
+- The visual moves to the step of that block only when the nearest block
+  changes. So a small scroll inside one block keeps a step that the learner
+  chose with the buttons. If no block touches the band, or the visual
   already shows that step, nothing happens. The block of the current step
   gets a bar on its left, also when the learner uses the buttons.
 - The pure logic is in `timeline.ts`, with tests in `timeline.test.ts`.

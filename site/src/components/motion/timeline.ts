@@ -38,6 +38,31 @@ export function stepForKey(key: string, current: number, total: number): number 
   return Object.hasOwn(targets, key) ? clampStep(targets[key], total) : null;
 }
 
+/** The screen position of one ScrollStep block, in px from the top of the screen. */
+export interface StepBlock {
+  /** The step of the block, from 1. */
+  step: number;
+  top: number;
+  bottom: number;
+}
+
+/**
+ * The step of the block nearest the center of the band, or null when no block
+ * touches the band. The distance is 0 for a block that holds the center, so a
+ * tall block wins over a short neighbor. On a tie, the earlier block wins.
+ */
+export function stepInBand(blocks: StepBlock[], bandTop: number, bandBottom: number): number | null {
+  const center = (bandTop + bandBottom) / 2;
+  let best: StepBlock | null = null;
+  let bestDistance = Infinity;
+  for (const block of blocks) {
+    if (block.bottom < bandTop || block.top > bandBottom) continue;
+    const distance = Math.max(block.top - center, center - block.bottom, 0);
+    if (distance < bestDistance) [best, bestDistance] = [block, distance];
+  }
+  return best?.step ?? null;
+}
+
 /** Paused at the end frame of step 1, so the picture matches the prerendered HTML. */
 export function initialState(durations: number[]): PlayerState {
   return { step: 0, t: durations[0], hold: 0, playing: false, mode: 'all', speed: 1, reduce: false };

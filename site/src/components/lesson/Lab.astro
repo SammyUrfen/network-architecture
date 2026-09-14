@@ -1,8 +1,9 @@
 ---
 // Exact commands on Linux, what to look at, and the expected result. The
 // source header says where the code comes from (docs/PEDAGOGY.md rule 17).
-// The default slot says what the program does and what the reader should
-// see, then holds a Terminal for each command.
+// A line under the clone commands says what git clone and cd do, for a reader
+// new to git. The default slot says what the program does and what the reader
+// should see, then holds a Terminal for each command.
 import Terminal from '../diagram/Terminal.astro';
 
 const REPO = 'https://github.com/jitendraag/cn-at-scaler';
@@ -28,6 +29,7 @@ const { title, folder } = Astro.props;
       title={folder ? `Copy the repo, then go to the folder ${folder}` : 'Copy the repo'}
       runs={[{ cmd: `git clone ${REPO}.git` }, ...(folder ? [{ cmd: `cd cn-at-scaler/${folder}` }] : [])]}
     />
+    <p><code>git clone</code> downloads a copy of the instructor repo{folder ? <>, and <code>cd</code> moves into the lab folder inside it.</> : '.'}</p>
   </div>
   <slot />
 </section>
