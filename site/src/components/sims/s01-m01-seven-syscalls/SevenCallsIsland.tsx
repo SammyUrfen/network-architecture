@@ -31,8 +31,8 @@ const GAP = 10;
 const LEFT = 13;
 const ROW_Y = [44, 132];
 const CLIENT_Y = 222;
-const CLIENT_W = 62;
-const CLIENT_GAP = 7;
+const CLIENT_W = 64;
+const CLIENT_GAP = 5;
 const colX = (col: number) => LEFT + col * (BOX_W + GAP);
 /** The column and row of each server call. */
 const place = (i: number) => (i < 3 ? { x: colX(i), y: ROW_Y[0] } : { x: colX(i - 3), y: ROW_Y[1] });
@@ -60,11 +60,11 @@ export default function SevenCallsIsland() {
     <g key={`${label}-${x}-${y}`}>
       <rect class="s1m1-call" x={x} y={y} width={w} height={BOX_H} rx="4" />
       {n !== undefined && (
-        <text class="s1m1-num" x={x + 7} y={y + 12}>
+        <text class="s1m1-num" x={x + 5} y={y + 10}>
           {n}
         </text>
       )}
-      <text class="s1m1-call-label" x={x + w / 2} y={y + 22}>
+      <text class="s1m1-call-label" x={x + w / 2 + (n === undefined ? 0 : 3)} y={y + 23}>
         {label}
       </text>
     </g>
@@ -83,10 +83,10 @@ export default function SevenCallsIsland() {
         role="img"
         aria-label="Seven boxes: socket, bind and listen in the first row, marked set up one time. Accept, read, write and close in the second row, marked for each client, with an arrow from close back to accept."
       >
-        <text class="mo-label s1m1-row-label" x={LEFT} y={ROW_Y[0] - 10}>
+        <text class="s1m1-row-label" x={LEFT} y={ROW_Y[0] - 10}>
           Set up, one time
         </text>
-        <text class="mo-label s1m1-row-label" x={acceptX + 12} y={ROW_Y[1] - 10}>
+        <text class="s1m1-row-label" x={acceptX + 12} y={ROW_Y[1] - 10}>
           For each client, again and again
         </text>
         {SERVER.map((name, i) => box(`${name}()`, place(i).x, place(i).y, BOX_W, i + 1))}
@@ -104,7 +104,7 @@ export default function SevenCallsIsland() {
           next client
         </text>
         <g data-part="client" style={{ opacity: 0 }}>
-          <text class="mo-label s1m1-row-label" x={LEFT} y={CLIENT_Y - 10}>
+          <text class="s1m1-row-label" x={LEFT} y={CLIENT_Y - 10}>
             A client
           </text>
           {CLIENT.map((name, i) => box(`${name}()`, LEFT + i * (CLIENT_W + CLIENT_GAP), CLIENT_Y, CLIENT_W))}

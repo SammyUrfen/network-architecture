@@ -15,8 +15,14 @@
   font-weight: 600;
 }
 
-/* SVG parts */
+/* SVG parts. The SVG grows with the rail only up to 30rem, so its labels stay near the size of the prose. */
+.s1m1-figure svg {
+  max-width: 30rem;
+  margin-inline: auto;
+}
 .s1m1-row-label {
+  font-size: 12px;
+  fill: var(--text-muted);
   text-anchor: start;
   font-variant: small-caps;
   letter-spacing: 0.04em;
@@ -28,12 +34,12 @@
 }
 .s1m1-call-label {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   text-anchor: middle;
   fill: var(--text);
 }
 .s1m1-num {
-  font-size: 9px;
+  font-size: 8.5px;
   fill: var(--text-muted);
 }
 .s1m1-ring {
