@@ -13,3 +13,6 @@ dist/
 .vscode/
 .idea/
 __pycache__/
+
+# Playwright MCP browser output
+.playwright-mcp/
