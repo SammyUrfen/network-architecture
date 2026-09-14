@@ -1,29 +1,31 @@
-import { useState } from 'preact/hooks';
-import { clampStep, isNewChunk, stepForKey, type Step } from './stepper';
+import AnimationControls from '../motion/AnimationControls';
+import { useTimeline } from '../motion/useTimeline';
+import { isNewChunk, type Step } from './stepper';
 
-// The island inside Stepper.astro. No autoplay: the learner moves with Back
-// and Next, or with the arrow keys, Home and End (PEDAGOGY rule 7).
+// The island inside Stepper.astro. It uses the shared AnimationControls, so it
+// steps with the buttons, the keys and the ScrollStep blocks of its part. A
+// step changes the lanes at once, with no motion. Play shows each step for
+// STEP_HOLD_MS and stops at a step with an ask, so the learner can predict.
 export interface Props {
   /** The accessible name of the stepper. */
   title: string;
   steps: Step[];
 }
 
-export default function StepperIsland({ title, steps }: Props) {
-  const [at, setAt] = useState(0);
-  const step = steps[at];
-  const last = steps.length - 1;
-  const go = (n: number) => setAt(clampStep(n, steps.length));
+/** The time that play shows one step at 1x: about 20 words of caption at a slow reading speed. */
+const STEP_HOLD_MS = 5000;
 
-  const onKeyDown = (event: KeyboardEvent) => {
-    const target = stepForKey(event.key, at, steps.length);
-    if (target === null) return;
-    event.preventDefault();
-    go(target);
-  };
+export default function StepperIsland({ title, steps }: Props) {
+  const player = useTimeline({
+    durations: steps.map(() => 0),
+    hold: STEP_HOLD_MS,
+    stops: steps.map((s) => Boolean(s.ask)),
+  });
+  const at = player.step;
+  const step = steps[at];
 
   return (
-    <div class="stepper" role="group" aria-label={title} onKeyDown={onKeyDown}>
+    <AnimationControls title={title} captions={steps.map((s) => s.caption)} {...player}>
       <div class="lanes">
         {step.lanes.map((lane, l) => (
           <div class="lane" key={lane.label}>
@@ -46,26 +48,11 @@ export default function StepperIsland({ title, steps }: Props) {
           </div>
         ))}
       </div>
-      <p class="caption" aria-live="polite">
-        <strong>
-          Step {at + 1} of {steps.length}.
-        </strong>{' '}
-        {step.caption}
-      </p>
       {step.ask && (
         <p class="ask">
           <strong>Predict before you press Next:</strong> {step.ask}
         </p>
       )}
-      <div class="controls">
-        <button type="button" aria-disabled={at === 0} onClick={() => go(at - 1)}>
-          Back
-        </button>
-        <button type="button" aria-disabled={at === last} onClick={() => go(at + 1)}>
-          Next
-        </button>
-        <span class="keys">Keys: ← → Home End</span>
-      </div>
-    </div>
+    </AnimationControls>
   );
 }

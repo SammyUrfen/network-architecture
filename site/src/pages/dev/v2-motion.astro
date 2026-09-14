@@ -1,0 +1,124 @@
+---
+// V2 dev page for the motion parts: AnimationControls, ScrollStep, the
+// upgraded Stepper and the sample animation. Not in the nav. The two-column
+// rows here stand in for the Segment visual slot that the layout work builds.
+import Stepper from '../../components/diagram/Stepper.astro';
+import type { Step } from '../../components/diagram/stepper';
+import BytePipeDemo from '../../components/motion/BytePipeDemo.tsx';
+import ScrollStep from '../../components/motion/ScrollStep.astro';
+import Base from '../../layouts/Base.astro';
+
+const lanes = (writes: string[], buffer: string[], segments: string[]) => [
+  { label: 'write() calls', chunks: writes },
+  { label: 'Send buffer', chunks: buffer },
+  { label: 'Segments sent', chunks: segments },
+];
+const steps: Step[] = [
+  {
+    caption: 'The sender calls write() with 5 bytes: hello. TCP copies them into its send buffer.',
+    lanes: lanes(['hello'], ['hello'], []),
+  },
+  {
+    caption: 'The sender calls write() again, with world. The buffer holds 10 bytes, with no mark between the writes.',
+    ask: 'How many segments does TCP use for these 10 bytes?',
+    lanes: lanes(['hello', 'world'], ['helloworld'], []),
+  },
+  {
+    caption: 'TCP picks the segment sizes, not the program. In this picture it sends 3, 4 and 3 bytes.',
+    lanes: lanes(['hello', 'world'], ['helloworld'], ['hel', 'lowo', 'rld']),
+  },
+];
+---
+
+<Base title="Dev: motion">
+  <div class="wide">
+    <p class="dev-note">
+      Dev page for the motion parts of lesson contract v2. It is not a lesson. Each part has prose on the left and
+      its visual in the rail on the right. On a screen under 1200 px wide, the visual comes after the prose.
+    </p>
+
+    <section class="part">
+      <div class="prose">
+        <h2>An animation with three scroll steps</h2>
+        <p>
+          Scroll down, and the picture follows the text. A block with a bar on its left moves the picture to its
+          step. You can also use the buttons, or focus the picture with the Tab key and use the keys.
+        </p>
+        <ScrollStep step={1}>
+          <p><strong>Step 1.</strong> A sender has three bytes. Byte 1 is at the front of the line.</p>
+        </ScrollStep>
+        <ScrollStep step={2}>
+          <p>
+            <strong>Step 2.</strong> The sender puts the bytes into the pipe, one after another. The bar moves to
+            this block. It also moves when you press Next.
+          </p>
+        </ScrollStep>
+        <ScrollStep step={3}>
+          <p>
+            <strong>Step 3.</strong> The receiver takes the bytes out, in the same order. Press Restart to see step
+            1 again, or press Play to see all the steps.
+          </p>
+        </ScrollStep>
+      </div>
+      <div class="rail">
+        <BytePipeDemo client:visible />
+      </div>
+    </section>
+
+    <section class="part">
+      <div class="prose">
+        <h2>The Stepper with scroll steps</h2>
+        <p>The Stepper uses the same controls. Its steps change the lanes at once, with no motion.</p>
+        <ScrollStep step={1}>
+          <p><strong>Step 1.</strong> The sender writes five bytes. TCP copies them into its send buffer.</p>
+        </ScrollStep>
+        <ScrollStep step={2}>
+          <p>
+            <strong>Step 2.</strong> The sender writes five more bytes. Play stops at this step, because the step
+            asks you to predict.
+          </p>
+        </ScrollStep>
+        <ScrollStep step={3}>
+          <p><strong>Step 3.</strong> TCP picks the segment sizes. The program does not pick them.</p>
+        </ScrollStep>
+      </div>
+      <div class="rail">
+        <Stepper title="Two writes, three segments" steps={steps} />
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .wide {
+    --wide: min(76rem, 100vw - 3rem);
+    width: var(--wide);
+    margin-inline: calc((100% - var(--wide)) / 2);
+  }
+  .dev-note {
+    color: var(--text-muted);
+  }
+  .part {
+    display: grid;
+    gap: var(--space-6);
+    margin-bottom: 40vh;
+  }
+  .prose {
+    max-width: var(--measure);
+  }
+  /* Space between the blocks, so each one passes the middle of the screen on its own. */
+  .prose :global(.scroll-step) {
+    margin-block: 30vh;
+  }
+  @media (min-width: 75rem) {
+    .part {
+      grid-template-columns: minmax(0, 36rem) minmax(0, 1fr);
+      gap: var(--space-8);
+    }
+    .rail {
+      position: sticky;
+      top: var(--space-4);
+      align-self: start;
+    }
+  }
+</style>
