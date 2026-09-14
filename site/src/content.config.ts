@@ -64,6 +64,9 @@ const itemBase = {
   explanation: z.string(),
   covers: z.array(claimId).min(1),
   tags: z.array(z.enum(['story', 'measured', 'beyond'])).default([]),
+  // The anchor where the page teaches the answer: a <KeyIdea id="..."> or a
+  // segment anchor. Optional here, required in a ready module (verify rule 10).
+  taughtIn: z.string().optional(),
 };
 
 export const quizItem = z.discriminatedUnion('type', [

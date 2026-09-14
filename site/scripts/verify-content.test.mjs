@@ -55,6 +55,7 @@ describe('content rules', () => {
     [7, 1],
     [8, 1],
     [9, 1],
+    [10, 2],
   ])('rule %i fails on its fixture, with %i failures', (rule, defects) => {
     const { failures } = verify(fixture(`content/rule${rule}`), curriculum);
     expect(failures.map((failure) => failure.rule)).toEqual(Array(defects).fill(rule));
@@ -64,5 +65,13 @@ describe('content rules', () => {
     const [failure] = verify(fixture('content/rule9'), curriculum).failures;
     expect(failure.file).toMatch(/s01-m01-alpha\.yaml$/);
     expect(failure.message).toMatch(/option 2 in all 3 mcq and predict items/);
+  });
+
+  test('rule 10 names each item with no taughtIn or with an unknown anchor', () => {
+    const messages = verify(fixture('content/rule10'), curriculum).failures.map((failure) => failure.message);
+    expect(messages).toEqual([
+      's01-m01-alpha-q01: no taughtIn',
+      's01-m01-alpha-q04: taughtIn length-last is not a KeyIdea id or a segment anchor of s01-m01-alpha',
+    ]);
   });
 });
