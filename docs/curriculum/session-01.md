@@ -230,7 +230,7 @@ Site order: m01, m02, m03, m04, m05, m06, m07, m08, m09, m11, m10. Module m11 is
 
 - **Title:** Seven system calls: the whole of a TCP server.
 - **Minutes:** 20.
-- **Big idea:** Every TCP server, from a 20-line class demo to Express, makes the same seven requests to the operating system, and the operating system does the network work between them.
+- **Big idea:** Every TCP server, from a 20-line class demo to a big web toolkit, makes the same seven requests to the operating system, and the operating system does the network work between them.
 - **Covers:** S01-C01, S01-C02, S01-C03, S01-C04, S01-C05, S01-C06, S01-C07, S01-C08, S01-C19, S01-C126, S01-C127.
 - **Prereqs:** none.
 - **Threads:** T-framing.

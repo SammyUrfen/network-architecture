@@ -4,7 +4,7 @@ session: 1
 order: 1
 title: "Seven system calls: the whole of a TCP server"
 minutes: 20
-bigIdea: "Every TCP server, from a 20-line class demo to Express, makes the same seven requests to the operating system, and the operating system does the network work between them."
+bigIdea: "Every TCP server, from a 20-line class demo to a big web toolkit, makes the same seven requests to the operating system, and the operating system does the network work between them."
 covers: [S01-C01, S01-C02, S01-C03, S01-C04, S01-C05, S01-C06, S01-C07, S01-C08, S01-C19, S01-C126, S01-C127]
 prereqs: []
 threads: [T-framing]
@@ -50,11 +50,11 @@ import SyscallTheater from '../../../components/sims/s01-m01-seven-syscalls/Sysc
 
 You open a web page, and your browser talks to a program on another computer. That program is a server. It waits for other programs to connect, and then it answers them. So how does a server really talk over the network? This lesson answers that question.
 
-The answer is short. A server makes seven requests to the kernel, the core of the operating system, in the same order every time. The first class used an echo server of 20 lines, a tiny server that sends back what it gets. It makes the seven requests. Express, Flask and Go's net/http, three toolkits that people use to build web servers, make the same seven. When a server hangs, dies with no message, or cuts a message in half, the cause is often in these calls.
+The answer is short. A byte is the smallest piece of data that a program sends, such as one letter. A server makes seven requests to the kernel, the core of the operating system, in the same order every time. The first class used an echo server of 20 lines, a tiny server that sends back what it gets. It makes the seven requests. Express, Flask and Go's net/http, three toolkits that people use to build web servers, make the same seven. When a server hangs, dies with no message, or cuts a message in half, the cause is often in these calls.
 
 Much of the course stands on them: many clients at once, the web server nginx, and HTTP, the rules of the web. So do the two graded builds that the course announces: a calculator assignment, and a project that sends HTTP as raw bytes instead of text.
 
-This is the first lesson, so you need nothing before it. A byte is the smallest piece of data that a program sends, such as one letter. The servers here use TCP, the set of rules that carries the bytes of most of the internet, in order. The top of the page names one thread, Framing. A thread is a big idea that comes back in many lessons. This one starts in Part 4 and continues in the lesson <ModuleLink id="s01-m08-framing" />.
+This is the first lesson, so you need nothing before it. The servers here use TCP, the set of rules that carries the bytes of most of the internet, in order. The top of the page names one thread, Framing. A thread is a big idea that comes back in many lessons. This one starts in Part 4 and continues in the lesson <ModuleLink id="s01-m08-framing" />.
 
 **The path through this lesson.** Part 1 shows why a program must ask the kernel for all network work, and it names the seven requests. Part 2 follows the first three calls, which set up the server before any client comes. Part 3 follows the other four calls, which serve one client, in the echo server of the first class. Part 4 shows why one read is not a whole conversation, and how the second server of the class fixes that.
 
@@ -154,7 +154,7 @@ The class runs for eight weeks, from network programming in week 1 to building f
 
 <Beyond source="accept4(2), Linux man page" url="https://man7.org/linux/man-pages/man2/accept4.2.html">
 
-Linux is an operating system, like Windows. On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection. The runs used Linux 7.1.8 over loopback, with the client and the server on the same computer (2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more argument for flags. To move the bytes, that server calls `recvfrom()` and `sendto()`, two close relatives of `read()` and `write()` for sockets.
+Linux is an operating system, like Windows. On Linux, the tool `strace` prints each system call that a program makes. A run of Python's built-in web server under `strace` showed `listen(3, 5)`, then one `accept4(3, ...)` for each connection. The numbers in brackets are the details of each request. The runs used Linux 7.1.8 over loopback, with the client and the server on the same computer (2026-09-13 and 2026-09-14). `accept4()` is `accept()` with one more setting. To move the bytes, that server calls `recvfrom()` and `sendto()`, two close relatives of `read()` and `write()` for sockets.
 
 </Beyond>
 
@@ -277,7 +277,7 @@ Try it in the theater next to this text. Press "Next call" to step the server, a
 
 ### The real thing
 
-The rest of `01_echo_server.c` is one loop <SlideLink session={1} page={6} />. Line 15 calls `accept()`, line 17 calls `read()` one time, line 18 writes the same bytes back, and line 19 calls `close()`. The class ran it with two commands <SlideLink session={1} page={7} />. The command `gcc` turns the C file into a program. The tool `nc` connects to port 2026, sends what you type, and prints what comes back.
+The rest of `01_echo_server.c` is one loop <SlideLink session={1} page={6} />. Line 15 calls `accept()`, line 17 calls `read()` one time, line 18 writes the same bytes back, and line 19 calls `close()`. The class ran it with two commands <SlideLink session={1} page={7} />. The command `gcc` turns the C file, a file of code in the programming language C, into a program. The tool `nc` connects to port 2026, sends what you type, and prints what comes back.
 
 On Linux, an operating system like Windows, the tool `strace` prints each system call of a program, one on each line. A line gives the name of the call, its arguments in brackets, and its result after the equals sign. In a string, `\n` is the newline byte at the end of a line. Here the first server served one client that sent `one` and a newline. The run used Linux 7.1.8 over loopback, which means with the client and the server on the same computer (2026-09-14):
 

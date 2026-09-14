@@ -139,7 +139,7 @@ export default function TheaterIsland({ title, kind: firstKind, choose = false }
         </button>
       </div>
       <p class="s1m1-simplifies">
-        What this simplifies: one client at a time, each line arrives whole, and no call fails. A real client learns about a reset only at its next read or write. The log leaves out arguments that this lesson does not use.
+        What this simplifies: one client at a time, each line arrives whole, and no call fails. A real client learns that the connection ended only at its next read or write. The log leaves out some details in the brackets.
       </p>
     </div>
   );
