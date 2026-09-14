@@ -120,11 +120,11 @@ order.
 > bracelet stopped.
 >
 > In TCP, each bead is a byte, and each bracelet is a message. The long string
-> is the connection. Your friend puts beads on the string when a program calls
-> `write()`. You take a handful when the other program calls `read()`. A
-> handful can have any number of beads, and a read can return any number of
-> bytes. So the two programs must agree on a rule before they start, and
-> Part 2 gives the first two rules.
+> is the connection. Your friend is the program that sends, and each call to
+> `write()` adds beads to the string. You are the program that receives, and
+> each call to `read()` takes one handful. A read can return any number of
+> bytes, from 1 up to the size of its buffer. So the two programs must agree
+> on a rule before they start, and Part 2 gives the first two rules.
 >
 > Where this breaks: a real string can snap and drop beads, but TCP never
 > loses a byte and never changes their order.
