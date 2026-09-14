@@ -1,11 +1,13 @@
 // One quiz item: an answer and a confidence, then a grade with feedback, or a
-// locked guess. Not an island: Pretest, Check, ExitQuiz and Predict render it.
+// locked guess. The exit quiz asks no confidence. Not an island: Pretest,
+// Check, ExitQuiz and Predict render it.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { gradeChoice, gradeMulti, gradeNumeric, gradeRecall, type Grade, type QuizItem } from '../../lib/grade';
 import type { Confidence as Level } from '../../lib/progress';
 import Confidence from './Confidence';
 import Inline from './Inline';
 import { addAnswer, save } from './record';
+import type { TaughtIn } from './taught';
 
 /** The question types of the two pilot pages. A spot-bug item comes in its options form only. */
 export type SupportedItem = Extract<QuizItem, { type: 'mcq' | 'predict' | 'multi' | 'numeric' | 'recall' | 'spot-bug' }>;
@@ -27,10 +29,14 @@ export interface Props {
   mode: 'guess' | 'graded';
   /** Predict asks "why" before it shows the explanation. */
   hideExplanation?: boolean;
+  /** false: no confidence step, and the graded answer saves with no confidence. The exit quiz uses it. */
+  askConfidence?: boolean;
+  /** The link to the place that taught the item. It shows with the grade. */
+  taughtIn?: TaughtIn;
   onDone?: (result: Result) => void;
 }
 
-export default function Question({ item, misconceptions, name, mode, hideExplanation = false, onDone }: Props) {
+export default function Question({ item, misconceptions, name, mode, hideExplanation = false, askConfidence = true, taughtIn, onDone }: Props) {
   const [picked, setPicked] = useState<number[]>([]);
   const [typed, setTyped] = useState('');
   const [confidence, setConfidence] = useState<Level | null>(null);
@@ -71,7 +77,7 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
   function finish(result: Grade | null) {
     setGrade(result);
     setPhase('done');
-    if (mode === 'graded' && result && confidence) {
+    if (mode === 'graded' && result && (confidence || !askConfidence)) {
       setSaveProblem(save((progress) => addAnswer(progress, item.id, result.correct, confidence, new Date())));
     }
     const answer = options
@@ -86,15 +92,15 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
     if (options && picked.length === 0) problem = multi ? 'Pick one or more answers.' : 'Pick an answer.';
     else if (!options && typed.trim() === '') problem = 'Type an answer first. A short guess is fine.';
     else if (item.type === 'numeric' && Number.isNaN(number)) problem = 'Type a number, such as 42.';
-    else if (!confidence) problem = 'Pick how sure you are.';
+    else if (askConfidence && !confidence) problem = 'Pick how sure you are.';
     setHint(problem);
     if (problem) return;
     if (item.type === 'recall' && mode === 'graded') setPhase('reveal');
     else finish(gradeNow(false));
   }
 
-  // Each wrong pick names its misconception once.
-  const myths = graded && options ? [...new Set(picked.flatMap((i) => (options[i].correct ? [] : [options[i].misconception ?? ''])))].filter(Boolean) : [];
+  // Each wrong pick names its misconception once, in words. The ID is for authors, so it never shows.
+  const myths = graded && options ? [...new Set(picked.flatMap((i) => (options[i].correct ? [] : [options[i].misconception ?? ''])))].filter((id) => misconceptions[id] && misconceptions[id] !== id) : [];
 
   return (
     <form class="chk-question" onSubmit={submit}>
@@ -136,7 +142,7 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
 
       {!locked && (
         <>
-          <Confidence name={`${name}-confidence`} value={confidence} onChange={setConfidence} />
+          {askConfidence && <Confidence name={`${name}-confidence`} value={confidence} onChange={setConfidence} />}
           <button type="submit">{mode === 'guess' ? 'Lock my guess' : item.type === 'recall' ? 'Show the model answer' : 'Check my answer'}</button>
           <p class="chk-hint" aria-live="polite">
             {hint}
@@ -169,7 +175,7 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
             </p>
             {myths.map((id) => (
               <p key={id} class="chk-myth">
-                The common mistake: “<Inline text={misconceptions[id] ?? id} />” <span class="chk-id">({id})</span>
+                The common mistake: “<Inline text={misconceptions[id]} />”
               </p>
             ))}
             {!grade.correct && confidence === 'sure' && (
@@ -181,6 +187,11 @@ export default function Question({ item, misconceptions, name, mode, hideExplana
             {!hideExplanation && item.explanation !== grade.feedback && (
               <p class="chk-why">
                 <Inline text={item.explanation} />
+              </p>
+            )}
+            {taughtIn && (
+              <p class="chk-taught">
+                Taught in: <a href={taughtIn.href}>{taughtIn.label}</a>
               </p>
             )}
             {saveProblem && <p class="chk-note">This answer is not saved. {saveProblem}</p>}

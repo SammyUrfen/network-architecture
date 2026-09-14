@@ -13,7 +13,7 @@ const { title, runs } = Astro.props;
 <figure class="terminal">
   {title && <figcaption>{title}</figcaption>}
   <pre
-    tabindex="0"><code>{runs.map(({ cmd, out }) => (<><span class="cmd"><span class="prompt" aria-hidden="true">$ </span>{cmd}</span>{out && <span class="out">{out}</span>}</>))}</code></pre>
+    tabindex="0"><code>{runs.map(({ cmd, out }) => (<><span class="cmd"><span class="prompt" aria-hidden="true">$ </span>{cmd.split(/(\s+)/).map((part, i) => (i % 2 ? part : <span class="word">{part}</span>))}</span>{out && <span class="out">{out}</span>}</>))}</code></pre>
 </figure>
 
 <style>
@@ -25,6 +25,8 @@ const { title, runs } = Astro.props;
     font-size: var(--text-sm);
     color: var(--text-muted);
   }
+  /* A long output line keeps its columns and scrolls. The scroll bar stays
+     visible, so the reader knows that more text is there. */
   pre {
     margin: 0;
     padding: var(--space-3) var(--space-4);
@@ -32,6 +34,27 @@ const { title, runs } = Astro.props;
     background: var(--surface-2);
     border: 1px solid var(--rule);
     border-radius: var(--radius);
+  }
+  /* Chromium and Safari draw a styled scroll bar at all times, also where the
+     system uses overlay scroll bars that hide. Chromium ignores these rules
+     when scrollbar-color is set, so only Firefox gets scrollbar-color. */
+  @supports selector(::-webkit-scrollbar) {
+    pre::-webkit-scrollbar {
+      height: 0.625rem;
+    }
+    pre::-webkit-scrollbar-track {
+      background: var(--surface-2);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    pre::-webkit-scrollbar-thumb {
+      background: var(--text-muted);
+      border-radius: 999px;
+    }
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    pre {
+      scrollbar-color: var(--text-muted) var(--surface-2);
+    }
   }
   code {
     padding: 0;
@@ -41,8 +64,30 @@ const { title, runs } = Astro.props;
   .out {
     display: block;
   }
+  /* A long command wraps at a space only, so a break never looks like a
+     space inside a word such as "site-a.local". A word longer than the line
+     scrolls. The lines after the first start under the command, not under "$". */
+  .cmd {
+    padding-left: 2ch;
+    text-indent: -2ch;
+    white-space: pre-wrap;
+  }
+  .word {
+    white-space: nowrap;
+  }
+  /* A copy of the command leaves out the prompt. */
+  .prompt {
+    user-select: none;
+  }
   .prompt,
   .out {
     color: var(--text-muted);
+  }
+  /* The same ink pair as a button, so selected text reads in both themes. */
+  .cmd::selection,
+  .word::selection,
+  .out::selection {
+    color: var(--bg);
+    background: var(--interactive);
   }
 </style>

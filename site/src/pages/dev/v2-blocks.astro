@@ -1,0 +1,119 @@
+---
+// Dev page for the v2 lesson blocks and the check changes. Not in the nav.
+// The "Taught in" labels come from the tags on this page: the page reads its
+// own source, as the check wrappers read the MDX body of a module.
+import CheckIsland from '../../components/check/Check.tsx';
+import ExitQuizIsland from '../../components/check/ExitQuiz.tsx';
+import PredictIsland from '../../components/check/Predict.tsx';
+import ExitQuiz from '../../components/check/ExitQuiz.astro';
+import { itemById, itemsFor, misconceptionsOf } from '../../components/check/items';
+import { taughtInLabel, type TaughtIn } from '../../components/check/taught';
+import Terminal from '../../components/diagram/Terminal.astro';
+import KeyIdea from '../../components/lesson/KeyIdea.astro';
+import Lab from '../../components/lesson/Lab.astro';
+import Picture from '../../components/lesson/Picture.astro';
+import Segment from '../../components/lesson/Segment.astro';
+import Base from '../../layouts/Base.astro';
+import source from './v2-blocks.astro?raw';
+
+const link = (anchor: string): TaughtIn => {
+  const label = taughtInLabel(source, anchor);
+  if (!label) throw new Error(`No anchor ${anchor} on the dev page.`);
+  return { href: `#${anchor}`, label };
+};
+
+const check = await itemById('s01-m08-q01');
+const predict = await itemById('s01-m08-q10');
+const exit = await itemsFor('s01-m08-framing', 'exit');
+// The last exit item gets no link, to show that an item with no taughtIn shows nothing.
+const exitLinks = Object.fromEntries(exit.slice(0, -1).map((item, i) => [item.id, link(i % 2 ? 'seg-two-answers-to-one-question' : 'tcp-keeps-order-not-edges')]));
+---
+
+<Base title="Dev: v2 lesson blocks">
+  <h1>Dev: v2 lesson blocks</h1>
+  <p>
+    Fixtures for <code>KeyIdea</code>, <code>Picture</code> with a story, <code>Lab</code> with its source header, long <code>Terminal</code> lines, the
+    "Taught in" link, and the exit quiz with no confidence step. The quiz items come from <code>src/content/quiz/s01-m08-framing.yaml</code>. Answers
+    save to the progress in this browser.
+  </p>
+
+  <Segment title="A byte stream has no edges">
+    <p>
+      <strong>In this part.</strong> You learn why the program that reads cannot see where a message ends. Every later part of the lesson answers this problem.
+    </p>
+
+    <Picture breaks="a real string can snap and drop beads, but TCP never loses a byte and never changes their order.">
+      <p>
+        Your friend makes two bead bracelets for you and sends them in a thin tube. To fit the tube, your friend puts all the beads on one long string, one
+        bead after the other. At home, you take the beads from the string a handful at a time. Nothing on the string shows where the first bracelet stopped.
+      </p>
+      <p>
+        In TCP, each bead is a byte, and each bracelet is a message. The long string is the connection. Each call to <code>write()</code> adds beads to the
+        string, and each call to <code>read()</code> takes one handful.
+      </p>
+    </Picture>
+
+    <KeyIdea id="tcp-keeps-order-not-edges" title="TCP keeps the order, not the edges">
+      <p>TCP delivers every byte in order. It keeps no mark where one write stopped, so the program must find where each message ends.</p>
+    </KeyIdea>
+
+    <h3>Check with a "Taught in" link to a key idea</h3>
+    <CheckIsland client:load item={check} misconceptions={misconceptionsOf([check])} taughtIn={link('tcp-keeps-order-not-edges')} />
+  </Segment>
+
+  <Segment title="Two answers to one question">
+    <p>
+      <strong>In this part.</strong> Part 1 left one question: where does a message end? This part shows the old picture form, which the pilots still use.
+    </p>
+
+    <Picture
+      rows={[
+        { picture: 'Every bracelet has 20 beads.', real: 'Every message has a fixed length.' },
+        { picture: 'A red bead ends each bracelet.', real: 'A delimiter ends each message.' },
+      ]}
+      breaks="a bracelet can hold a red bead in its pattern, and then the rule cuts it too early."
+    />
+
+    <h3>Predict with a "Taught in" link to a part</h3>
+    <PredictIsland client:load item={predict} misconceptions={misconceptionsOf([predict])} taughtIn={link('seg-two-answers-to-one-question')}>
+      <p>The server log under strace, on loopback:</p>
+      <pre><code>read(4, "helloworld", 4096) = 10</code></pre>
+    </PredictIsland>
+  </Segment>
+
+  <h2>Lab with a source header</h2>
+  <Lab title="Watch the server read two sends" folder="lesson1">
+    <p>The server prints each read. You should see one read that holds both sends.</p>
+    <Terminal
+      title="Terminal 2: a long command wraps at a space, on loopback"
+      runs={[
+        {
+          cmd: `python3 -c 'import socket,time; s=socket.create_connection(("127.0.0.1",2026)); s.send(b"hello"); s.send(b"world"); time.sleep(0.3); print(s.recv(100))'`,
+        },
+      ]}
+    />
+    <Terminal
+      title="A long output line scrolls with a visible scroll bar"
+      runs={[
+        {
+          cmd: 'strace -e trace=read,write ./02_echo_server_persistent',
+          out: 'read(4, "GET /style.css HTTP/1.1\\r\\nHost: site-a.local\\r\\n\\r\\nGET /app.js HTTP/1.1\\r\\nHost: site-a.local\\r\\n\\r\\n", 4096) = 92\nwrite(4, "HTTP/1.1 200 OK\\r\\nContent-Length: 219\\r\\n\\r\\n", 41) = 41',
+        },
+        { cmd: 'curl --silent --show-error --http1.1 --header "Host: site-a.local" http://127.0.0.1:8011/averyveryveryveryveryveryveryveryverylongpath/index.html' },
+      ]}
+    />
+  </Lab>
+
+  <h2>Lab with no folder (the pilot form)</h2>
+  <Lab title="Send two requests in one send">
+    <Terminal title="Terminal 1, in lesson5/http-evolution of the instructor repo" runs={[{ cmd: 'python3 02-http11/server11.py 8011' }]} />
+  </Lab>
+
+  <h2>Exit quiz island, no confidence step</h2>
+  <p>The first two items link to this page. The last item has no link.</p>
+  <ExitQuizIsland client:load module="dev-v2-blocks" items={exit} misconceptions={misconceptionsOf(exit)} taughtIn={exitLinks} />
+
+  <h2>Exit quiz wrapper on the pilot</h2>
+  <p>The pilot quiz has no <code>taughtIn</code> yet, so no item shows a link.</p>
+  <ExitQuiz module="s01-m08-framing" />
+</Base>

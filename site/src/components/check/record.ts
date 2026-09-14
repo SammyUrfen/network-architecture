@@ -6,10 +6,11 @@ import { newCard, reviewCard } from '../../lib/schedule';
  * Adds one graded answer to the progress. A "sure" answer that is wrong joins
  * the review queue, due tomorrow (docs/PEDAGOGY.md, rule 5). Quiz item IDs
  * and card IDs share one namespace (verify rule 6), so the item keeps its
- * review schedule in `cards` under its own ID.
+ * review schedule in `cards` under its own ID. An exit quiz answer has no
+ * confidence step: it passes null, and the record has no `confidence` field.
  */
-export function addAnswer(progress: Progress, itemId: string, correct: boolean, confidence: Confidence, now: Date): Progress {
-  (progress.answers[itemId] ??= []).push({ at: now.toISOString(), correct, confidence });
+export function addAnswer(progress: Progress, itemId: string, correct: boolean, confidence: Confidence | null, now: Date): Progress {
+  (progress.answers[itemId] ??= []).push({ at: now.toISOString(), correct, ...(confidence && { confidence }) });
   if (confidence === 'sure' && !correct) progress.cards[itemId] = reviewCard(progress.cards[itemId] ?? newCard(now), false, now);
   return progress;
 }

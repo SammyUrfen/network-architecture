@@ -1,9 +1,13 @@
 ---
-// Rung 1. The analogy and the real mechanism side by side, in an open box
-// (PEDAGOGY rules 2 and 3).
+// Rung 1, in an open box (docs/PEDAGOGY.md section 2, rung 1). The default
+// slot holds the story paragraph about a scene that a 10-year-old knows, then
+// the sentences that map each part of the scene to the real thing.
 export interface Props {
-  /** One row for each step of the analogy. */
-  rows: { picture: string; real: string }[];
+  /**
+   * The old side-by-side form. The pilots use it until their rebuild. A new
+   * picture leaves it out and uses the slot.
+   */
+  rows?: { picture: string; real: string }[];
   /** Where the analogy breaks. Every analogy has one. */
   breaks: string;
 }
@@ -12,24 +16,29 @@ const { rows, breaks } = Astro.props;
 
 <details open class="rung">
   <summary>The picture</summary>
-  <table>
-    <thead>
-      <tr>
-        <th scope="col">The picture</th>
-        <th scope="col">The real thing</th>
-      </tr>
-    </thead>
-    <tbody>
-      {
-        rows.map(({ picture, real }) => (
+  {
+    rows && (
+      <table>
+        <thead>
           <tr>
-            <td>{picture}</td>
-            <td>{real}</td>
+            <th scope="col">The picture</th>
+            <th scope="col">The real thing</th>
           </tr>
-        ))
-      }
-    </tbody>
-  </table>
+        </thead>
+        <tbody>
+          {rows.map(({ picture, real }) => (
+            <tr>
+              <td>{picture}</td>
+              <td>{real}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  <div class="story">
+    <slot />
+  </div>
   <p class="breaks"><strong>Where this breaks:</strong> {breaks}</p>
 </details>
 
@@ -61,8 +70,11 @@ const { rows, breaks } = Astro.props;
     font-size: var(--text-sm);
     color: var(--text-muted);
   }
+  .story :global(p) {
+    margin: var(--space-3) 0 0;
+  }
   .breaks {
-    margin-bottom: 0;
+    margin: var(--space-3) 0 0;
     padding: var(--space-2) var(--space-3);
     background: var(--wrong-bg);
     border-left: 4px solid var(--wrong);

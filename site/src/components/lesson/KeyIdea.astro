@@ -1,0 +1,78 @@
+---
+// One must-know idea, 2 to 4 for each lesson (docs/PEDAGOGY.md rule 6). It is
+// the heaviest block on the page after the headings. Its id is the anchor
+// that a quiz item names in taughtIn. The check wrappers and verify rule 10
+// read the id and the title from the raw MDX, so both are plain strings.
+export interface Props {
+  /** The anchor: lowercase words with hyphens, such as "tcp-keeps-order-not-edges". No "seg-" prefix. */
+  id: string;
+  /** A short title, such as "TCP keeps the order, not the edges". */
+  title: string;
+}
+const { id, title } = Astro.props;
+// A seg- id can hide a part anchor, and a bad id gives a link that never scrolls.
+if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) || id.startsWith('seg-')) {
+  throw new Error(`KeyIdea id "${id}": use lowercase words with hyphens, with no "seg-" prefix.`);
+}
+---
+
+<section class="key-idea" id={id} aria-labelledby={`${id}-title`}>
+  <p class="label"><span aria-hidden="true">✦</span> Key idea</p>
+  <h3 id={`${id}-title`}>
+    {title}
+    <a class="anchor" href={`#${id}`} aria-label={`Link to the key idea: ${title}`}>#</a>
+  </h3>
+  <div class="body">
+    <slot />
+  </div>
+</section>
+
+<style>
+  /* Double rules above and below, as in an editorial pull quote. */
+  .key-idea {
+    margin: var(--space-8) 0;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    background: var(--key-bg);
+    border-top: 6px double var(--key);
+    border-bottom: 6px double var(--key);
+    scroll-margin-top: 4rem;
+  }
+  /* A "Taught in" link lands here, so the learner sees which block it means. */
+  .key-idea:target {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+  .label {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--key);
+  }
+  h3 {
+    margin: var(--space-1) 0 var(--space-2);
+    font-size: var(--text-xl);
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .anchor {
+    margin-left: var(--space-1);
+    padding: 0 var(--space-1);
+    font-weight: 400;
+    color: var(--key);
+    text-decoration: none;
+  }
+  .anchor:hover {
+    text-decoration: underline;
+  }
+  .body {
+    font-size: var(--text-lg);
+  }
+  .body :global(p) {
+    margin: 0 0 var(--space-2);
+  }
+  .body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+</style>

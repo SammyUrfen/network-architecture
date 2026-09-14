@@ -1,7 +1,8 @@
 /* The check blocks: pretest, check, predict, explain it back, faded example,
    exam prompts, exit quiz. Islands cannot use scoped Astro styles, so every
    class starts with "chk-". A color never carries meaning alone: each state
-   also has a word or a mark. */
+   also has a word or a mark. The edge of a control uses border-strong,
+   because the theme border is a faint rule. */
 
 .chk {
   margin: var(--space-6) 0;
@@ -62,7 +63,7 @@
   align-items: flex-start;
   margin-bottom: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong, var(--border));
   border-radius: var(--radius);
   cursor: pointer;
 }
@@ -113,7 +114,7 @@
   font: inherit;
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong, var(--border));
   border-radius: var(--radius);
   padding: var(--space-2);
 }
@@ -237,9 +238,6 @@
 .chk-myth {
   font-style: italic;
 }
-.chk-id {
-  white-space: nowrap;
-}
 .chk-loud {
   padding: var(--space-2) var(--space-3);
   border: 2px solid var(--wrong);
@@ -254,4 +252,11 @@
 }
 .chk-summary {
   font-weight: 700;
+}
+.chk-taught {
+  font-size: var(--text-sm);
+}
+.chk-taught a {
+  font-weight: 600;
+  color: var(--interactive);
 }

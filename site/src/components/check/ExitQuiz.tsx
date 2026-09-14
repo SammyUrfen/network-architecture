@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import Question, { type Result, type SupportedItem } from './Question';
 import { pretestGuesses, save } from './record';
+import type { TaughtIn } from './taught';
 import './check.css';
 
 export interface Props {
@@ -9,9 +10,12 @@ export interface Props {
   items: SupportedItem[];
   /** The statement of each misconception ID in the items. */
   misconceptions: Record<string, string>;
+  /** The "Taught in" link of each item that has one, by item ID. */
+  taughtIn: Record<string, TaughtIn>;
 }
 
-export default function ExitQuiz({ module, items, misconceptions }: Props) {
+// The exit quiz reveals every answer, so it asks no confidence (Bibek, 2026-09-14).
+export default function ExitQuiz({ module, items, misconceptions, taughtIn }: Props) {
   const [results, setResults] = useState<Record<string, Result>>({});
   const [before, setBefore] = useState<{ right: number; total: number } | null>(null);
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
@@ -41,7 +45,15 @@ export default function ExitQuiz({ module, items, misconceptions }: Props) {
       <ol class="chk-list">
         {items.map((item) => (
           <li key={item.id}>
-            <Question item={item} misconceptions={misconceptions} name={`exit-${item.id}`} mode="graded" onDone={(r) => onDone(item.id, r)} />
+            <Question
+              item={item}
+              misconceptions={misconceptions}
+              name={`exit-${item.id}`}
+              mode="graded"
+              askConfidence={false}
+              taughtIn={taughtIn[item.id]}
+              onDone={(r) => onDone(item.id, r)}
+            />
             {results[item.id] && pretestGuesses.has(item.id) && (
               <p class="chk-note">Your guess before the lesson: “{pretestGuesses.get(item.id)}”</p>
             )}

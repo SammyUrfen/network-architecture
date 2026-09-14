@@ -22,7 +22,9 @@ export type Confidence = 'sure' | 'think' | 'guess';
  * Timestamps are ISO 8601 strings. `pretestDoneAt` marks a pretest with every
  * guess locked, recall guesses too. `pretest` is the score, and only a pretest
  * with a grade for every item has one. A file from before `pretestDoneAt` has
- * only the score, and it is still version 1.
+ * only the score, and it is still version 1. An exit quiz answer has no
+ * `confidence`. Every older file has one on each answer, so it is still
+ * version 1 too.
  */
 export interface Progress {
   version: typeof PROGRESS_VERSION;
@@ -30,7 +32,7 @@ export interface Progress {
     string,
     { startedAt: string; completedAt?: string; pretestDoneAt?: string; pretest?: { right: number; total: number } }
   >;
-  answers: Record<string, Array<{ at: string; correct: boolean; confidence: Confidence }>>;
+  answers: Record<string, Array<{ at: string; correct: boolean; confidence?: Confidence }>>;
   cards: Record<string, CardState>;
 }
 
@@ -123,7 +125,13 @@ export function parseProgress(json: string): Progress {
   for (const [id, list] of Object.entries(answers as Record<string, unknown>)) {
     check(
       Array.isArray(list) &&
-        list.every((a) => isRecord(a) && isTime(a.at) && typeof a.correct === 'boolean' && ['sure', 'think', 'guess'].includes(a.confidence as string)),
+        list.every(
+          (a) =>
+            isRecord(a) &&
+            isTime(a.at) &&
+            typeof a.correct === 'boolean' &&
+            (a.confidence === undefined || ['sure', 'think', 'guess'].includes(a.confidence as string)),
+        ),
       `answers.${id}`,
     );
   }

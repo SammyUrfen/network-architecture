@@ -1,7 +1,7 @@
 ---
 // Finds the quiz item at build time and passes it to the island.
 import Island from './Check.tsx';
-import { itemById, misconceptionsOf } from './items';
+import { itemById, misconceptionsOf, taughtInOf } from './items';
 
 export interface Props {
   /** A quiz item ID, such as s01-m08-q01. */
@@ -9,6 +9,7 @@ export interface Props {
 }
 
 const item = await itemById(Astro.props.id);
+const taughtIn = await taughtInOf(item);
 ---
 
-<Island client:load item={item} misconceptions={misconceptionsOf([item])} />
+<Island client:load item={item} misconceptions={misconceptionsOf([item])} taughtIn={taughtIn} />
