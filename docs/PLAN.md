@@ -9,14 +9,14 @@ A living document. Update the status table when a phase changes state.
 | 0 | Foundation: repo, sources, pedagogy, curriculum maps for sessions 1–5 | done 2026-09-14 | — |
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
-| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | build steps 1 and 2 done 2026-09-14. Next: Bibek uses the pages (step 3). | 1–2 days of use |
+| 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | Steps 1 to 3 done 2026-09-14: Bibek read both pages. Now at steps 4 and 5: 15 feedback items recorded, lesson contract v2 written, both pages `draft` until their rebuild. | 1–2 sessions for the rebuild |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
 | 5 | Sessions 1 and 2, remaining modules (20) | not started | 40–80 h of packets, 3–6 sessions |
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
 | 7 | Session 5, remaining modules and project studio (10) | not started | 20–40 h of packets, 2–3 sessions |
 | 8 | Threads, practice exam, glossary, end-term pack | not started | 1–2 sessions |
 | R | Each new session (6, 7, 8): run `docs/ADD-A-SESSION.md` | recurring | within 48 h of the class |
-| D | Public GitHub repo and GitHub Pages deploy | deferred: Bibek wants a public repo later. Checklist in section 4. | 1–2 h |
+| D | Public GitHub repo, CI/CD and GitHub Pages deploy | Bibek decided on 2026-09-14: everything goes public (section 10). Checklist in section 4. | 1–2 h |
 
 A "session" in the Estimate column is one Claude Code working session of 3
 to 4 hours. Phases 5 to 7 assume 2 to 4 hours for each packet and 4 packets
@@ -36,10 +36,11 @@ that brings ideas back over days.
 
 - No backend, no accounts, no analytics. Progress lives in the browser.
 - No solutions to graded work.
-- No copy of the instructor's slides. Original explanations with short
-  quotes and source pointers.
+- No copy of the slide text. Original explanations with short quotes and
+  source pointers. The five deck PDFs are the one exception: the site hosts
+  them for the slide viewer (section 10).
 - No lesson for a session before its sources exist.
-- No public deploy until Bibek asks.
+- No public deploy before the Phase D checklist in section 4 passes.
 - No offline mode.
 
 ---
@@ -59,8 +60,8 @@ Each decision names what it rejects and why.
 | Review schedule | Five fixed boxes: 1, 3, 7, 14, 30 days, capped by exam dates when a date is known | SM-2, FSRS | Research shows no gain from growing gaps over fixed gaps (docs/PEDAGOGY.md). Fixed boxes are a few lines. |
 | Shared widget state | One store module (nanostores, as the Astro docs advise) that writes through to `localStorage`. Progress widgets read storage only on the client. | `storage` events, React context | The `storage` event fires only in other tabs. Context does not cross islands. Astro prerenders islands at build time, where `localStorage` does not exist. |
 | Search | None at first. Pagefind in Phase 8 if needed | Algolia | Pagefind is static. Search is not a need at 57 pages with a clear map. |
-| Theme | "Patch Panel", hand-rolled tokens, light and dark | A UI kit | Bibek designs a named theme per project. |
-| Sources in git | Ignored. Only `sources/MANIFEST.md` is tracked. | Commit the PDFs and the instructor clone | The repo can go public later. The material belongs to the instructor. |
+| Theme | "Honey & Amber", Bibek's own tokens, light and dark, serif body text (section 10) | "Patch Panel", a UI kit | Bibek designs a named theme per project. The pilot showed that "Patch Panel" is not good for long reading. |
+| Sources in git | Ignored. Only `sources/MANIFEST.md` is tracked. The five deck PDFs are also copied to `site/public/slides/` (section 10). | Commit the AI notes and the instructor clone | The repo is public. The material belongs to the instructor. Bibek owns the permission question for the decks. |
 | Unit tests | Vitest | `node --test` | Astro is Vite-based, so Vitest shares its TypeScript setup with no extra config. |
 
 Confirm the current Astro, MDX, Preact and Vitest APIs with the context7 tools
@@ -88,7 +89,7 @@ site/
       cards/s01-m08-framing.yaml   one file per module, items in a list
       assessments.yaml         quizzes, assignment, project, exam, with dates
     components/
-      lesson/                  ModuleHeader, Segment, Picture, ExamDepth, Story, Myth, Beyond, WordCard, InventFirst, Lab, CardsAdded, ThreadLink, ModuleLink
+      lesson/                  ModuleHeader, Segment, KeyIdea, Picture, ExamDepth, Story, Myth, Beyond, WordCard, InventFirst, Lab, CardsAdded, ThreadLink, ModuleLink, SlideLink
       check/                   Pretest, Check, ExitQuiz, Predict, ExplainBack, FadedExample, Generator, ExamPrompts
       diagram/                 Stepper, SequenceDiagram, LayerStack, ByteView, Terminal, Timeline
       sims/<module-id>/        one folder per simulator
@@ -125,6 +126,39 @@ site/
   `import.meta.env.BASE_URL`, the route and a trailing slash. For a planned
   module with no page yet, it shows the module ID as plain text with
   "(planned)". Lesson MDX never uses a root-relative Markdown link.
+
+### Lesson page, version 2
+
+Bibek's pilot feedback changed the page (section 10, `docs/PEDAGOGY.md`
+section 2). The entries in `docs/COMPONENTS.md` say "planned for v2" until
+they exist.
+
+- **Layout.** On a screen 1200 px wide or more: a fixed left sidebar, a
+  reading column of about 68 to 72 characters, and a visual rail on the
+  right. The sidebar holds the site name, the sessions with their lessons,
+  the outline of the current lesson, and the progress. A medium screen puts
+  the sidebar in a drawer. A phone gets a slim top bar, and each visual goes
+  inline after its paragraph. No top nav bar, and no lesson header block.
+- **`KeyIdea`.** An Astro block with `id` and `title`, both plain string
+  attributes. It marks one must-know idea, 2 to 4 for each lesson. Its `id`
+  is also its anchor on the page.
+- **The `visual` slot of `Segment`.** Each part gives one visual with a
+  `slot="visual"` attribute. The part is a two-column grid row, and its
+  visual is `position: sticky` in the rail. So no JavaScript swaps the
+  visuals when the reader scrolls.
+- **Animation controls.** Every animation has the same control bar: play or
+  pause, previous step, next step, and speed. The controls are native buttons
+  and a select, so the keyboard works. No autoplay. Under
+  `prefers-reduced-motion`, a step changes the picture with no motion. The
+  animations use SVG, CSS and the Web Animations API, and no library.
+- **`taughtIn`.** A quiz item field: the `id` of a `KeyIdea`, or the anchor
+  of a part. A part anchor comes from `segmentAnchor()` in
+  `src/components/lesson/segments.ts`, for example
+  `seg-a-byte-stream-has-no-edges`. Verify rule 10 requires it in a `ready`
+  module. At build time, the check wrappers turn it into the link
+  "Taught in: Part 2, <title>".
+- **Slides.** The five deck PDFs sit in `site/public/slides/`. A slide
+  citation opens a viewer at its page, and the viewer offers the download.
 
 ### Loaders
 
@@ -204,6 +238,7 @@ terms:
   explanation: A read returns the bytes available, from 1 up to the buffer size. The application finds the message end.
   covers: [S01-C92]
   tags: []                # story | measured | beyond
+  taughtIn: seg-a-byte-stream-has-no-edges   # a KeyIdea id or a part anchor. Required in a ready module (verify rule 10).
 ```
 
 **Fields for each question type.** `numeric`, `order`, `bytes` and `recall`
@@ -259,7 +294,7 @@ A curriculum question with no options, such as most pretest questions, is a
 {
   version: 1,
   modules: { [id]: { startedAt: string, completedAt?: string, pretest?: { right, total }, pretestDoneAt?: string } },
-  answers: { [itemId]: Array<{ at: string, correct, confidence: "sure" | "think" | "guess" }> },
+  answers: { [itemId]: Array<{ at: string, correct, confidence?: "sure" | "think" | "guess" }> },
   cards:   { [cardId]: { box: 1..5, due: "YYYY-MM-DD", lapses } }
 }
 ```
@@ -267,21 +302,27 @@ A curriculum question with no options, such as most pretest questions, is a
 Timestamps are ISO 8601 strings. `due` is a calendar date in the local time
 zone of the browser.
 
+An exit quiz answer has no `confidence` (planned for v2). The version stays
+1, because every file with a `confidence` stays valid.
+
 A version mismatch runs a migration or asks before a reset. It never wipes
 data without asking.
 
-### Theme "Patch Panel"
+### Theme "Honey & Amber"
 
-Colors come from the four pairs of a network cable (orange, green, blue,
-brown) on a paper background in light mode and a rack-dark background in dark
-mode.
+Bibek's own theme (https://sammyurfen.github.io/themes/): a warm editorial
+serif, paper surfaces and honeyed ink. `src/styles/tokens.css` holds its
+tokens exactly. The `na-theme` key, the theme toggle and the script before
+paint stay. The dark tokens map onto the
+existing dark switch.
 
 - **Semantic colors:** key idea, correct, wrong, interactive, story. A color
   never carries meaning alone. Each one has an icon or a word.
 - **Layer colors:** one color per layer (physical, link, network, transport,
   application), the same in every diagram and every `ByteView`. Load the
-  `dataviz` skill and run its palette validator on both themes.
-- **Type:** system UI font for prose, a monospace font for bytes and code.
+  `dataviz` skill and run its palette validator on both themes. Check the
+  layer colors again on the Honey & Amber surfaces.
+- **Type:** a serif font for prose, a monospace font for bytes and code.
 - **Accessibility:** WCAG AA contrast, keyboard access to every widget,
   visible focus, `aria-live` on feedback, `prefers-reduced-motion`.
 
@@ -342,9 +383,10 @@ and give him the assignment page before the due date.
 3. Bibek uses both pages for one or two days. He starts his own server with
    `npm run preview -- --port 4400`. Progress in `localStorage` belongs to
    one address, host and port, so he exports before a change of address.
-4. Record his feedback in `docs/feedback.md`, with a date.
+4. Record his feedback in `docs/feedback.md`, with a date. Done on
+   2026-09-14: 15 items.
 5. Change `docs/PEDAGOGY.md` and the components to match. Rebuild the two
-   pages.
+   pages. The lesson contract v2 is the change to `docs/PEDAGOGY.md`.
 
 **Deadline:** the deck says the assignment is due before Session 7 (Friday
 2026-09-25). Finish the build steps of Phases 1 to 3 by 2026-09-19. Until
@@ -353,6 +395,8 @@ then, Bibek reads the `s05-m12-assignment-prep` section of
 are readable now.
 
 **Hard gate:** no other module starts before Bibek accepts the format.
+Bibek relaxed this gate on 2026-09-14: Session 1 lessons 1 to 3 start in
+parallel while he reviews the v2 pilot pages (section 10).
 
 ### Phase 4: the rest of the engine, and the HTTP path
 
@@ -394,18 +438,17 @@ project deadline, move `s05-m13-project-studio` and the prereqs that
   `S0N-Q` instructor questions as open prompts with model answers.
 - Pagefind search, only if Bibek asks for search.
 
-### Phase D: public repo (deferred)
+### Phase D: public repo
 
 Before any public push:
 
-1. Keep `docs/curriculum/` and the pages for graded work (`s05-m12`,
-   `s05-m13`) out of the public tree until the grades are final. Bibek
-   picks how: a private branch or `.gitignore`. The build reads
-   `docs/curriculum/README.md` (the threads loader) and
-   `docs/curriculum/session-*.md` (misconception text for the check
-   islands). The chosen way must keep the build working.
-2. Ask the instructor before a public release.
-3. Scan every tracked file for long quotes from `sources/`.
+1. Settled on 2026-09-14: everything goes public, with
+   `docs/curriculum/` and the `s05-m12-assignment-prep` page. Rule 4 in
+   `CLAUDE.md` still holds, so no page gives a solution to graded work.
+2. Bibek owns the permission question with the instructor, for the lessons
+   and for the deck PDFs.
+3. Scan every tracked file for long quotes from `sources/`. The deck PDFs in
+   `site/public/slides/` are the one allowed copy.
 
 ### The module packet
 
@@ -420,6 +463,8 @@ The unit of parallel work in Phases 3 to 8.
   - `src/content/cards/<id>.yaml`
   - `src/lib/sims/<id>.ts` and its test, if the module has a simulator
   - `src/components/sims/<id>/`, if the module has a simulator
+  - the module section of `docs/curriculum/session-0N.md`, only to match a
+    picture or a question that the learner review made the packet rewrite
 - **No shared files.** The nav, the session page and the review queue come
   from the collections. If a packet needs a new shared component, it stops
   and records the need in `docs/PLAN.md` under "Contract change requests".
@@ -434,6 +479,11 @@ section and the sources.
 
 | Block or field | Source |
 |---|---|
+| Opening story | the big idea, the prereqs and threads (as lesson titles), and the graded-work guard or later modules that use the idea |
+| "In this part" | the segment plan, or the group of checks of the part, and the part before it |
+| `KeyIdea` blocks | the `core` claims that the module covers, 2 to 4 of them |
+| Visual for each part | the Diagrams and Interactives fields. A part with neither gets a diagram from its rung 2 steps. |
+| `taughtIn` | the part or the `KeyIdea` that teaches the claims in the `covers` of the item |
 | Word card | the terms that rungs 2 and 3 use |
 | Segments | the segment plan when the section has one. Otherwise one segment for each group of related checks. |
 | Explain it back | a "why" question from rung 4, with its model answer |
@@ -448,18 +498,29 @@ section and the sources.
 2. Write the simulator logic and its tests first, with RFC or source test
    vectors.
 3. Build the simulator component.
-4. Write the MDX page in lesson-contract order.
-5. Write the quiz items and the cards.
-6. Run the gate.
-7. Run one accuracy review subagent on the finished page. Fix what it
-   proves.
-8. Set `status: ready`.
+4. Write the MDX page in lesson-contract order: the opening story, then
+   each part with "In this part", its `KeyIdea` blocks and its checks.
+5. Build one visual for each part in the `visual` slot of its `Segment`: a
+   diagram that steps, an animation with the shared controls, or a
+   simulation.
+6. Write the quiz items, each with `taughtIn`, and the cards.
+7. Run gate checks 1 to 4, 6 and 7.
+8. Run one accuracy review subagent on the finished page (gate check 5).
+   Fix what it proves.
+9. Run one learner review subagent (gate check 8). Fix every finding. A
+   picture or a question from the curriculum file that fails this review
+   gets a rewrite on the page. Then fix the module section of the curriculum
+   file to match.
+10. Run the gate again, and set `status: ready`.
 
-**Estimate:** 2 to 4 hours for a module with one simulator.
+**Estimate:** 2 to 4 hours for a module with one simulator. The visual for
+each part and the learner review can add 1 to 2 hours. Not measured yet.
 
 **Parallel runs:** because packets never share a file, a workflow can run
 several packets at once in separate git worktrees and merge them with no
-conflicts. This is the contract-first method from SiteSync. Each worktree
+conflicts. A learner-review fix to a curriculum file is the one exception.
+It touches only the module section of its own module, so two packets change
+different lines of one session file. This is the contract-first method from SiteSync. Each worktree
 runs the whole gate on its own preview port, 4401 and up.
 
 **Feedback after the pilot:** when a page confuses Bibek, he adds a line to
@@ -486,7 +547,8 @@ A packet or phase is done only when all of these pass. Show the output.
 | 4 | Build | `npm run build` |
 | 5 | Accuracy | One adversarial review subagent checks the page against the curriculum file, the sources, and the RFCs. For a module with a "Graded-work guard" or an "Integrity note", it also checks rule 4 in `CLAUDE.md`. Fix every proven finding. |
 | 6 | Visual QA | Playwright MCP on `npm run preview -- --port 4399` (4401 and up in a worktree): light and dark, 390 px and 1280 px wide, a keyboard-only pass through every widget, zero console errors |
-| 7 | Prose | `npm run lint:prose -- <module-id>` under 2.5 per 100 words. With no module ID, it lints every module. |
+| 7 | Prose | `npm run lint:prose -- <module-id>` under 2.5 per 100 words. With no module ID, it lints every module. Then the `remove-ai-marks` skill on the lesson prose. |
+| 8 | Learner review | One subagent reads the built page with the prompt in `docs/reviews/learner-review.md`: first as a 10-year-old, then as a student before the exam. Fix every finding. |
 
 `lint-prose.mjs` needs no MDX parser. It drops the frontmatter, `import`
 lines, fenced code, inline code and JSX tags with regular expressions, then
@@ -516,6 +578,10 @@ which reads stdin when it gets no file.
 9. In a quiz file with 3 or more `mcq` and `predict` items, the right option
    is not at the same index in all of them. Both pilot quizzes first put it
    at option 1 in most items, so a learner could guess by position.
+10. In a `ready` module, every quiz item has `taughtIn`. It names the `id` of
+    a `<KeyIdea id="...">` in the MDX, or the anchor of a `<Segment>` from
+    `segmentAnchor()`. The `id` is a plain string attribute. A `draft` module
+    and a quiz pack skip this rule.
 
 **How the verifier reads the curriculum.** The files in `docs/curriculum/`
 stay the single source of truth. The verifier reads four things, with these
@@ -600,7 +666,8 @@ curriculum file has no field for.
 | Browser data is cleared | Progress is lost | Export and import |
 | The syllabus for weeks 7 and 8 differs between documents. The Session 4 and 5 decks preview Session 6 as "Where did the state go?", not CDNs. | Wrong placeholders | Build only from sources that exist |
 | Graded work leaks | An integrity problem | Rule 4 in CLAUDE.md, the integrity check in gate check 5, prep pages with checklists and hints only |
-| The public repo shows the curriculum files and the graded-work prep | Classmates see prep for graded work | The Phase D checklist in section 4 |
+| The public repo shows the curriculum files and the graded-work prep | Classmates see prep for graded work | Bibek decided to publish it (section 10). Rule 4 in `CLAUDE.md` keeps every solution out, and gate check 5 checks it. |
+| The deck PDFs are public | The instructor did not agree to it | Bibek owns the permission question (section 10) |
 
 ---
 
@@ -640,6 +707,16 @@ so the Phase D deploy changes one config line at most.
 | 2026-09-13 | Class transcripts | Not available. AI notes exist for Sessions 1 and 2 only. |
 | 2026-09-13 | Dates | Sessions 6, 7, 8 on Fridays 2026-09-18, 09-25, 10-02. Can change. The assignment is not formally given yet. |
 | 2026-09-13 | Public or private repo | Public, later. Sources stay git-ignored. |
+| 2026-09-14 | Pilot feedback | 15 items in `docs/feedback.md`. They give the lesson contract v2 in `docs/PEDAGOGY.md` section 2. |
+| 2026-09-14 | Theme | "Honey & Amber", Bibek's own theme, with serif body text for reading. It replaces "Patch Panel". |
+| 2026-09-14 | Layout | Use the whole screen: a fixed left sidebar with the lessons, the outline and the progress, a reading column, and a visual rail that changes as the reader scrolls. No top nav bar. Never show a raw ID. |
+| 2026-09-14 | Prose | Story paragraphs, not tables. Every lesson opens with its story, and every part says what it teaches. A picture passes the 10-year-old test. A `KeyIdea` block marks each must-know idea. |
+| 2026-09-14 | Visuals | Every part has a diagram, an animation or a simulation. Animations are hand-built and the learner controls them. |
+| 2026-09-14 | Public repo, CI/CD and Pages | The repo goes public with CI/CD and a GitHub Pages site. Bibek shares the site with his classmates. |
+| 2026-09-14 | Slides | Host the five deck PDFs publicly in `site/public/slides/`. The site shows them and offers downloads. A slide citation opens a viewer at that page. Bibek owns the permission question with the instructor. `CLAUDE.md` rule 5 changed to match. |
+| 2026-09-14 | What goes public | Everything, with `docs/curriculum/` and the `s05-m12-assignment-prep` page. This settles Phase D item 1. Rule 4 still holds. |
+| 2026-09-14 | Confidence choice | The exit quiz has no confidence step. The pretest and the checks inside parts keep sure, think so and guessing. |
+| 2026-09-14 | What comes next | Session 1 lessons 1 to 3 start in parallel while Bibek reviews the v2 pilot pages. |
 
 Still open: the dates of the three quizzes and how long after each class a
 quiz opens, the project deadline and the end-term.

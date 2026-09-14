@@ -9,6 +9,11 @@ request in `docs/PLAN.md`.
 Each component file exports a typed `Props` interface. The file is the final
 word on a prop. This catalog gives the map.
 
+**Version 2.** Bibek's pilot feedback of 2026-09-14 changed the lesson
+contract (`docs/PEDAGOGY.md` section 2). An entry marked "planned for v2" is
+the contract for a part that does not exist yet. Build it to this text. Then
+remove the mark in the same change.
+
 **Kinds**
 
 | Kind | Meaning |
@@ -33,6 +38,10 @@ word on a prop. This catalog gives the map.
 - For a link to another module, use `<ModuleLink id="..." />`. Never write a
   root-relative Markdown link (verify rule 8).
 - Give `WordCard` the frontmatter terms: `<WordCard terms={frontmatter.terms} />`.
+- Planned for v2: the sidebar holds the outline and the progress, and
+  `ModuleHeader` goes away. The MDX starts at block 1, the opening story, as
+  plain prose before the `Pretest`. A prereq or a thread shows as a lesson
+  title or a thread idea, never as a raw ID.
 
 ### Segments
 
@@ -43,6 +52,12 @@ word on a prop. This catalog gives the map.
 - The `title` of a `Segment` is a plain string attribute, `title="..."`. The
   page reads the titles from the raw MDX for the outline, so an expression
   such as `title={x}` does not show in the outline.
+- The anchor of a part is `segmentAnchor(title)` from
+  `src/components/lesson/segments.ts`: `seg-`, then the title in lower case
+  with each run of other characters as one hyphen. "Fixed length and
+  delimiters" gives `seg-fixed-length-and-delimiters`.
+- Planned for v2: each part starts with a paragraph that opens with
+  `**In this part.**`, in plain MDX. No component.
 
 ### Boxes, hints and ladders
 
@@ -71,6 +86,10 @@ The check islands show these types: `mcq`, `predict`, `multi`, `numeric`,
 A missing quiz item ID, or a module with no item for a `use`, also fails the
 build.
 
+Every quiz item of a `ready` module has `taughtIn`: the `id` of a `KeyIdea`
+in the MDX, or the anchor of a part. Verify rule 10 checks it now. The
+"Taught in" link on the page is planned for v2.
+
 In a quiz file with 3 or more `mcq` and `predict` items, move the right
 option between positions. Verify rule 9 fails a file with the right option
 at the same position in all of them. The islands do not shuffle options.
@@ -86,13 +105,15 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 |---|---|---|---|
 | `ModuleHeader` | Astro | `title: string`, `minutes: number`, `bigIdea: string`, `status: 'draft' \| 'ready'`, `prereqs: string[]`, `threads: string[]`, `segments: string[]`. Named slot `progress`. The module page gives it. | both |
 | `WordCard` | Astro | `terms: { term: string; meaning: string }[]` | both |
-| `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. | both |
-| `Picture` | Astro | `rows: { picture: string; real: string }[]`, `breaks: string` | both |
+| `Segment` | Astro | `title: string`, a plain string attribute. Default slot. Shows "Part N" with a CSS counter. Planned for v2: named slot `visual`, for the one visual of the part. Put `slot="visual"` on the visual component, or on a `<div>` that holds it. On a wide screen, the visual is sticky in the rail next to the prose of its part. | both |
+| `KeyIdea` | Astro | Planned for v2. `id: string`, `title: string`, both plain string attributes, because verify rule 10 and the check wrappers read them from the raw MDX. Default slot: the idea in 1 to 3 sentences. Shows a "Key idea" label and the title. The `id` is the HTML anchor: lowercase words with hyphens, with no `seg-` prefix. 2 to 4 for each lesson. | none yet |
+| `Picture` | Astro | `rows: { picture: string; real: string }[]`, `breaks: string`. Planned for v2: no `rows` table. The default slot holds the picture paragraph and the sentences that map it to the real thing. `breaks: string` stays. It sits in an open box. | both |
 | `ExamDepth` | Astro | No props. Default slot. A closed box. | both |
-| `ModuleLink` | Astro | `id: string`. A module with no page shows its ID and "(planned)". | both |
+| `ModuleLink` | Astro | `id: string`. A module with no page shows its ID and "(planned)". Planned for v2: a module with no page shows its title and "(planned)", never its ID. | both |
 | `InventFirst` | Astro | `prompt: string`. Default slot holds the full explanation. | m08 |
 | `Beyond` | Astro | `source: string`, `url?: string`. Default slot. Shows the "beyond the slides" badge. | m12 |
-| `Lab` | Astro | `title: string`. Default slot, for `Terminal` blocks. | none yet |
+| `Lab` | Astro | `title: string`. Default slot, for `Terminal` blocks. Planned for v2: `folder: string`, the folder in the instructor repo, such as `lesson1`. A source header shows the repo URL https://github.com/jitendraag/cn-at-scaler, the clone command `git clone https://github.com/jitendraag/cn-at-scaler.git`, and `cd cn-at-scaler/<folder>`. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
+| `SlideLink` | Astro | Planned for v2. `session: number`, `page: number`, the PDF page. Shows "slide N" as a link to `slides/session-0N.pdf#page=N` under the base URL. The browser PDF viewer opens at that page and offers the download. The PDFs sit in `site/public/slides/`. | none yet |
 | `CardsAdded` | Island with wrapper | Wrapper: `id: string`, the module ID. Island: `cards: string[]`. It adds the cards when the learner pushes the button, not on page load. | both |
 | `ModuleProgress` | Island, no wrapper | `id: string`, the module ID. The module page uses `<ModuleProgress slot="progress" client:only="preact" id={id} />`. | both, through the page |
 
@@ -113,7 +134,7 @@ All in `src/components/check/`. Each wrapper adds `client:load`.
 | `ExplainBack` | Island with wrapper | `prompt: string`, `model: string` | both |
 | `FadedExample` | Island with wrapper | `worked: { problem: string; steps: string[] }`, `faded: { problem: string; blanks: { label: string; answer: string }[] }`, `yourTurn: { problem: string; answer: string }` | both |
 | `ExamPrompts` | Island with wrapper | `prompts: { prompt: string; model: string }[]` | both |
-| `ExitQuiz` | Island with wrapper | The same props as `Pretest`, with `use: exit`. | both |
+| `ExitQuiz` | Island with wrapper | The same props as `Pretest`, with `use: exit`. Planned for v2: no `Confidence` step. An exit answer saves with no `confidence`. | both |
 | `Confidence` | Plain Preact | `name: string`, `value: Confidence \| null`, `onChange: (value: Confidence) => void`, `disabled?: boolean`. Radios for sure, think so, guessing. | inside `Question` and the review page |
 | `Question` | Plain Preact | `item: SupportedItem`, `misconceptions: Record<string, string>`, `name: string`, `mode: 'guess' \| 'graded'`, `hideExplanation?: boolean`, `onDone?: (result: Result) => void` | inside the quiz islands |
 | `Reveal` | Plain Preact | `prompt: string`, `model: string`, `modelLabel?: string` | inside `ExplainBack`, `ExamPrompts`, `Predict` |
@@ -130,6 +151,14 @@ How the check blocks behave:
 - A wrong pick names its misconception with the statement from the
   curriculum file, then the ID.
 - A "sure" answer that is wrong goes to the review queue, due tomorrow.
+- Planned for v2, "Taught in": after an answer, `Check`, `Predict` and
+  `ExitQuiz` show "Taught in: Part N, <title>" as a link. The wrapper finds
+  the quiz entry that holds the item. Its entry ID is the module ID. The
+  wrapper reads the raw MDX body of that module and turns `taughtIn` into
+  the island prop `taughtIn: { href: string; label: string }`. For a part,
+  the label has the part number and the part title. For a `KeyIdea`, it has
+  the number of the part that holds it and the `KeyIdea` title. The
+  `Pretest` shows no link, because it shows no answer.
 
 ---
 
@@ -140,12 +169,43 @@ All in `src/components/diagram/`.
 | Name | Kind | Props | Pilot |
 |---|---|---|---|
 | `ByteView` | Astro | `caption: string`, `messages: ByteMessage[]`, `view?: 'bytes' \| 'text'`. `ByteMessage` is `{ name?: string; fields: { hex?: string; text?: string; label?: string; kind?: 'length' \| 'delimiter' \| 'pad' }[] }`. A field has `hex` or `text`, not both. Offsets count from 0 across all messages. | both |
-| `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. | both |
+| `Terminal` | Astro | `title?: string`, `runs: { cmd: string; out?: string }[]`. Put the run conditions in the title. Planned for v2: a long line wraps, or scrolls with a visible scroll bar. | both |
 | `SequenceDiagram` | Astro | `title: string`, `actors: string[]`, `messages: { from: string; to: string; label: string }[]`. A message with `from` equal to `to` is a note. | m12 |
 | `Stepper` | Island with wrapper | `title: string`, `steps: { caption: string; ask?: string; lanes: { label: string; chunks: string[] }[] }[]`. Each step gives the full state of every lane, with the same lanes in the same order. The island marks the chunks that changed. The wrapper uses `client:visible`. | m08, m12 |
 
 `ByteView` colors mark the role of a field, not a network layer. No pilot
 shows two layers.
+
+### Animation controls (planned for v2)
+
+Every animation island uses one plain Preact control bar,
+`src/components/diagram/AnimationControls.tsx`. The island owns its SVG and
+its Web Animations API objects. No animation library.
+
+**Props:** `title: string`, `captions: string[]` (one for each step),
+`step: number` (from 0), `playing: boolean`, `speed: 0.5 | 1 | 2`,
+`onPlay: () => void`, `onPause: () => void`, `onStep: (step: number) => void`,
+`onSpeed: (speed: 0.5 | 1 | 2) => void`.
+
+| Control | Element | What it does |
+|---|---|---|
+| Play and pause | one `<button>` | Play runs from the current step to the last step. Play on the last step starts again at step 1. Pause stops at the current frame. |
+| Previous step, next step | two `<button>` elements | Pause, then play the motion of that one step and stop at its end. Disabled at the first and at the last step. |
+| Speed | a `<select>` with 0.5×, 1× and 2× | Calls `updatePlaybackRate()` on each animation of the island |
+| Caption | a `<p>` with `aria-live="polite"` | "Step N of M", then the caption of the step |
+
+How an animation behaves:
+
+- It starts paused at step 1. Nothing plays before the learner presses play.
+- The prerendered HTML shows the end frame of step 1, so the page shows a
+  picture before the island loads.
+- Under `prefers-reduced-motion: reduce`, read on the client with
+  `matchMedia`, each step jumps to its end frame with no motion. Play then
+  shows the end frame of each step in turn.
+- The controls are native elements, so Tab, Enter and Space work, with a
+  visible focus. No custom key handler.
+- Each step is one time range on the animation timeline. A step change sets
+  `currentTime` to the start of that range.
 
 ---
 
@@ -153,7 +213,7 @@ shows two layers.
 
 | Name | Kind | Props | Notes |
 |---|---|---|---|
-| `Base` layout | Astro | `title: string` | The theme script, the header, the nav and the global styles |
+| `Base` layout | Astro | `title: string` | The theme script, the header, the nav and the global styles. Planned for v2: the sidebar, the drawer and the visual rail, with no top nav bar (`docs/PLAN.md` section 3). |
 | `ThemeToggle` | Astro | No props | System, light, dark. It writes the `na-theme` key. |
 | `SourceBadge` | Astro | `status: 'complete' \| 'partial' \| 'missing'` | Session source status |
 | `/review/` island `_ReviewQueue.tsx` | Island, no wrapper | `cards: ReviewCard[]`, `progressHref: string`. `ReviewCard` is `{ id; front; options?; back; explanation?; examDates }`. | Holds the cards and every quiz item |
@@ -196,7 +256,7 @@ The store writes through to one `localStorage` key, `na-progress`.
 
 | Export | Type | What it does |
 |---|---|---|
-| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3. A module also has the optional `pretestDoneAt`. A version 1 file with no `pretestDoneAt` stays valid. |
+| `Progress` | type | `{ version: 1; modules; answers; cards }`, as in `docs/PLAN.md` section 3. A module also has the optional `pretestDoneAt`. A version 1 file with no `pretestDoneAt` stays valid. Planned for v2: `confidence` in an answer is optional, and `parseProgress` accepts an answer with no `confidence`. |
 | `Confidence` | type | `'sure' \| 'think' \| 'guess'` |
 | `$progress` | `atom<Progress>` | The progress. It reads storage on the first subscriber, never at import. |
 | `$progressProblem` | `atom<string \| null>` | The reason why the stored data is not in use: bad data, a newer version, or blocked storage. While it is set, changes stay in memory. |
@@ -233,7 +293,7 @@ narrow the item before the call.
 
 | Export | What it does |
 |---|---|
-| `addAnswer(progress, itemId, correct, confidence, now)` | Adds one graded answer. A sure wrong answer puts the item ID in `cards`. |
+| `addAnswer(progress, itemId, correct, confidence, now)` | Adds one graded answer. A sure wrong answer puts the item ID in `cards`. Planned for v2: `confidence` can be `null` for an exit answer, and the record then has no `confidence`. |
 | `save(change)` | Calls `updateProgress`. Gives the reason when the change is not saved, or `null`. |
 | `pretestGuesses` | The pretest guesses of this page view, for the exit quiz |
 

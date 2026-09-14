@@ -20,7 +20,7 @@ arrive each week, so the site grows one session at a time.
 | Part | State |
 |---|---|
 | Curriculum maps | Sessions 1–5 written and reviewed on 2026-09-14: 57 modules, 894 claims. Sessions 6–8 not taught yet. |
-| Site | Phases 1 and 2 done on 2026-09-14: skeleton, theme, schemas, gate scripts, components (`docs/COMPONENTS.md`), review and progress pages. Phase 3 pilot pages `s01-m08-framing` and `s05-m12-assignment-prep` built on 2026-09-14. Next: Bibek uses them, then writes `docs/feedback.md`. |
+| Site | Phases 1 and 2 done on 2026-09-14: skeleton, theme, schemas, gate scripts, components (`docs/COMPONENTS.md`), review and progress pages. Phase 3 pilot pages `s01-m08-framing` and `s05-m12-assignment-prep` built on 2026-09-14. Bibek read them and gave 15 feedback items (`docs/feedback.md`). Phase 3 is at steps 4 and 5: lesson contract v2 is in `docs/PEDAGOGY.md`, and both pilots are `draft` until their rebuild. Session 1 lessons 1 to 3 start in parallel. |
 | Sources | All five decks complete. No transcripts. See `sources/MANIFEST.md`. |
 
 Update this table when a phase ends.
@@ -55,7 +55,7 @@ formally given yet.
 
 | Path | What | In git |
 |---|---|---|
-| `docs/` | plan, pedagogy, curriculum maps, runbook | yes |
+| `docs/` | plan, pedagogy, curriculum maps, runbook, review prompts | yes |
 | `sources/` | slides, AI notes, instructor clone | no, only `MANIFEST.md` |
 | `tools/pdf_salvage.py` | gets text out of a truncated PDF deck | yes |
 | `.claude/workflows/session-curriculum.js` | the saved workflow that writes and reviews a curriculum file | yes |
@@ -80,10 +80,15 @@ formally given yet.
    ladder. It never gives solution code, a solving skeleton, a written spec,
    or the answer to a real quiz question. This is the one text of the rule.
    Other files point here.
-5. **No copy of the slides.** Quote short phrases only. Explain in original
-   words. Never put a source PDF, slide image or large code file in `site/`.
-6. **Plain words first.** A code identifier is evidence after the
-   explanation. Every analogy says where it breaks.
+5. **No copy of the slide text.** Quote short phrases only. Explain in
+   original words. The five deck PDFs go in `site/public/slides/`, for the
+   slide viewer and the downloads (Bibek, 2026-09-14). Never put another
+   source file, a slide image or a large code file in `site/`.
+6. **Plain words first, told as a story.** A lesson opens with its question
+   and why it matters, and each part says what it teaches. A picture is a
+   real-life scene that a 10-year-old knows, mapped to the real thing, with
+   the place where it breaks. A code identifier is evidence after the
+   explanation.
 7. **IDs are permanent.** Never rename or reuse a claim, module, item or card
    ID once a lesson page uses it. Add new IDs at the end.
 
@@ -107,8 +112,9 @@ formally given yet.
   `python3 ~/.claude/skills/asd-ste100/scripts/ste-lint.py --fail-over 2.5 FILE`.
 - Confirm current Astro, Preact and Vitest APIs with the context7 tools
   before writing site code.
-- No GitHub remote and no deploy until Bibek asks. The repo goes public later,
-  so nothing from `sources/` may enter a tracked file beyond short quotes.
+- The repo goes public with CI/CD and GitHub Pages (Bibek, 2026-09-14). Add
+  a remote, push or deploy only when Bibek asks. Nothing from `sources/` may
+  enter a tracked file beyond short quotes, except the deck PDFs of rule 5.
   Before any public push, run the Phase D checklist in `docs/PLAN.md`
   section 4.
 
