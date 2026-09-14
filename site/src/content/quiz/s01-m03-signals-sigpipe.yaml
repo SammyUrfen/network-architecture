@@ -1,0 +1,197 @@
+# The items of s01-m03-signals-sigpipe in docs/curriculum/session-01.md.
+# q01 to q06 are the checks of the curriculum, in its order. q02 is the
+# predict, observe, explain block of Part 1, in plain words, because the page
+# asks it before Part 3 teaches the answer. q05 is the plain `wait` spot-bug.
+# The page has room for 6 checks, so q05 is a practice item only. q07 to q09
+# are the pretest in plain words, asked again in the exit quiz. q10 is a new
+# check for linger 0 in Part 3, with misconceptions from Sessions 1 and 2.
+# Segments: 1 the vanished server (q02), 2 signals (q01, q04), 3 the reset and
+# the writes (q10, q03), 4 keep the server alive (q06).
+items:
+  - id: s01-m03-q01
+    use: [check, practice]
+    segment: 2
+    type: numeric
+    prompt: A server ends with no error message, and the shell shows the exit status 141. What is the number of the signal that ended it?
+    answer: { value: 13, tolerance: 0, unit: null }
+    distractors:
+      - value: 141
+        feedback: 141 is the exit status, not the signal number. The shell adds 128 to the signal number, so subtract 128.
+      - value: 128
+        feedback: 128 is the part that the shell adds. Subtract it from 141 to get the signal number.
+    explanation: When signal N ends a process, the shell shows 128 + N. 141 - 128 = 13, and signal 13 is SIGPIPE.
+    covers: [S01-C27, S01-C34]
+    tags: []
+    taughtIn: exit-status-141-means-sigpipe
+
+  - id: s01-m03-q02
+    use: [check, practice]
+    segment: 1
+    type: predict
+    prompt: 'The demo server gets `hello` from the client. While the server sleeps for 1 second, the client hangs up the hard way. Then the server writes `hello` back two times and checks no result. What happens to the server?'
+    options:
+      - text: Both writes fail with an error. The server takes no notice and ends normally.
+        correct: false
+        misconception: S01-M10
+        feedback: Only the first write returns a plain error. The second write brings a signal from the kernel, and that signal ends the server.
+      - text: The server ends during a write, and it prints no error message.
+        correct: true
+        feedback: A write to the dead connection makes the kernel send a signal, and by default that signal ends the server.
+      - text: Both writes work, because the kernel only keeps the bytes to send later.
+        correct: false
+        misconception: S01-M53
+        feedback: The kernel already knows that the connection is dead, so it fails the write at once.
+    explanation: 'The kernel knows that the client reset the connection. On Linux, the first write fails with the error ECONNRESET. The second write fails with EPIPE and brings the signal SIGPIPE, which ends the server. The shell shows 141. Part 2 explains signals, and Part 3 shows each write.'
+    covers: [S01-C26, S01-C30]
+    tags: [measured]
+    taughtIn: write-after-reset-kills
+
+  - id: s01-m03-q03
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: 'In the demo on Linux, the client resets the connection. Then the server calls read() one time and write() two times. Which call brings SIGPIPE?'
+    options:
+      - text: The second write.
+        correct: true
+        feedback: The first write reports the reset as the error ECONNRESET. The second write fails with EPIPE and brings SIGPIPE.
+      - text: The first write.
+        correct: false
+        misconception: S01-M11
+        feedback: On Linux, the first write returns the error ECONNRESET and brings no signal. The second write brings SIGPIPE.
+      - text: The read before the writes.
+        correct: false
+        misconception: S01-M54
+        feedback: A read never brings SIGPIPE. Only a write to a dead connection does.
+    explanation: 'strace of the demo on Linux shows `write(4, "hello", 5) = -1 ECONNRESET`, then `write(4, "hello", 5) = -1 EPIPE` and the SIGPIPE line. The comments of the class code put SIGPIPE on the first write. On a quiz, expect that wording.'
+    covers: [S01-C30]
+    tags: [measured]
+    taughtIn: write-after-reset-kills
+
+  - id: s01-m03-q04
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A program sets up a handler for each signal below. Which signal can its handler catch?
+    options:
+      - text: SIGKILL
+        correct: false
+        misconception: S01-M12
+        feedback: No handler can catch SIGKILL. The kernel ends the process at once.
+      - text: SIGSTOP
+        correct: false
+        misconception: S01-M55
+        feedback: No handler can catch SIGSTOP either. It always pauses the process.
+      - text: SIGTERM
+        correct: true
+        feedback: SIGTERM is the polite kill. A handler can catch it, clean up, and then end the program.
+    explanation: A program can catch most signals. SIGKILL and SIGSTOP are the two that no handler can catch and no program can ignore.
+    covers: [S01-C28]
+    tags: []
+    taughtIn: sigkill-cannot-be-caught
+
+  - id: s01-m03-q05
+    use: [practice]
+    type: spot-bug
+    prompt: 'A classmate starts the server with `&`, runs the client, then types a plain `wait` and `echo $?`. The shell prints 0. The classmate says that SIGPIPE never ended the server. What is wrong?'
+    options:
+      - text: Nothing. The status 0 proves that the server ended normally.
+        correct: false
+        misconception: S01-M56
+        feedback: A plain `wait` returns 0 in bash and zsh, whatever the server did. It says nothing about the server.
+      - text: 'A plain `wait` returns 0. Save the process ID with `pid=$!`, and use `wait $pid`.'
+        correct: true
+        feedback: '`wait $pid` returns the exit status of the server, 141.'
+      - text: The classmate must run only the client. If the shell shows 141, the demo worked.
+        correct: false
+        misconception: S01-M13
+        feedback: The client alone also ends with 141, so that proves nothing about the server.
+    explanation: 'In bash and zsh, a plain `wait` returns 0. `wait $pid` returns the exit status of that one program. A run on Linux on 2026-09-14 printed 0 with a plain `wait` and 141 with `wait $pid`.'
+    covers: [S01-C34]
+    tags: [measured]
+    taughtIn: seg-the-server-that-vanished
+
+  - id: s01-m03-q06
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: You run only the client of the demo, with no server on the port. The shell shows the exit status 141. What does that tell you?
+    options:
+      - text: The server demo worked, because 141 is the status of SIGPIPE.
+        correct: false
+        misconception: S01-M13
+        feedback: No server ran. The client got SIGPIPE on its own, so 141 alone proves nothing about the server.
+      - text: The client wrote to a socket with no connection, and SIGPIPE ended the client.
+        correct: true
+        feedback: connect() failed, the code checks nothing, and its write() to a socket with no connection brought SIGPIPE.
+      - text: The failed connect() brought SIGPIPE.
+        correct: false
+        misconception: S01-M57
+        feedback: connect() only returns -1 with an error. The write after it, which the code does not check, brings SIGPIPE.
+    explanation: 'strace of the client alone shows `connect(...) = -1 ECONNREFUSED`, then `write(3, "hello", 5) = -1 EPIPE` and the SIGPIPE line. So any program that writes to a dead socket can die with 141, a client too.'
+    covers: [S01-C26, S01-C34]
+    tags: [measured]
+    taughtIn: seg-keep-the-server-alive
+
+  - id: s01-m03-q07
+    use: [pretest, exit]
+    type: mcq
+    prompt: A server program sends data to a client that already cut the connection. The server asked for no special setting. What do you think happens to the server?
+    options:
+      - text: It gets an error back, and it goes on.
+        correct: false
+        misconception: S01-M10
+        feedback: On Linux, the first write gets an error, but the next write brings a signal, and that signal ends the server.
+      - text: Nothing. The data waits until the client comes back.
+        correct: false
+        misconception: S01-M53
+        feedback: The kernel knows that the connection is dead, so the write fails. The data does not wait.
+      - text: The operating system ends the server, and the server prints no error message.
+        correct: true
+        feedback: A write to the dead connection brings the signal SIGPIPE. By default, SIGPIPE ends the process with no message.
+    explanation: On Linux, the first write after a reset fails with ECONNRESET. The next write fails with EPIPE and brings SIGPIPE, which ends the process by default.
+    covers: [S01-C26]
+    tags: []
+    taughtIn: write-after-reset-kills
+
+  - id: s01-m03-q08
+    use: [pretest, exit]
+    type: recall
+    prompt: 'The operating system can send a running program a signal, a short message such as "please stop". A program can catch most signals and run its own code first. Which one do you think no program can catch: SIGTERM, the signal for "please stop", or SIGKILL, the signal for "stop now"?'
+    model: SIGKILL. No program can catch it, so the kernel ends the program at once. SIGTERM is the polite kill. A program can catch it, clean up, and then end.
+    explanation: No handler can catch SIGKILL or SIGSTOP. A careful stop sends SIGTERM first and SIGKILL only if the program does not end.
+    covers: [S01-C28]
+    tags: []
+    taughtIn: sigkill-cannot-be-caught
+
+  - id: s01-m03-q09
+    use: [pretest, exit]
+    type: recall
+    prompt: A server ends with no error message. The shell shows its exit status, the number that a program leaves when it ends, and that number is 141. What do you think the number tells you?
+    model: A signal ended the server. When signal N ends a process, the shell shows 128 + N. 141 - 128 = 13, and signal 13 is SIGPIPE.
+    explanation: An exit status over 128 means that a signal ended the process. Subtract 128 to get the signal number.
+    covers: [S01-C27, S01-C34]
+    tags: []
+    taughtIn: exit-status-141-means-sigpipe
+
+  - id: s01-m03-q10
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: 'The client of the demo sets SO_LINGER to `{1, 0}` and then calls close(). What does its kernel do?'
+    options:
+      - text: It sends FIN, a fast and polite close, and every unsent byte still arrives.
+        correct: false
+        misconception: S02-M18
+        feedback: Linger 0 is not a polite close. It sends RST and drops the bytes that were not sent yet.
+      - text: It sends FIN, and then both sides wait in TIME_WAIT.
+        correct: false
+        misconception: S01-M60
+        feedback: Linger 0 sends RST, so nobody waits in TIME_WAIT. After a normal close, only the side that closes first waits.
+      - text: It sends RST. The connection ends at once, unsent bytes are dropped, and nobody waits in TIME_WAIT.
+        correct: true
+        feedback: Linger 0 turns close() into an abort. That is why the class client uses it to set the trap.
+    explanation: A normal close() sends FIN, and the side that closes first waits in TIME_WAIT. With linger 0, close() sends RST, drops unsent data and leaves no TIME_WAIT. It is fast but lossy, so use it for demos.
+    covers: [S01-C31, S01-C32, S01-C33]
+    tags: []
+    taughtIn: linger-zero-sends-rst

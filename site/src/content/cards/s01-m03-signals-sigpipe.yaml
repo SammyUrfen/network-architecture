@@ -1,0 +1,32 @@
+# The review cards of s01-m03-signals-sigpipe, from docs/curriculum/session-01.md.
+# c07 asks what each write gets on Linux, not which slide says what (lesson
+# contract rule 11).
+items:
+  - id: s01-m03-c01
+    front: What is the signal number of SIGPIPE?
+    back: "13"
+    covers: [S01-C27]
+  - id: s01-m03-c02
+    front: What exit status does the shell show for a process that SIGPIPE ended, and how do you get that number?
+    back: 141. The shell shows 128 plus the signal number, and SIGPIPE is 13.
+    covers: [S01-C34]
+  - id: s01-m03-c03
+    front: Which two signals can no handler catch?
+    back: SIGKILL and SIGSTOP.
+    covers: [S01-C28]
+  - id: s01-m03-c04
+    front: What does SO_LINGER set to {1, 0} make close() send, in place of FIN?
+    back: RST, a reset. The connection ends at once, and unsent bytes are dropped.
+    covers: [S01-C31, S01-C32]
+  - id: s01-m03-c05
+    front: After a close with linger 0, which side waits in TIME_WAIT?
+    back: Neither side.
+    covers: [S01-C32]
+  - id: s01-m03-c06
+    front: Which send() flag stops SIGPIPE for one call?
+    back: MSG_NOSIGNAL.
+    covers: [S01-C26]
+  - id: s01-m03-c07
+    front: On Linux, a server writes two times to a connection that the client reset. What does each write get?
+    back: The first write gets the error ECONNRESET. The second gets EPIPE and SIGPIPE, which ends the process by default.
+    covers: [S01-C26, S01-C30]
