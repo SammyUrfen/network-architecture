@@ -82,43 +82,43 @@ A program cannot send one byte over the network by itself. Only the kernel uses 
 
 <ScrollStep step={1}>
 
-**1.** `socket()` asks: make me a socket, one end of a connection.
+**1.** `socket()` asks: make me a socket, one end of a connection. The kernel makes the socket and gives back a small number that names it. In the mall, this is the shop that the office gives you.
 
 </ScrollStep>
 
 <ScrollStep step={2}>
 
-**2.** `bind()` asks: give my socket a port, such as 2026, so that clients can find it.
+**2.** `bind()` asks: give my socket a port, such as 2026. Clients use that number to find this server on the computer. In the mall, it is the number on the shop door.
 
 </ScrollStep>
 
 <ScrollStep step={3}>
 
-**3.** `listen()` asks: take clients on that port for me, and keep them in a line.
+**3.** `listen()` asks: take clients on that port for me, and keep them in a line. From now on, the kernel answers new clients by itself. In the mall, the guard starts to line customers up at the door.
 
 </ScrollStep>
 
 <ScrollStep step={4}>
 
-**4.** `accept()` asks: give me the next client from the line.
+**4.** `accept()` asks: give me the next client from the line. The loop for each client starts here, so the server comes back to this call again and again. In the mall, the shopkeeper calls one customer to the counter.
 
 </ScrollStep>
 
 <ScrollStep step={5}>
 
-**5.** `read()` asks: give me the bytes that this client sent.
+**5.** `read()` asks: give me the bytes that this client sent. If no bytes wait yet, the call waits until some arrive. In the mall, the shopkeeper listens to the customer.
 
 </ScrollStep>
 
 <ScrollStep step={6}>
 
-**6.** `write()` asks: send these bytes to this client.
+**6.** `write()` asks: send these bytes to this client. The echo server sends back the same bytes that `read()` gave it. In the mall, the shopkeeper answers the customer.
 
 </ScrollStep>
 
 <ScrollStep step={7}>
 
-**7.** `close()` asks: end the connection with this client. The server then goes back to step 4 for the next client.
+**7.** `close()` asks: end the connection with this client. The server then goes back to step 4 and asks for the next client. In the mall, the shopkeeper says goodbye.
 
 </ScrollStep>
 
