@@ -1,7 +1,7 @@
 # The review cards of s05-m12-assignment-prep, from docs/curriculum/session-05.md.
 items:
   - id: s05-m12-c01
-    front: On a persistent connection, what marks the end of a request with no body?
+    front: On a connection that stays open, what marks the end of a request with no body?
     back: The empty line after the header lines.
     covers: [S05-C09]
   - id: s05-m12-c02
@@ -22,5 +22,5 @@ items:
     covers: [S05-C04]
   - id: s05-m12-c06
     front: After its six requests, what does the assignment marker check on the same connection?
-    back: That the connection is still open. One TCP handshake gives six answers.
+    back: That the connection is still open. One connection setup gives six answers.
     covers: [S05-C08]

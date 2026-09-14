@@ -13,7 +13,7 @@ export interface Props {}
   <BoundaryFinderIsland client:visible />
   <p class="simplifies">
     <strong>What this simplifies:</strong> the finder knows where every request ends before the first read, but a
-    server sees only bytes. Real reads split where packets and timing put them, not where you type. The finder shows
+    server sees only bytes. Real reads stop where the network and its timing put them, not where you type. The finder shows
     only Content-Length bodies, not chunked ones.
   </p>
 </figure>

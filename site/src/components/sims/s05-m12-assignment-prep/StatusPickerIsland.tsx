@@ -37,7 +37,7 @@ export default function StatusPickerIsland(_: Props) {
   return (
     <div class="m12-picker">
       <p class="m12-help">
-        Pick up a request, then pick the status that it earns. With a mouse, you can also drag a request onto a status.
+        Read this part first: its key idea says which status fits which problem. Then pick up a request, and pick the status that it earns. With a mouse, you can also drag a request onto a status.
       </p>
       <ul class="m12-cards" aria-label="Requests">
         {CARDS.map((card) => {

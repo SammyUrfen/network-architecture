@@ -106,7 +106,7 @@ items:
   - id: s05-m12-q06
     use: [pretest, exit]
     type: recall
-    prompt: The first lines of a request say that its body is 5 bytes long. How many body bytes belong to this request?
+    prompt: The first lines of a request say that 5 more bytes of data follow them. How many of the bytes after those lines belong to this request?
     model: Exactly 5. The byte after them starts the next request.
     explanation: 'The line `Content-Length: 5` gives the body size. The server takes exactly 5 bytes after the empty line, because the next byte belongs to the next request.'
     covers: [S05-C09]
@@ -116,7 +116,7 @@ items:
   - id: s05-m12-q07
     use: [pretest, exit]
     type: recall
-    prompt: A client sends a request to a path that exists on the server. But it uses a method, such as POST, that this path does not allow. Which status code fits?
+    prompt: A program asks a web server for a page that exists. But it asks for an action that this page does not allow, such as sending data to it. Every answer starts with a number. Which number fits here?
     model: 405 Method Not Allowed.
     explanation: The path exists and the method is known, so the problem is the method on this path. That is 405, not 404.
     covers: [S05-C07]

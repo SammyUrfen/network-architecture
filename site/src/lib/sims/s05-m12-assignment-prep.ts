@@ -186,7 +186,7 @@ export const CARDS: RequestCard[] = [
   { id: 'div-zero', lines: ['GET /div?a=1&b=0'], status: 400, problem: 'The input is wrong: b is 0, and nobody can divide by zero.' },
   { id: 'not-number', lines: ['GET /add?a=x&b=3'], status: 400, problem: 'The input is wrong: x is not a number.' },
   { id: 'pow', lines: ['GET /pow?a=2&b=8'], status: 404, problem: 'The path is wrong: the calculator has no /pow.' },
-  { id: 'post', lines: ['POST /add'], status: 405, problem: 'The method is wrong for this path: /add exists, but it takes GET only.', extra: 'The answer also carries an Allow line that lists GET.' },
+  { id: 'post', lines: ['POST /add'], status: 405, problem: 'The method is wrong for this path: /add exists, but it takes GET only.', extra: 'The answer also carries an Allow line, which tells the client that /add takes GET.' },
   { id: 'no-host', lines: ['GET /add?a=2&b=3', 'with no Host line'], status: 400, problem: 'The request is not complete: every HTTP/1.1 request must carry a Host line.' },
   { id: 'div', lines: ['GET /div?a=9&b=3'], status: 200, problem: 'Nothing is wrong: /div exists, it allows GET, and 9 divided by 3 is 3.', extra: 'The body is 3.' },
 ];

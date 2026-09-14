@@ -4,19 +4,19 @@ session: 5
 order: 12
 title: "Assignment prep: a calculator that stays on the line"
 minutes: 20
-bigIdea: "The arithmetic is trivial, and the real skill is to take exactly one request off a persistent byte stream and pick the right status."
+bigIdea: "The math is easy. The real skill is to take exactly one request at a time off a connection that stays open, and to answer each one with the right status code."
 covers: [S05-C04, S05-C05, S05-C06, S05-C07, S05-C08, S05-C09, S05-C10, S05-C11]
 prereqs: [s05-m02-keepalive-host, s05-m04-range-chunked-extras, s01-m08-framing, s01-m04-clients]
 threads: [T-framing, T-setup-off-path]
 confidence: high
 status: ready
 terms:
-  - { term: persistent connection, meaning: "one TCP connection that carries many requests, one after another" }
-  - { term: head, meaning: "the request line and the header lines of a request, up to and including the empty line" }
-  - { term: empty line, meaning: "a line with nothing on it, only the two line-end bytes CR and LF, written \\r\\n. It ends the head." }
-  - { term: Content-Length, meaning: "the header line that gives the size of the body in bytes" }
-  - { term: buffer, meaning: "the bytes that the server read but did not use yet" }
-  - { term: status code, meaning: "the three-digit number at the start of an answer, such as 200 OK or 404 Not Found" }
+  - { term: request line, meaning: "the first line of a request: the method (the action, such as GET or POST), the path (the thing asked for) and the HTTP version" }
+  - { term: header line, meaning: "a line after the request line, in the form Name: value, such as Host: site-a.local" }
+  - { term: empty line, meaning: "a line with nothing on it, only the two line-end bytes CR and LF, written \\r\\n" }
+  - { term: head, meaning: "the request line and the header lines, up to and including the empty line" }
+  - { term: body, meaning: "the data bytes after the head. The header line Content-Length gives their count." }
+  - { term: status code, meaning: "the three-digit number at the start of an answer that says how the request went, such as 200 OK or 404 Not Found" }
 ---
 
 import BoundaryFinder from '../../../components/sims/s05-m12-assignment-prep/BoundaryFinder.astro';
@@ -45,13 +45,13 @@ import Pretest from '../../../components/check/Pretest.astro';
 
 **Graded work.** This page prepares you for the calculator assignment, 20% of the grade. It gives a checklist, a test plan and hints, but no solution code. The instructor's course repo holds a finished HTTP/1.1 server, `server11.py`, and the lab below shows where it is. <SlideLink session={5} page={3}>The assignment slide</SlideLink> asks you not to read that file until your own server fails at least once.
 
-The assignment asks for a small server that adds, subtracts, multiplies and divides two numbers. The math takes a few minutes. The hard part is one question: when one connection brings many requests, where does one request end and the next one start? This lesson answers that question. Then it gives each request the status code that it earns.
+The assignment asks for a small server, a program that answers requests over the network. It adds, subtracts, multiplies and divides two numbers. The math takes a few minutes. The hard part is one question: when one connection brings many requests, where does one request end and the next one start? This lesson answers that question. Then it gives each request its status code, the number at the start of each answer that says how the request went.
 
-The question matters because of how the marker tests your server. The marker opens one connection, sends six requests on it, and then checks that the connection is still open. An old HTTP/1.0 server hung up after each answer, so the close marked the end for free. Your server keeps the connection open, so it must find every end itself. The assignment is due before Session 7.
+The question matters because of how the marker tests your server. The marker is the test program that grades your work. It opens one connection, sends six requests on it, and then checks that the connection is still open. An HTTP/1.0 server, the kind from 1996, hung up after each answer, so the close marked the end for free. Your server keeps the connection open, so it must find every end itself. The assignment is due before Session 7.
 
-You already know two things that this lesson uses. From <ModuleLink id="s01-m08-framing" />, you know that TCP keeps every byte in order but keeps no mark where one message stops. From <ModuleLink id="s05-m02-keepalive-host" />, you know that an HTTP/1.1 connection stays open for many requests.
+You already know two things that this lesson uses. From <ModuleLink id="s01-m08-framing" />, you know that TCP keeps every byte in order but keeps no mark where one message stops. From <ModuleLink id="s05-m02-keepalive-host" />, you know that an HTTP/1.1 connection stays open for many requests. The top of this page also names two threads. A thread is an idea that comes back in many lessons. Framing asks where a message ends. Setup off path means that you pay a costly setup, such as a new connection, one time and not for each request.
 
-**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the body bytes that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, and what it does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why the error answers of the marking run must leave the connection open.
+**The path through this lesson.** Part 1 reads two requests byte by byte and finds where each one ends: at an empty line, then after the data bytes, the body, that Content-Length gives. Part 2 shows why a server cannot see those ends in its reads, the chunks of bytes that it takes from the connection one at a time. It also shows what the server does with the bytes that are left over. Part 3 gives each request of the assignment its status code, and shows why the error answers of the marking run must leave the connection open.
 
 <Pretest module="s05-m12-assignment-prep" />
 
@@ -63,21 +63,23 @@ You already know two things that this lesson uses. From <ModuleLink id="s01-m08-
 
 <ReadingAnimation slot="visual" />
 
-<Picture breaks="a teacher sees where each sheet of paper ends. A server gets one long row of bytes with no sheets. It must count bytes, and each line end is two bytes, CR and LF.">
+<Picture breaks="on paper, the cook can see where a note ends. In bytes, a body can hold anything, even an empty line. So the server counts the body bytes and never searches them for an end.">
 
-Your class hands in homework as one big pile of paper, with no clips. Each kid's homework starts with a cover sheet. The cover sheet has a few lines: the kid's name, the subject, and sometimes a line such as "Pages: 5". Under its last line, the cover sheet has one blank line. Exactly that many pages come after the cover sheet. The very next sheet in the pile is the cover sheet of the next kid.
+At a school fair, a printer in the kitchen prints every food order on one long strip of paper, like a very long shop receipt. Nothing cuts the strip between two orders. Each order starts with a line that says what to make, such as "MAKE pancakes". A few short lines follow, such as "TABLE: 4", and sometimes "NOTE: 5 letters". Then the printer leaves one line empty. If the order has that note line, exactly 5 letters follow, such as "hello", to write on the plate. The letter after them starts the next order. The cook reads down the strip and finds where each order stops.
 
-In HTTP, the pile is the connection, and the homework of one kid is one request. The cover sheet is the head: the request line and the header lines. The blank line is the empty line that ends the head. "Pages: 5" is the header line `Content-Length: 5`, and the 5 pages are the 5 bytes of the body. A cover sheet with no "Pages" line has no pages after it. In the same way, a request with no Content-Length has no body.
+In HTTP, the strip is the connection, and each order is one request. The cook is your server. The first line, "MAKE pancakes", is the request line, and the short lines after it are the header lines. "TABLE: 4" is like the Host line, which says which website the request is for. The empty line ends the head. "NOTE: 5 letters" is the header line `Content-Length: 5`, and the 5 letters are the 5 bytes of the body. An order with no note line has nothing after its empty line. In the same way, a request with no Content-Length has no body.
 
 </Picture>
 
 ### How it works
 
-Now read like the teacher, but with real bytes. The picture shows the two requests of this lesson: a POST with the 5-byte body `hello`, then a GET for `/style.css`. A row ends after each `\r\n`, so the body `hello` shares a row with the request line of request 2. The number at the start of a row is the byte number of its first byte.
+Now read like the cook, but with real bytes. The first word of a request line is the method, the action that the client wants. The client is the program that sends the request. GET asks for something, and POST sends data. The next part is the path, the name of the thing asked for. The Host line names the website, and every HTTP/1.1 request must carry one.
+
+The animation shows the two requests of this lesson: a POST with the 5-byte body `hello`, then a GET for the path `/style.css`. A row ends after each `\r\n`, so the body `hello` shares a row with the request line of request 2. The number at the start of a row is the byte number of its first byte. Bytes count from 0.
 
 <ScrollStep step={1}>
 
-The connection brings 114 bytes. Nothing between the two requests marks an edge. The first byte of request 2 comes right after the last body byte of request 1.
+The connection brings 114 bytes, from byte 0 to byte 113. Nothing between the two requests marks an edge. The first byte of request 2 comes right after the last body byte of request 1.
 
 </ScrollStep>
 
@@ -142,7 +144,7 @@ A request head ends at the empty line after its header lines. If the head says `
 
 <Beyond source="RFC 9112 §6.3" url="https://www.rfc-editor.org/rfc/rfc9112#section-6.3">
 
-A request with a valid Content-Length and no Transfer-Encoding has a body of exactly that many bytes. A request with neither header has no body. A request can also send its body in chunks, with `Transfer-Encoding: chunked`. The lesson <ModuleLink id="s05-m04-range-chunked-extras" /> teaches chunks, and the assignment lists them as a stretch goal only.
+RFCs are the official documents that define internet protocols, and RFC 9112 defines how HTTP/1.1 looks on the wire. A request can send its body in chunks, with the header line `Transfer-Encoding: chunked`. The lesson <ModuleLink id="s05-m04-range-chunked-extras" /> teaches chunks, and the assignment lists them only as an optional extra, a stretch goal. A request with a valid Content-Length and no Transfer-Encoding has a body of exactly that many bytes. A request with neither header has no body.
 
 </Beyond>
 
@@ -164,11 +166,11 @@ A request with a valid Content-Length and no Transfer-Encoding has a body of exa
 
 <BoundaryFinder slot="visual" />
 
-<Picture breaks="a helper always brings whole sheets. A read can stop in the middle of a line, even between the CR and the LF of the empty line.">
+<Picture breaks="the cook chooses where to tear. A read cannot choose where it stops: it gets the bytes that already arrived. It can stop in the middle of a line, even between the CR and the LF of the empty line.">
 
-Now the teacher does not get the whole pile at one time. A helper brings the sheets from the classroom in handfuls, and each handful holds whatever the helper grabbed. One handful can hold half of one kid's homework. The next handful can hold the rest of it and the cover sheet of the next kid. So the teacher never treats a handful as the homework of one kid. The extra sheets wait on the desk until the next homework is complete.
+Now the strip comes out of the printer slowly. The cook does not wait for the whole strip. Every so often, the cook tears off the piece that has come out so far. One piece can hold half of an order. The next piece can hold the rest of that order and the start of the next one. So the cook never treats a piece as one order. The cook pins the unfinished part on a board and joins it to the next piece.
 
-In the server, each handful is one read: one call that gets bytes from the connection, such as `recv()`. The desk is the buffer, the bytes that the server read but did not use yet. The teacher counts sheets, not handfuls. In the same way, the server finds each request end with the two marks of Part 1, not with its reads.
+In the server, the printer is the client, which sends the bytes over TCP. Each torn piece is one read: one call, such as `recv()`, that takes the bytes that have arrived. The board is the buffer, the bytes that the server read but did not use yet. The cook finds orders by their lines and notes, not by the tears. In the same way, the server finds each request end with the two marks of Part 1, not with its reads.
 
 </Picture>
 
@@ -180,6 +182,8 @@ With the sizes 30, 50 and 34, read 1 stops inside the Host line of request 1. Re
 
 Now type other sizes. With 4096, one large read brings both requests. With 61, read 1 stops after the CR of the empty line, so the head is not complete yet. With 1, each read brings one byte.
 
+After the last byte, the finder stops. A real read waits for more bytes, because the client keeps the connection open. Only when the other side closes the connection does a read return no bytes at all. That signal is called end of file.
+
 <KeyIdea id="a-read-is-not-a-request" title="A read is not a request">
 
 One read gives the bytes that arrived: a part of a request, one request, or parts of two. The server keeps the bytes that it did not use, because they start the next request.
@@ -188,13 +192,13 @@ One read gives the bytes that arrived: a part of a request, one request, or part
 
 ### The real thing
 
-<Beyond source="recv(2), Linux man page" url="https://man7.org/linux/man-pages/man2/recv.2.html">
+<Beyond source="recv(2), the Linux manual page" url="https://man7.org/linux/man-pages/man2/recv.2.html">
 
-The man page says that the receive calls "return any data available, up to the requested amount". So `recv(4096)` gives the bytes that wait, from 1 byte up to 4096 bytes. It does not wait for one whole request.
+The Linux manual page for `recv()` says that `recv()` and the calls like it "return any data available, up to the requested amount". So `recv(4096)` gives the bytes that wait, from 1 byte up to 4096 bytes. It does not wait for one whole request.
 
 </Beyond>
 
-The sender does not choose where your reads stop. TCP and the timing of the packets decide how many bytes wait when a read runs. So a test must send a request in pieces on purpose. The test plan at the end of this page does that.
+The sender does not choose where your reads stop. The network carries the bytes in pieces, called packets. TCP and the timing of those packets decide how many bytes wait when a read runs. So a test must send a request in pieces on purpose. The test plan at the end of this page does that.
 
 <ExamDepth>
 
@@ -216,15 +220,15 @@ The sender does not choose where your reads stop. TCP and the timing of the pack
 
 <Picture breaks="a kid reads the words on the slip. A program acts on the number, so the number must be right, whatever the words say.">
 
-At a school snack counter, kids ask for things one after another. A kid asks for 2 apples, gets them, and gets a slip that says "done". A kid asks for "x" apples, and the slip says "that is not a number". A kid asks to share 1 apple among 0 friends, and the slip says "that cannot be done". A kid asks for pizza, and the slip says "we have no pizza". A kid tries to sell an apple to the counter, and the slip says "this counter only gives out apples". After each of these slips, the counter stays open for the next kid.
+At a school snack counter, kids ask for things one after another. Every kid gets a slip with a number at its top and a short note under it. A kid asks for 2 apples, gets them, and the slip says "200: done". A kid asks for "x" apples, and the slip says "400: that is not a number". A kid asks to share 1 apple among 0 friends, and the slip says "400: that cannot be done". A kid asks for pizza, and the slip says "404: we have no pizza". A kid tries to sell an apple to the counter, and the slip says "405: this counter only gives out apples". After each of these slips, the counter stays open for the next kid.
 
-The counter is your server, and the line of kids is the requests on one connection. Each slip is an answer, and the word at its top is the status code. A bad order, such as "x" apples or a share among 0 friends, is bad input: 400. Pizza is a path that does not exist: 404. Selling to a counter that only gives out apples is a method that the path does not allow: 405. That slip also says what the counter does. The counter does not close after a wrong order, and your server keeps the connection open after these errors.
+The counter is your server, and the line of kids is the requests on one connection. Each slip is an answer, and the number at its top is the status code. A bad order, such as "x" apples or a share among 0 friends, is bad input: 400. Pizza is a path that does not exist: 404. Selling to a counter that only gives out apples is a method that the path does not allow: 405. The note "only gives out apples" is like the Allow line of a 405 answer, which lists the methods that the path takes. The counter does not close after a wrong order, and your server keeps the connection open after these errors.
 
 </Picture>
 
 ### How it works
 
-Try the picker. It holds the requests of <SlideLink session={5} page={3}>the assignment slide</SlideLink>. Pick up a request, drop it on a status, and read what the feedback says is wrong.
+The calculator gets its numbers in the request line. In `GET /add?a=2&b=3`, the method is GET and the path is `/add`. The part after the `?` is the query: it gives the numbers as `a=2` and `b=3`, joined by `&`.
 
 <KeyIdea id="status-by-what-is-wrong" title="Pick the status by what is wrong">
 
@@ -232,11 +236,11 @@ Bad input, such as `b=0` for div or a value that is not a number, gets 400. A re
 
 </KeyIdea>
 
-Two statuses in the picker are traps. They sound right, but they mean something else.
+Now try the picker. It holds the requests of <SlideLink session={5} page={3}>the assignment slide</SlideLink>. Pick up a request, drop it on a status, and read what the feedback says is wrong. Two statuses in the picker are traps, 500 and 501. They sound right, but they mean something else.
 
 <Beyond source="RFC 9110 §15.6.1, §15.6.2" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.6.1">
 
-**Why not 500 for a division by zero?** RFC 9110 keeps 500 for an unexpected condition inside the server. A division by zero comes from the client input, and the server can see it before it divides. So the answer is 400.
+**Why not 500 for a division by zero?** RFC 9110, the document that defines what each status code means, keeps 500 for an unexpected condition inside the server. A division by zero comes from the client input, and the server can see it before it divides. So the answer is 400.
 
 **Why not 501 for POST?** RFC 9110 uses 501 when the server does not know the method for any path. Your server knows POST as a method. Only `/add` refuses it, so the answer is 405.
 
@@ -244,7 +248,7 @@ Two statuses in the picker are traps. They sound right, but they mean something 
 
 ### The real thing
 
-The assignment slide gives the whole feature set. Build the server on a plain socket, in any language, with no framework. Use this table as your checklist.
+The assignment slide gives the whole feature set. Build the server on a plain socket, the end of a connection that the operating system gives your program. Use any language, but no framework, a ready-made web server library. Use this table as your checklist.
 
 | # | Request | Expected answer |
 |---|---|---|
@@ -260,13 +264,13 @@ The assignment slide gives the whole feature set. Build the server on a plain so
 
 <KeyIdea id="six-answers-on-one-connection" title="Six answers on one connection">
 
-The marker connects to port 8080 on your machine. It sends six requests on one connection: rows 1, 2, 3, 5, 7 and 8, in that order. Three of them are errors. Then the marker checks that the connection is still open: one TCP handshake, six answers.
+The marker connects to port 8080 on your machine. It sends six requests on one connection: rows 1, 2, 3, 5, 7 and 8, in that order. Three of them are errors. Then the marker checks that the connection is still open: one connection setup (one TCP handshake), six answers.
 
 </KeyIdea>
 
-The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". So the 400, the 404 and the 405 of the marking run are normal answers. The server sends each one and waits for the next request on the same connection.
+A port is the number that picks one program on a machine. The slide says it plainly: if the connection dies before the marker is done, you wrote "a 1996 server". HTTP/1.0 is from 1996, and it closes after each answer. So the 400, the 404 and the 405 of the marking run are normal answers. The server sends each one and waits for the next request on the same connection.
 
-The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend. Support chunked encoding. The slide does not say whether that means requests, answers or both. Answer six requests that arrive at once, in order.
+The slide also lists four stretch goals, all optional. Close the connection when the client sends `Connection: close`. Pick an idle timeout that you can defend: how long the server waits for the next request before it closes the connection. Support chunked encoding. <SlideLink session={5} page={16}>In chunked encoding</SlideLink>, each chunk starts with its size in hex, and a chunk of size 0 ends the body. The assignment slide does not say whether it means requests, answers or both. Answer six requests that arrive at once, in order.
 
 <Beyond source="RFC 9110 §15.5.6, RFC 9112 §3.2" url="https://www.rfc-editor.org/rfc/rfc9110#section-15.5.6">
 
@@ -278,7 +282,7 @@ A 405 means that the server knows the method, but the target path does not suppo
 
 **Errors on a kept connection.** The marking run holds three errors: a 400, a 404 and a 405. The connection must stay open through all of them. The slide does not say what must happen after the no-Host 400 or the `a=x` 400. Test those two cases on separate connections, and ask the instructor.
 
-**The idle timeout.** A short idle timeout frees server memory, but it drops a slow client. A long timeout keeps idle connections open. The lab server sends `Keep-Alive: timeout=15, max=100` (our capture, scratch copy, loopback, 2026-09-13). Pick your own number, and be ready to defend it.
+**The idle timeout.** A short idle timeout frees server memory, but it drops a slow client. A long timeout keeps idle connections open. The lab server closes a connection that stays idle for 15 seconds. Its answers carry the line `Keep-Alive: timeout=15, max=100`. The first value tells the client about that timeout. The lab code does not enforce the second value, a limit of 100 requests. Pick your own number, and be ready to defend it.
 
 **Answers in order.** If six requests arrive at once, the answers go back in the same order. An HTTP/1.1 answer carries no request number, so the client matches each answer to a request by its position. RFC 9112 §9.3.2 requires the same order.
 
@@ -296,7 +300,7 @@ A 405 means that the server knows the method, but the target path does not suppo
 
 <Predict id="s05-m12-q08">
 
-Our run on a scratch copy of the lab, over loopback, on 2026-09-13. The test program is `talk.py` from the lab below. It prints the lines that start with `---`, and it prints the answers only after it stops waiting. The dots mark lines and values that we left out.
+Our run on a copy of the lab, on 2026-09-13, over loopback: the client and the server ran on one machine, which talked to itself. The test program is `talk.py` from the lab below. It prints the lines that start with `---`, and it prints the answers only after it stops waiting. The dots mark lines and values that we left out.
 
 ```text
 --- sent 91 bytes
@@ -316,7 +320,7 @@ Content-Length: 32
 
 <Lab title="Send two requests in one send" folder="lesson5/http-evolution">
 
-The folder holds the instructor's HTTP/1.1 lab. `02-http11/server11.py` is a server that keeps connections open. Run it, but do not read its code before your first attempt. `tools/talk.py` sends the exact lines that you type, each with `\r\n`, and an empty string gives the empty line. It then prints every byte that comes back.
+The folder holds the instructor's HTTP/1.1 lab. `02-http11/server11.py` is a server that keeps connections open. Run it, but do not read its code before your first attempt. `tools/talk.py` sends the exact lines that you type, each with `\r\n`, and an empty string gives the empty line. Each quoted string after `--req` is one line to send. `--keep-open` keeps the connection open after the send. The program then prints every byte that comes back.
 
 You should see two `HTTP/1.1 200 OK` answers, with bodies of 55 and 32 bytes. Before them, a line says that the server holds the connection open.
 
@@ -390,13 +394,13 @@ The Session 5 deck announces the assignment and says that it is due before Sessi
 
 ### Local test plan
 
-Run these tests against your own server. The marker on the slide connects to localhost, port 8080, so test on that port too.
+Run these tests against your own server. The marker on the slide connects to localhost, the name of your own machine, on port 8080. So test on that port too.
 
 1. Open one connection with a short client of your own. Send the six requests of the marking run in its order: add, sub, mul, div by zero, pow, POST /add. Check each answer, and then check that the connection still works.
 2. Test rows 4, 6 and 9 of the checklist (div 9/3, a=x, no Host) on separate connections.
-3. Send one request in two writes, 1 s apart, split inside a header line. Expect one correct answer.
-4. Send two requests in one write. Expect two answers, in order.
-5. Send a POST with `Content-Length: 5`, then 5 body bytes and a GET, all in one write. Expect two answers.
+3. Send one request in two sends, 1 s apart, split inside a header line. Expect one correct answer.
+4. Send two requests in one send. Expect two answers, in order.
+5. Send a POST with `Content-Length: 5`, then 5 body bytes and a GET, all in one send. Expect two answers.
 6. Send `Connection: close`. Expect one answer, then end of file.
 7. Stay idle past your timeout. Expect the server to close the connection.
 8. Send a pair of requests in one send with the lab tool: `python3 tools/talk.py PORT --keep-open --req "GET /add?a=2&b=3 HTTP/1.1" "Host: localhost" "" "GET /mul?a=6&b=7 HTTP/1.1" "Host: localhost" ""`
