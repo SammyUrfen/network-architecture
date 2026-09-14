@@ -59,7 +59,7 @@ items:
       - value: 1
         misconception: S01-M50
         feedback: Linux calls the queue full only when it holds more than the backlog. So a backlog of 1 holds 2 connections.
-    explanation: Linux holds backlog + 1 finished connections in the accept queue. With a backlog of 1, two clients connect, and the rest get no answer.
+    explanation: Linux holds backlog + 1 connections whose handshake is done in the accept queue. With a backlog of 1, two clients connect, and the rest get no answer.
     covers: [S01-C20, S01-C25]
     tags: [beyond]
     taughtIn: seg-the-accept-queue-has-a-size
@@ -128,7 +128,7 @@ items:
         correct: false
         misconception: S01-M06
         feedback: The backlog is the size of the waiting line, not a limit on clients.
-    explanation: The backlog sets how many finished connections can wait for accept(). This server takes each one at once, so the queue stays empty and every client connects.
+    explanation: The backlog sets how many connections whose handshake is done can wait for accept(). This server takes each one at once, so the queue stays empty and every client connects.
     covers: [S01-C21, S01-C25]
     tags: []
     taughtIn: the-backlog-sizes-the-line
@@ -136,7 +136,7 @@ items:
   - id: s01-m02-q07
     use: [pretest, exit]
     type: recall
-    prompt: A server program claims a port and tells the operating system to take connections for it. But the program itself never picks up a connection. A client tries to connect. Does the connection succeed?
+    prompt: A server program claims a port number, which clients use to find it. It tells the operating system to take connections for it. But the program itself never picks up a connection. A client tries to connect. Does the connection succeed?
     model: Yes. The kernel, the core of the operating system, finishes the connection for the program and puts it in a waiting line. Then the client waits, because the program never answers.
     explanation: The kernel does the handshake before the program calls accept(). With no accept(), the connection waits in the accept queue, and the client hangs.
     covers: [S01-C17, S01-C18]
@@ -146,7 +146,7 @@ items:
   - id: s01-m02-q08
     use: [pretest, exit]
     type: recall
-    prompt: No program on a computer waits for connections on port 2026. A client tries to connect to that port. What does the client see, and how fast?
+    prompt: A port number tells a computer which program gets a connection. No program on a computer waits for connections on port number 2026. A client tries to connect to that port. What does the client see, and how fast?
     model: '"Connection refused", at once. The kernel answers with a reset, because no program owns the port.'
     explanation: The kernel answers the SYN with an RST. The failure is fast and loud, so it is easy to debug.
     covers: [S01-C15, S01-C16]
@@ -171,7 +171,7 @@ items:
       - text: None, because the server does not call accept() for them.
         correct: false
         misconception: S01-M03
-        feedback: The kernel finishes a handshake before accept(). accept() only takes a finished connection from the queue.
+        feedback: The kernel finishes a handshake before accept(). accept() only takes a connection whose handshake is done from the queue.
       - text: One, because the backlog is 1.
         correct: false
         misconception: S01-M50

@@ -4,7 +4,7 @@ session: 1
 order: 2
 title: "Ports and the accept queue: refused, queued or hung"
 minutes: 22
-bigIdea: "Before your code runs, the port and the accept queue decide what a client sees: a refusal, a wait in line, or a silent hang."
+bigIdea: "Before your code runs, the port number and a waiting line for new connections decide what a client sees: a refusal, a wait in line, or a silent hang."
 covers: [S01-C09, S01-C10, S01-C11, S01-C12, S01-C13, S01-C14, S01-C15, S01-C16, S01-C17, S01-C18, S01-C20, S01-C21, S01-C22, S01-C23, S01-C24, S01-C25, S01-C80, S01-C83]
 prereqs: [s01-m01-seven-syscalls]
 threads: [T-honest-benchmarks]
@@ -20,7 +20,7 @@ terms:
   - term: handshake
     meaning: the three short messages that open a TCP connection, called SYN, SYN-ACK and ACK
   - term: accept queue
-    meaning: the line of finished connections that wait for the program to take them with accept()
+    meaning: the line of connections whose handshake is done. They wait for the program to take them with accept().
   - term: backlog
     meaning: the number that a program gives to listen(). It sets the size of the accept queue.
 ---
@@ -47,11 +47,11 @@ import Predict from '../../../components/check/Predict.astro';
 import Pretest from '../../../components/check/Pretest.astro';
 import Visual from '../../../components/sims/s01-m02-ports-and-queue/Visual.astro';
 
-Two programs talk over TCP, the part of the operating system that carries bytes between them, complete and in order. A client program asks a server for a connection, and one of three things happens. The connection is refused at once. Or it waits in a line and then works. Or the client hangs, with no answer and no error. The code of the server does not pick the result. The port and a waiting line inside the operating system pick it, before the code reads one byte. So what decides what a client sees? This lesson answers that question.
+Two programs talk over TCP, the part of the operating system that carries bytes between them, complete and in order. A client program asks a server for a connection, and one of three things happens. The connection is refused at once. Or the connection waits in a line until the server program takes it, and if the program never takes it, the client hangs with no reply and no error. Or the client gets no answer at all, and after a long wait it gives up. The code of the server does not pick the result. Two things pick it, before the code reads one byte. The first is the port, the number that tells the computer which program gets a connection. The second is a waiting line inside the operating system, the accept queue. So what decides what a client sees? This lesson answers that question.
 
-This matters, because a hang looks just like a server with too much work. People then fix the wrong thing. A server program makes three calls before it talks to a client. `bind()` claims a port. `listen()` tells the operating system to take connections for the program. `accept()` takes the next connection from the line. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows all seven calls of a server, but this lesson explains these three again, so you can start here. Later lessons build on this one: <ModuleLink id="s02-m04-tcp-lifecycle" /> opens the handshake in detail, and <ModuleLink id="s04-m03-process-model" /> shows how nginx, a popular web server, takes its connections. The idea also belongs to the thread "Honest benchmarks": a result that you see on your own laptop can mislead, because other systems act in other ways.
+This matters, because a hang looks just like a server with too much work. People then fix the wrong thing. A server program makes three calls before it talks to a client. `bind()` claims a port. `listen()` tells the operating system to take connections for the program. `accept()` takes the next connection from the line. The lesson <ModuleLink id="s01-m01-seven-syscalls" /> shows all seven calls of a server, but this lesson explains these three again, so you can start here. Later lessons build on this one. <ModuleLink id="s02-m04-tcp-lifecycle" /> shows the handshake in detail: the three short messages that open a connection. <ModuleLink id="s04-m03-process-model" /> shows how nginx, a popular web server, takes its connections. On this site, a thread is an idea that returns in many lessons. This lesson belongs to the thread "Honest benchmarks", and a benchmark is a speed test. A result that you see on your own laptop can mislead, because other systems act in other ways.
 
-**The path through this lesson.** Part 1 shows what a port is, and why a port below 1024 needs root. Part 2 lets a client knock on that port, and shows the first two results: a fast refusal, or a silent wait. Part 3 opens the waiting line, shows how big it is, and shows the third result, when the line is full. Part 4 shows how a quick restart can lose the port, so that every client gets the refusal of Part 2 again. At the end, you predict what the real class server does, and you try it yourself.
+**The path through this lesson.** Part 1 shows what a port is, and why a port below 1024 needs root, the admin account of the computer. Part 2 lets a client knock on that port, and shows the first two results: a fast refusal, or a wait in line that can become a silent hang. Part 3 opens the waiting line, shows how big it is, and shows the third result: no answer at all, when the line is full. Part 4 shows how a quick restart can lose the port, so that every client gets the refusal of Part 2 again. At the end, you predict what the class server does, and you try it yourself. The class server is the echo server that the instructor ran in class: it sends back the bytes that it gets.
 
 <Pretest module="s01-m02-ports-and-queue" />
 
@@ -59,15 +59,15 @@ This matters, because a hang looks just like a server with too much work. People
 
 <Segment title="Ports: numbered doors, and who may open them">
 
-**In this part.** You learn what a port is, and who may use which port. Every later part starts with a client that knocks on a port, so the port comes first. You also see why real servers keep their own code away from port 80.
+**In this part.** You learn what a port is, and who may use which port. Every later part starts with a client that knocks on a port, so the port comes first. `bind()` also picks the addresses of the computer that clients can use, so you see those too. And you see why real servers keep their own code away from port 80, behind a small front program called a proxy.
 
 <Visual slot="visual" name="ports" title="Pick a port and a user, and see what bind() does" />
 
 <Picture breaks="a master key only opens doors, but root can do much more. Root can read every file and change every program. So a root program that gets tricked is a far bigger problem than a lost key.">
 
-Think of a big clinic building with many numbered rooms. Each doctor rents one room, and a patient asks for a doctor by the room number. The rooms from 1 to 1023 open only with the master key, which the caretaker keeps. Any doctor can rent a room from 1024 up. The master key opens every door in the building, so a careful building does not give it to a busy doctor. Instead, a greeter with the key stands in room 80. The greeter only sends each patient up to the real doctor in room 8080.
+Think of a big clinic building with many numbered rooms. Each doctor rents one room, and a patient asks for a doctor by the room number. The rooms from 1 to 1023 open only with the master key. Any doctor can rent a room from 1024 up. The master key opens every door in the building, so a careful building does not give it to a busy doctor. Instead, a greeter with the key stands in room 80. The greeter only sends each patient up to the real doctor in room 8080.
 
-The building is one computer, and each room number is a port. A doctor is a server program, and a patient is a client. The master key is root, the admin account that may do anything on a Linux computer. So the rooms below 1024 are the ports that only root may use. The greeter is a front proxy: a small program that takes each connection on port 80 and passes it to the real program on port 8080.
+The building is one computer, and each room number is a port. A doctor is a server program, and a patient is a client. Renting a room is `bind()`, the call that claims a port. The master key is root, the admin account that may do anything on a Linux computer. So the rooms below 1024 are the ports that only root may use. The greeter is a front proxy: a small program that takes each connection on port 80 and passes it to the real program on port 8080.
 
 </Picture>
 
@@ -95,15 +95,15 @@ Linux can lift the line without full root in two ways. The capability `CAP_NET_B
 
 `bind()` takes an address as well as a port, and a computer has more than one address. The address 127.0.0.1 means "this computer", and only programs on the same computer can use it. The network card has another address, and other computers use that one. The class server gives `bind()` the value `INADDR_ANY`, which means every address of the computer.
 
-The class server is the file `01_echo_server.c`. Its line 9 sets the address to `INADDR_ANY`, and line 10 sets the port to 2026. Line 11 calls `bind()` with that address and port, and line 12 calls `listen()` with a backlog of 1. Line 10 also passes the port through `htons()`, which puts the number in network byte order. <ModuleLink id="s01-m05-byte-order-dns" /> explains that.
+The class server is the file `01_echo_server.c`, in the folder `lesson1` of the instructor's code on GitHub. The lab at the end of this lesson shows how to get it. Its line 9 sets the address to `INADDR_ANY`, and line 10 sets the port to 2026. Line 11 calls `bind()` with that address and port, and line 12 calls `listen()` with a backlog of 1. Line 10 also passes the port through `htons()`, which puts the two bytes of the number in the order that networks use. <ModuleLink id="s01-m05-byte-order-dns" /> explains that.
 
-So the class server takes connections from every computer that can reach it, for example the other computers on the same Wi-Fi. <SlideLink session={1} page={34} /> calls `INADDR_ANY` easy in development, and a choice to make on purpose in production. Give `bind()` the address 127.0.0.1 when only programs on the same computer may connect.
+So the class server takes connections from every computer that can reach it, for example the other computers on the same Wi-Fi. <SlideLink session={1} page={34} /> calls `INADDR_ANY` easy while you build and test on your laptop, and a choice to make on purpose on a real server that users reach. Give `bind()` the address 127.0.0.1 when only programs on the same computer may connect.
 
 <ExamDepth>
 
 - **The line is a privilege.** Three things let a program bind a port below 1024: root, the capability `CAP_NET_BIND_SERVICE`, or a lower `ip_unprivileged_port_start`. So "root only" on the slide means root by default.
 - **Why a proxy lowers the risk.** The proxy does almost nothing, so it has little code where a bug can hide. The program with the complex request code runs as a normal user. A bug there gives an attacker the rights of that user, not root. A server can also start as root, bind port 80, and then switch to a normal user before it reads requests. <ModuleLink id="s04-m03-process-model" /> shows that split inside nginx.
-- **Every address or one address.** `INADDR_ANY` is quick for development, because every client reaches the server. In production, a server that only a proxy on the same computer talks to can bind 127.0.0.1. Then no other computer can reach it directly.
+- **Every address or one address.** `INADDR_ANY` is quick while you build and test, because every client reaches the server. On a real server that users reach, a program that only a proxy on the same computer talks to can bind 127.0.0.1. Then no other computer can reach it directly.
 
 </ExamDepth>
 
@@ -113,7 +113,7 @@ So the class server takes connections from every computer that can reach it, for
 
 <Segment title="Refused, or a silent wait">
 
-**In this part.** Part 1 showed how a server claims a port. Now a client knocks on that port, and you learn the first two results: a fast refusal, or a silent wait. One missing call makes the difference, `bind()` or `accept()`. The kernel answers before the program does, and that explains both results.
+**In this part.** Part 1 showed how a server claims a port. Now a client knocks on that port, and you learn the first two results: a fast refusal, or a wait in line that can become a silent hang. One missing call makes the difference, `bind()` or `accept()`. The kernel answers before the program does, and that explains both results.
 
 <Visual slot="visual" name="knock" title="A client knocks on port 2026 two times" />
 
@@ -121,7 +121,7 @@ So the class server takes connections from every computer that can reach it, for
 
 You go to the clinic and ask the front desk for the doctor in room 2026. On the first day, no doctor rents room 2026. The desk tells you at once that nobody works there. You go home after one minute, and you know the problem. On the second day, a doctor rents the room and tells the desk to seat patients. The desk writes down your name and gives you a seat in the waiting room. But the doctor never comes out to call a name. You sit and wait, and nobody tells you that something is wrong.
 
-The front desk is the kernel, which answers for every program on the computer. "Nobody works there" is the refusal that the client sees as "Connection refused". When the desk writes your name and seats you, the kernel finishes the handshake and puts the connection in the accept queue. The doctor who calls a name is `accept()`. A doctor who never calls is a program that never calls `accept()`. To you, that doctor looks very busy, and a server with no `accept()` looks overloaded in the same way.
+The front desk is the kernel, which answers for every program on the computer. Renting the room is `bind()`, and telling the desk to seat patients is `listen()`. On the first day, nobody called `bind()`. "Nobody works there" is the refusal that the client sees as "Connection refused". When the desk writes your name and seats you, the kernel finishes the handshake and puts the connection in the accept queue. The doctor who calls a name is `accept()`. A doctor who never calls is a program that never calls `accept()`. To you, that doctor looks very busy, and a server with no `accept()` looks overloaded in the same way.
 
 </Picture>
 
@@ -167,7 +167,7 @@ The kernel puts the new connection in the accept queue. Only `accept()` takes a 
 
 <ScrollStep step={7}>
 
-The client sends hi. The kernel answers with an ACK, which says that the bytes arrived, and it keeps the bytes in a buffer for the program.
+The client sends hi. The kernel answers with an ACK, which says that the bytes arrived, and it keeps the bytes in memory, where they wait for the program to read them.
 
 </ScrollStep>
 
@@ -195,7 +195,7 @@ Linux adds a detail to the first case. A program that skips `bind()` still liste
 
 <ExamDepth>
 
-- **Refused or hung.** A refusal costs one round trip, and its error names the problem. A hang costs the whole timeout of the client, and it looks like load. So a hang is much harder to debug.
+- **Refused or hung.** A refusal costs one message there and one message back, and its error names the problem. A hang costs the whole timeout of the client, and it looks like load. So a hang is much harder to debug.
 - **The slide wording.** The slide says that the client "waits until TCP times out". But TCP sent an ACK for the handshake and for the bytes, so TCP sees nothing wrong. The client waits until its own timeout, if the client program sets one. On a quiz, expect the slide wording.
 
 </ExamDepth>
@@ -208,7 +208,7 @@ Linux adds a detail to the first case. A program that skips `bind()` still liste
 
 <Segment title="The accept queue has a size">
 
-**In this part.** Part 2 put a connection in a waiting line, the accept queue. This part shows how big that line is, and what the number in `listen()` really means. It also shows the third result that a client can see: no answer at all, when the line is full.
+**In this part.** Part 2 put a connection in a waiting line, the accept queue. This part shows how big that line is, and what the number in `listen()` really means. It also shows the third result that a client can see: no answer at all, when the line is full. That client does get an error in the end, "Connection timed out".
 
 <Visual slot="visual" name="queue" title="Set the backlog and the clients, and see where each client ends up" />
 
@@ -222,7 +222,7 @@ The chairs are the accept queue, and the number of chairs is the backlog, the se
 
 ### How it works
 
-The class server calls `listen(server_fd, 1)`, and that 1 is the backlog (<SlideLink session={1} page={11} />). The backlog sets the depth of the accept queue: how many finished connections can wait for `accept()`. It is not a limit on connections (<SlideLink session={2} page={4} />).
+The class server calls `listen()` with a backlog of 1 (<SlideLink session={1} page={11} />). The backlog sets the depth of the accept queue: how many connections whose handshake is done can wait for `accept()`. It is not a limit on connections (<SlideLink session={2} page={4} />).
 
 A connection leaves the queue when the program calls `accept()`. So a program that calls `accept()` quickly keeps the queue almost empty. Then a backlog of 1 can serve many clients, one after the other. The queue only fills when connections arrive faster than the program takes them. So the queue lets a burst of clients wait while the program works.
 
@@ -240,7 +240,7 @@ The class code passes 1, and real servers pass hundreds. But the number in the c
 
 <KeyIdea id="the-backlog-sizes-the-line" title="The backlog sizes the waiting line, not the number of clients">
 
-The second argument of `listen()` sets how many finished connections can wait for `accept()`. It does not limit how many clients the server can serve. When the line is full, Linux drops new SYNs, and those clients wait and then time out. Some other systems refuse them.
+The second argument of `listen()` sets how many connections whose handshake is done can wait for `accept()`. It does not limit how many clients the server can serve. When the line is full, Linux drops new SYNs, and those clients wait and then time out. Some other systems refuse them.
 
 </KeyIdea>
 
@@ -291,7 +291,7 @@ Even Linux has a setting for this. `tcp_abort_on_overflow` makes Linux reset a c
 
 <Segment title="The restart trap">
 
-**In this part.** Parts 2 and 3 showed what a client sees while the server runs. This part shows a trap at restart: the server comes back on a random port, and every client gets the refusal of Part 2 again. You learn why that happens, and the one socket option that prevents it.
+**In this part.** Parts 2 and 3 showed what a client sees while the server runs. This part shows a trap at restart: the server comes back on a random port, and every client gets the refusal of Part 2 again. You learn why that happens, and the one socket option that prevents it. A socket option is a switch on a socket, and a program sets it with the call `setsockopt()`.
 
 <Stepper
   slot="visual"
@@ -306,7 +306,7 @@ Even Linux has a setting for this. `tcp_abort_on_overflow` makes Linux reset a c
       ],
     },
     {
-      caption: 'A client sends hello, gets it back, and ends. The server called close() first, so its side of the connection enters TIME_WAIT.',
+      caption: 'A client sends hello, gets it back, and ends. The server called close() first, so its side enters TIME_WAIT, a state that holds the port for about 60 seconds.',
       lanes: [
         { label: 'Port 2026 is held by', chunks: ['the listening socket', 'the old connection, in TIME_WAIT'] },
         { label: 'The server program', chunks: ['write(hello)', 'close() first'] },
@@ -367,9 +367,9 @@ Even Linux has a setting for this. `tcp_abort_on_overflow` makes Linux reset a c
 
 <Picture breaks="the lock belongs to the old visit, not to the whole room. With the note, the old visit keeps its minute, and the new doctor uses the same room at the same time. Also, Linux accepts the note only if the doctor gave it on the earlier visit too.">
 
-The doctor in room 2026 sees the last patient, then goes out and comes straight back. But the clinic keeps a room locked for one minute after each visit, in case a late letter for that visit still arrives. So the desk says that room 2026 is still in use. This doctor does not listen to the answer, and sits down in any free room, such as room 52053. Patients still ask for room 2026, and the desk tells each one that nobody works there. The fix is a note that the doctor gives the desk on every visit: I know about the locked minute, so give me my room anyway.
+The doctor in room 2026 sees the last patient and leaves. A moment later, the doctor comes back to start again. But the clinic keeps a room locked for one minute after each visit. A late letter for the last patient can still arrive, and a new patient in the room could open it by mistake. So the desk says that room 2026 is still in use. This doctor does not listen to the answer, and sits down in any free room, such as room 52053. Patients still ask for room 2026, and the desk tells each one that nobody works there. The fix is a note that the doctor gives the desk on every visit: I know about the locked minute, so give me my room anyway.
 
-The locked minute is TIME_WAIT, a state that keeps a closed connection for about 60 seconds (<SlideLink session={1} page={21} />). During that time, a late packet of the old connection, one piece of its data, cannot land in a new connection. The desk's answer is the error of `bind()`, "Address already in use". The doctor who does not listen is the class code, which never checks what `bind()` returns. The free room is the random port that `listen()` picks, as in Part 2. The note is the socket option `SO_REUSEADDR`.
+The doctor who leaves and comes back at once is a server that you stop and start again at once. The locked minute is TIME_WAIT, a state that keeps a closed connection for about 60 seconds (<SlideLink session={1} page={21} />). During that time, a late packet of the old connection, one piece of its data, cannot land in a new connection, just as the late letter cannot reach a new patient. The desk's answer is the error of `bind()`, "Address already in use". The doctor who does not listen is the class code, which never checks what `bind()` returns. The free room is the random port that `listen()` picks, as in Part 2. The note is the socket option `SO_REUSEADDR`.
 
 </Picture>
 
@@ -433,9 +433,9 @@ A connection that the server closed first stays in TIME_WAIT for about 60 second
 
 ### The real thing
 
-A socket option is a switch on a socket, and a program sets it with the call `setsockopt()`. The class code sets no option, so it walks into this trap. The lab at the end of this lesson shows the trap on the class server.
+The class code sets no socket option, so it walks into this trap. The lab at the end of this lesson shows the trap on the class server.
 
-The class code also checks no return value, on purpose. The README of the course repo says that the code skips error checks to stay short and readable. A real server checks every call, so a failed `bind()` stops it with a clear message.
+The class code also checks no return value, on purpose. The notes file of the instructor's code on GitHub, its README, says that the code skips error checks to stay short and readable. A real server checks every call, so a failed `bind()` stops it with a clear message.
 
 <Beyond source="RFC 9293 §3.6, Closing a Connection" url="https://www.rfc-editor.org/rfc/rfc9293#section-3.6">
 
@@ -487,7 +487,7 @@ State  Recv-Q Send-Q Local Address:Port Peer Address:Port
 LISTEN 2      1            0.0.0.0:2026      0.0.0.0:*
 ```
 
-Each line of the first table is one client. ESTAB means that the handshake is done, and SYN-SENT means that the SYN got no answer. So three clients connected and one did not. One ESTAB line is client 1, which `accept()` took, but `ss` does not show which one. The other two wait in the queue. The listening socket shows Recv-Q 2, the two waiting connections, and Send-Q 1, the backlog.
+Each line of the first table is one client. ESTAB means that the handshake is done, and SYN-SENT means that the SYN got no answer. So three clients connected and one did not. One ESTAB line is client 1, which `accept()` took, but `ss` does not show which one. The other two wait in the queue. The listening socket shows Recv-Q 2, the two waiting connections, and Send-Q 1, the backlog. Each client line also shows a port of the client itself, such as 41784. The kernel lends each client a free port when it connects, and the right column shows the server port, 2026.
 
 </Predict>
 
@@ -584,7 +584,7 @@ What you should see: the server listens on a random high port, not on 2026, and 
 <ExamPrompts
   prompts={[
     {
-      prompt: 'Your load test fills the accept queue. On your Linux laptop, the extra clients hang. A classmate on another system gets Connection refused. Which result is right, and what should the client code assume?',
+      prompt: 'Your test starts many clients at once and fills the accept queue. On your Linux laptop, the extra clients hang. A classmate on another system gets Connection refused. Which result is right, and what should the client code assume?',
       model: 'Both results are right, because a full queue acts differently on different systems. Linux drops the SYN, so the client sends it again and later times out. Some other systems refuse at once. So the client code must handle both a refusal and a timeout. It must not depend on the result of one laptop.',
     },
     {

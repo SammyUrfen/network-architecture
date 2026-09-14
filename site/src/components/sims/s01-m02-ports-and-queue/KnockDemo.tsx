@@ -16,7 +16,7 @@ const CAPTIONS = [
   'Now a program calls bind() and listen() on port 2026, but never accept(). The client sends a SYN again.',
   'The kernel answers SYN-ACK for the program, and the client answers ACK. The handshake is done, and connect() succeeds.',
   'The kernel puts the connection in the accept queue. The program never calls accept(), so nobody takes it.',
-  'The client sends hi. The kernel answers with an ACK and keeps the 2 bytes in a buffer.',
+  'The client sends hi. The kernel answers with an ACK and keeps the 2 bytes in memory for the program.',
   'The client waits for a reply that never comes. No error arrives, and it looks like an overloaded server.',
 ];
 
@@ -174,7 +174,7 @@ export default function KnockDemo({ title }: { title: string }) {
           </text>
         </g>
         <text class="m02-muted m02-halo" data-key="buffer" style={base('buffer')} x={KX + 8} y="380">
-          hi waits in a buffer
+          hi waits in memory
         </text>
         <text class="m02-note wait m02-halo" data-key="waits" style={base('waits')} x="8" y="402">
           … the client waits, and no reply comes

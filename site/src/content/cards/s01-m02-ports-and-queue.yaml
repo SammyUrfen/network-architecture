@@ -10,7 +10,7 @@ items:
     covers: [S01-C17, S01-C18]
   - id: s01-m02-c03
     front: What does the second argument of listen() set?
-    back: The size of the accept queue, the finished connections that wait for accept(). It is not a limit on clients.
+    back: The size of the accept queue, the connections whose handshake is done and that wait for accept(). It is not a limit on clients.
     covers: [S01-C20, S01-C25]
   - id: s01-m02-c04
     front: When accept() returns, what has already happened to the TCP connection?
