@@ -1,0 +1,113 @@
+/* The slide viewer island. The sv- prefix keeps these rules to it. */
+.sv {
+  /* Every deck page is 16:9. The dialog is as wide as the window allows,
+     and short enough that the slide and the bars fit in its height. */
+  width: min(100vw - 1rem, (100dvh - 11rem) * 16 / 9, 80rem);
+  max-width: none;
+  max-height: calc(100dvh - 1rem);
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-2);
+}
+.sv::backdrop {
+  background: rgb(20 14 4 / 0.6);
+}
+/* The page under the dialog does not scroll. */
+html:has(.sv[open]) {
+  overflow: hidden;
+}
+/* Phones in portrait: the width, not the height, limits the slide. */
+@media (width < 40rem) {
+  .sv {
+    width: calc(100vw - 1rem);
+  }
+}
+
+.sv-body {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.sv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.sv-head h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.sv-close {
+  min-width: 2.75rem;
+  padding: 0;
+}
+
+.sv-frame {
+  position: relative;
+  background: #fff;
+  border: var(--bw) solid var(--border);
+}
+.sv-frame canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.sv-note {
+  position: absolute;
+  inset: auto 0 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+.sv-problem {
+  color: var(--wrong);
+  background: var(--wrong-bg);
+}
+
+.sv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.sv-bar .btn[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.sv-page {
+  margin: 0;
+}
+.sv-page input {
+  width: 4.5em;
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  font: inherit;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface);
+  border: var(--bw) solid var(--border-strong);
+  border-radius: var(--radius-m);
+}
+/* Phones: previous and next share the first row, the page field goes below. */
+@media (width < 40rem) {
+  .sv-page {
+    order: 1;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.sv-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+}

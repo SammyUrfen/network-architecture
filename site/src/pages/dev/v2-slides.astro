@@ -1,0 +1,24 @@
+---
+// Fixture page for the v2 visual QA of the slide links and the viewer. Not in the nav.
+import SlideLink from '../../components/slides/SlideLink.astro';
+import Base from '../../layouts/Base.astro';
+import { href } from '../../lib/url';
+---
+
+<Base title="Dev: slides">
+  <h1>Dev: slides</h1>
+  <p>
+    A slide citation sits inside a sentence. The Session 1 deck starts on <SlideLink session={1} page={1} />, and the
+    framing lesson cites <SlideLink session={1} page={39} />. The last page of the Session 5 deck is <SlideLink
+      session={5}
+      page={51}
+    />.
+  </p>
+  <p>
+    A plain click opens the viewer. A click with Ctrl or Cmd opens the PDF in a new tab. With no JavaScript, the link
+    opens the PDF at its page.
+  </p>
+  <h2>A link that looks like a button</h2>
+  <p><SlideLink session={3} page={1} class="btn">View the Session 3 slides</SlideLink></p>
+  <p><a href={href('slides/')}>The slides page</a> · <a href={href('about/')}>About</a></p>
+</Base>

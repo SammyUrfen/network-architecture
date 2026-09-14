@@ -1,0 +1,115 @@
+---
+import { getCollection } from 'astro:content';
+import SlideLink from '../../components/slides/SlideLink.astro';
+import { deckFile, decks } from '../../components/slides/decks';
+import Base from '../../layouts/Base.astro';
+import { href, sessionHref } from '../../lib/url';
+
+const sessions = (await getCollection('sessions'))
+  .map((entry) => entry.data)
+  .filter((s) => decks[s.number])
+  .sort((a, b) => a.number - b.number);
+---
+
+<Base title="Slides" wide>
+  <h1>Slides</h1>
+  <p class="lead">
+    These are the slide decks that the instructor used in class, one for each session. View a deck here one slide at a
+    time, or download the PDF to keep it.
+  </p>
+  <p>
+    The slides belong to the instructor. The lessons on this site cite them by slide number, and each citation opens
+    the deck at that slide.
+  </p>
+
+  <ol class="decks">
+    {
+      sessions.map((s) => (
+        <li class="deck">
+          <h2>
+            <span class="num">Session {s.number}</span>
+            <a href={sessionHref(s.number)}>{s.title}</a>
+          </h2>
+          {s.subtitle && <p class="subtitle">{s.subtitle}</p>}
+          <p class="facts">
+            {decks[s.number].pages} slides · PDF, {decks[s.number].mb.toFixed(1)} MB
+          </p>
+          <p class="actions">
+            <SlideLink session={s.number} page={1} class="btn">
+              View the slides
+            </SlideLink>
+            <a class="btn" href={href(deckFile(s.number))} download>
+              Download<span class="sr-only"> the Session {s.number} deck</span>
+            </a>
+          </p>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="later">The deck of each later session comes here after its class.</p>
+</Base>
+
+<style>
+  p {
+    max-width: var(--measure);
+  }
+  .lead {
+    font-size: var(--text-lg);
+  }
+  .decks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-4);
+    margin: var(--space-8) 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+  /* The buttons of every card in a row line up at the bottom. */
+  .deck {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4);
+    background: var(--surface);
+    border: var(--bw) solid var(--border);
+    border-radius: var(--radius-m);
+    box-shadow: var(--shadow-1);
+  }
+  h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-lg);
+  }
+  .num {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 0.12em;
+    color: var(--accent-2);
+  }
+  h2 a {
+    color: var(--text);
+  }
+  .subtitle {
+    margin: 0 0 var(--space-2);
+    font-style: italic;
+    color: var(--text-muted);
+  }
+  .facts {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: auto 0 0;
+  }
+  /* The view link is a SlideLink, so a scoped rule does not reach it. */
+  .actions :global(.btn) {
+    text-decoration: none;
+  }
+  .later {
+    color: var(--text-muted);
+  }
+</style>

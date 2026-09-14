@@ -1,0 +1,54 @@
+---
+import Base from '../layouts/Base.astro';
+import { href } from '../lib/url';
+
+const repo = 'https://github.com/jitendraag/cn-at-scaler';
+---
+
+<Base title="About">
+  <h1>About this site</h1>
+  <p class="lead">
+    This site is an unofficial study companion for the course Network Architecture (CN @ Scaler). A student of the
+    course built it. The instructor and the school did not make it, and they do not check it.
+  </p>
+
+  <h2>Why it exists</h2>
+  <p>
+    A live lecture moves fast, and one missed idea makes the next one hard to follow. So this site teaches the course
+    again, one idea at a time, in the order of the sessions. Each lesson starts with a scene from real life that a
+    10-year-old can follow. Then it goes deep enough for the exam and for design questions. Questions along the way show
+    what you know, and a review queue brings each idea back over the next days.
+  </p>
+
+  <h2>Two rules it keeps</h2>
+  <p>
+    The first rule: it gives no solutions to graded work. Graded work is the calculator assignment, the binary HTTP
+    project and the real questions of the post-class quizzes. A page that helps you prepare for graded work gives a
+    checklist, a test plan and hints. It never gives the answer or the code.
+  </p>
+  <p>
+    The second rule: every fact comes from a source that you can check. The source is the slides, the instructor code,
+    or a named reference such as an RFC or a manual page. A fact that is not in the slides carries a "beyond the slides"
+    badge with its reference. If a lesson and the slides do not agree, trust the slides, and ask the instructor.
+  </p>
+
+  <h2>Your progress stays with you</h2>
+  <p>
+    The site has no accounts and no analytics. Your answers and your review cards live only in this browser, at this
+    address. If you clear the browser data, or move to a new browser or device, your progress stays behind. So export it
+    from time to time on the <a href={href('progress/')}>Progress page</a>, and import the file in the new place.
+  </p>
+
+  <h2>Credits</h2>
+  <p>
+    The slides and the demo code belong to the instructor. Every demo in the lessons comes from the instructor repo,{' '}
+    <a href={repo}>github.com/jitendraag/cn-at-scaler</a>. The <a href={href('slides/')}>Slides page</a> has the deck of
+    each session, to view here or to download.
+  </p>
+</Base>
+
+<style>
+  .lead {
+    font-size: var(--text-lg);
+  }
+</style>
