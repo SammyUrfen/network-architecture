@@ -124,7 +124,7 @@ The letter is your data. Your envelope is the TCP header. The sack is the IP pac
 
 </Picture>
 
-OSI names these layers. It is a committee model from 1984 that outlived almost everything built on it. Layer 7 holds HTTP, FTP, DNS and SMTP, layer 6 holds encryption and compression, and layer 5 holds sessions. Layer 4 is transport, layer 3 is the network, layer 2 is the link, and layer 1 is cables and signals.
+OSI names these layers. It is a committee model from 1984 that outlived almost everything built on it. Layer 7 holds HTTP, FTP, DNS and SMTP, layer 6 holds encryption and compression, and layer 5 holds sessions. Layer 4 is transport, with TCP and UDP. Layer 3 is the network, with IP, ICMP and routing. Layer 2 is the link, with Ethernet, MAC addresses, ARP and switches. Layer 1 is cables and signals.
 
 TCP and UDP share layer 4 and make opposite promises. TCP sets up a connection and delivers every byte in order, with flow control, congestion control and error recovery, and it pays in latency. UDP sends one datagram with no connection, no promise and no order, and it is cheap. HTTP, FTP, SMTP and SSH take the first deal, and DNS, voice, video and games take the second.
 
@@ -148,6 +148,7 @@ Each layer adds its own header and treats everything inside as bytes it must not
 
 - OSI from the top: 7 application, 6 presentation, 5 session, 4 transport, 3 network, 2 link, 1 physical.
 - MSS 1460 bytes: MTU 1500 minus 20 for IP and 20 for TCP. One full frame is 1518 bytes.
+- Ethernet II: 6 bytes for each MAC address, 2 for the EtherType, 46 to 1500 of payload, then a 4-byte CRC-32.
 - EtherType 0x0800 means IPv4. IP protocol 6 means TCP.
 - A router changes the TTL and the IP checksum. A NAT box also rewrites addresses.
 - A radio cannot hear a collision while it sends, so Wi-Fi acks every frame at layer 2.
@@ -446,6 +447,7 @@ QUIC rebuilds TCP inside UDP, in userspace, because UDP is 8 bytes that the kern
 - TIME_WAIT sits on the side that closes first, for 2 MSL. CLOSE_WAIT means your app forgot close().
 - BBR measures bottleneck bandwidth times round-trip propagation time, and paces at that rate.
 - Round trips before data, as drawn: TCP 1, TLS 1.2 3, TLS 1.3 2, TCP Fast Open 1, QUIC 1.
+- The TCP header is 20 bytes at least: 2 per port, 4 seq, 4 ack, 2 flags, 2 window, 2 checksum, 2 urgent, then 0 to 40 of options.
 - The UDP header is 8 bytes: two ports, a length and a checksum. The largest IPv4 payload is 65,507 bytes.
 - One lost packet stalls every HTTP/2 stream over TCP. Under QUIC it stalls only its own stream.
 
@@ -507,7 +509,7 @@ That openness is also the hole. MAIL FROM is whatever you type, and the base pro
 
 The session shape is fixed: a 220 greeting, EHLO with a 250 and the extension list, a 250 for MAIL FROM and for RCPT TO, a 354 for DATA, then the headers, a blank line, the body, a line that holds only a dot, and 221 after QUIT. Two traps live there. The blank line ends the headers, not the message. And a body line that starts with a dot needs one extra dot, or the server ends your message early.
 
-A text protocol cannot carry arbitrary bytes, so images travel as base64: 3 bytes, 24 bits, regrouped as four 6-bit values, so the bytes of "Man" become TWFu. The cost is 4 characters for every 3 bytes, about 33%, and MIME caps a line at 76 characters. The alphabet is A to Z, a to z, 0 to 9, plus and slash, with the equals sign as padding, and every mail system passes it unchanged. An attachment uses multipart/mixed, which names a boundary that each part repeats after two hyphens. Pick one that cannot appear in the body: the delimiter idea again.
+A text protocol cannot carry arbitrary bytes, so images travel as base64: 3 bytes, 24 bits, regrouped as four 6-bit values, so the bytes of "Man" become TWFu. The cost is 4 characters for every 3 bytes, about 33%, and MIME caps a line at 76 characters. The alphabet is A to Z, a to z, 0 to 9, plus and slash, with the equals sign as padding, and every mail system passes it unchanged. An attachment uses multipart/mixed, which names a boundary. Each part starts with two hyphens and that boundary and carries its own Content-Type, and two hyphens on both sides end the message. Pick a boundary that cannot appear in the body: the delimiter idea again.
 
 Reading mail makes state placement the design question. POP is four verbs, STAT, LIST, RETR and DELE, and DELE only marks a message until QUIT. USER and PASS cross the wire in clear text, which is why POP3S on port 995 exists. POP keeps mail on your device and treats the server as a spool, so a second device sees nothing. IMAP keeps mail on the server, so every device sees the same mailbox and the same read state, held as a flag such as \Seen. POP has one inbox and local search, while IMAP has folders, server-side SEARCH and IDLE that pushes new mail. IMAP FETCH BODY[1] returns one MIME part, where POP RETR returns the whole message. Everything follows from that one choice.
 
@@ -527,7 +529,7 @@ Two columns on the framing slide need a correction. MTP2 sits under "length", bu
 
 FTP answers with a connection instead of a rule: one connection holds the conversation, and a new connection carries each file. The 1971 active mode puts control on port 21 and has the server dial back from port 20, which every NAT box now blocks. Passive mode fixes it: the client sends PASV, the server replies 227 with six numbers, and the client connects there, so the client opens both connections. Each transfer needs a new PASV.
 
-Decode that reply and you meet byte order again. In (127,0,0,1,117,48) the first four numbers give the address and the last two give the port, high byte first: 117 times 256 plus 48 is 30000. The reply is text, so a 16-bit port ships as two 8-bit halves in network byte order, which is htons by hand. The class demo also pins the passive ports to a small range, which keeps the firewall rule finite, and sets the address in the 227 reply, because a server in a container does not know the address a client can reach.
+Decode that reply and you meet byte order again. In (127,0,0,1,117,48) the first four numbers give the address and the last two give the port, high byte first: 117 times 256 plus 48 is 30000. The reply is text, so a 16-bit port ships as two 8-bit halves in network byte order, which is htons by hand. In the class demo you need two terminals: the control connection on port 2121, and the data connection on the port that the 227 reply names. The listing and the file body appear on the data side, and each transfer needs a new PASV. The demo also pins the passive ports to a small range, which keeps the firewall rule finite, and sets the address in the 227 reply, because a server in a container does not know the address a client can reach.
 
 <Remember>
 
