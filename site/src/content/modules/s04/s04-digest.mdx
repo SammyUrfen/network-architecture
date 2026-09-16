@@ -90,9 +90,9 @@ This class is the answer to that question, followed into the real nginx source. 
 
 <Picture breaks="a waiter costs a salary, and a process costs memory, a scheduler slot and a context switch. The lobby is a list inside the kernel, and a restaurant has nothing like it.">
 
-A restaurant gets busy. First it hires one waiter for each guest who comes in. Then it hires a team of waiters before it opens. Then the waiters share one locker room and one uniform, but each waiter still stands at one table. Last, a host seats the resting guests in the lobby and calls a waiter only when a guest wants to order. Every step makes a waiter cheaper. Nobody asks whether a resting guest needs a waiter at all.
+A restaurant gets busy. First it hires one waiter for each guest who comes in. Then it hires a team before it opens. Then the waiters share one locker room, but each waiter still stands at one table. Last, a host seats the resting guests in the lobby and calls a waiter only for an order. Every step makes a waiter cheaper, and nobody asks whether a resting guest needs a waiter at all.
 
-Each waiter is a worker: a process, and later a thread. Each guest is a connection. A guest who reads the menu for ten minutes is an idle connection, and there are thousands of them. The lobby with the host is the kernel, which holds the quiet connections and names the ones that are ready.
+Each waiter is a worker: a process, and later a thread. Each guest is a connection, and a guest who reads the menu for ten minutes is an idle connection. The lobby with the host is the kernel, which holds the quiet connections and names the ready ones.
 
 </Picture>
 
@@ -117,12 +117,12 @@ Three different programs hide in that sentence. The first web server was CERN ht
 <Remember>
 
 - CGI pays fork, exec, interpreter load, parse, run and exit on every request.
-- Apache 1.3 prefork forks its pool at startup, not per request. One process still parks on one connection.
-- The Apache 2.4 event MPM parks idle keep-alives on epoll. It is the Unix default since 2.4.
+- Apache 1.3 prefork forks its pool at startup. One process still parks on one connection.
+- The Apache 2.4 event MPM parks idle keep-alives on epoll. Unix default since 2.4.
 - A servlet object loads one time. Each request is a method call on a pooled thread.
-- Prefork, FastCGI, servlets, connection pools and upstream keep-alive are one move: pay the setup one time.
-- In 2002 the hardware was fast enough. A stack and a scheduler entry per connection were the limit.
-- nginx wanted 10,000 idle connections in one process, with another program for the dynamic pages. So it is a proxy by design.
+- Prefork, FastCGI, servlets, pools and upstream keep-alive: pay the setup one time.
+- In 2002 the hardware was ready. A stack and a scheduler entry per connection were the limit.
+- 10,000 idle connections in one process, with another program for the dynamic pages. So nginx is a proxy by design.
 - An idle connection needs a few hundred bytes and a list entry.
 - The first public nginx release is 4 October 2004.
 - Two ideas that transfer: ask the other question, and check whether the constraint still exists.
@@ -208,7 +208,7 @@ Three different programs hide in that sentence. The first web server was CERN ht
 
 A night nurse has a board of call buttons and an alarm clock. Before she rests, she sets the alarm for the next medicine time. She wakes when a button lights or when the alarm rings. She answers every lit button, she gives the medicine that is due, she sets the alarm again, and she rests.
 
-The nurse is one worker process. The board of call buttons is the kernel list of ready sockets, and each lit button is a connection with data. The alarm clock is the timer tree, and the next medicine time is the nearest deadline. The floor is one CPU core, and each floor of the hospital has its own nurse.
+The nurse is one worker process, and her floor is one CPU core. The board of call buttons is the kernel list of ready sockets, and each lit button is a connection with data. The alarm clock is the timer tree, and the next medicine time is the nearest deadline.
 
 </Picture>
 
@@ -229,18 +229,18 @@ Now the price. A handler cannot wait for the rest of a request, so the HTTP pars
 <Remember>
 
 - One process per core, one loop in each. No connection owns a thread or a process.
-- The master binds the ports, reads the config, forks the workers and handles signals. It never touches a connection.
+- The master binds the ports, reads the config, forks the workers and handles signals. Never a connection.
 - The worker count does not change under load. fork happens at startup and on reload.
-- The six lines: nearest timer, epoll_wait, accept events, release the mutex, expire timers, other events.
-- The epoll_wait timeout is the time to the nearest deadline, the leftmost node of a red-black tree.
+- Six lines: nearest timer, epoll_wait, accept events, release the mutex, expire timers, other events.
+- The epoll_wait timeout is the nearest deadline, the leftmost node of a red-black tree.
 - "99.9% asleep" is a teaching number, not a measurement.
-- accept_disabled = connection_n / 8 - free_connection_n. It turns positive past 7/8 full.
-- The balance needs no coordinator. Each worker reads a number that it already has.
+- accept_disabled = connection_n / 8 - free_connection_n. Positive past 7/8 full.
+- No coordinator. Each worker reads a number that it already has.
 - accept_mutex is off by default since 1.11.3, because EPOLLEXCLUSIVE and SO_REUSEPORT do the job.
-- The request-line parser holds 27 states, reads one byte at a time and allocates nothing.
-- `r->state` survives between reads, because a request line can arrive in three segments.
+- The request-line parser: 27 states, one byte at a time, no allocation.
+- `r->state` survives between reads, because a line can arrive in three segments.
 - That state machine is the source-level cost of non-blocking I/O.
-- Eleven phases, POST_READ to LOG. A return from the phase loop can mean "suspended", not "done".
+- Eleven phases, POST_READ to LOG. A return can mean "suspended", not "done".
 - limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT, proxy_pass and static in CONTENT.
 
 </Remember>
@@ -302,7 +302,7 @@ Now the price. A handler cannot wait for the rest of a request, so the HTTP pars
 
 A teacher has 10,000 students. With the old method she reads the whole register every minute, and every student answers "nothing" or "question". That is 10,000 answers to find 10 questions. With the new method a student with a question drops a card in a box, and she reads only the cards. The second trick is the same move. The office used to send worksheets to her desk, and she carried each sheet to the student. Now the office puts them straight on the desk of the student, and no sheet passes through her hands.
 
-The register is the `select` bitmap, which your process rebuilds on every call. The box of cards is the epoll ready list inside the kernel. The worksheets are file bytes, her desk is your buffer in user space, and the direct delivery is `sendfile`. Each seat number is a file descriptor, and the kernel gives a free number to the next connection.
+The register is the `select` bitmap, which your process rebuilds on every call, and the box of cards is the epoll ready list inside the kernel. The worksheets are file bytes, her desk is your buffer in user space, and the direct delivery is `sendfile`. Each seat number is a file descriptor.
 
 </Picture>
 
@@ -327,19 +327,19 @@ On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus
 <Remember>
 
 - select costs O(watched). epoll costs O(active).
-- The select list lives in your process and is rebuilt on each call. The epoll list lives in the kernel.
+- The select list lives in your process, rebuilt each call. The epoll list lives in the kernel.
 - select: O(n) build, O(n) in the kernel, O(n) scan. epoll: O(ready events).
 - 10,000 idle and 10 active: about 30,000 units against 10.
 - ulimit -n does nothing for select and everything for epoll.
 - Every row of the comparison follows from one decision: who owns the watch list.
-- A batch of events can name a connection that an earlier handler in the same batch closed.
-- nginx keeps an instance bit in the low bit of the connection pointer and skips a mismatch.
+- A batch can name a connection that an earlier handler in the same batch closed.
+- nginx keeps an instance bit in the low bit of the connection pointer, and skips a mismatch.
 - Alignment keeps that bit zero, so the flag costs no memory and one branch.
-- read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.
-- True zero copy needs a network card with scatter-gather DMA and checksum offload.
-- gzip and TLS must see the bytes, so they stop sendfile. kTLS exists for that reason.
-- On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process.
-- The win is CPU headroom under concurrency, not a faster single transfer.
+- read plus write: 4 copies, 2 mode switches per chunk. sendfile: 2 copies, both DMA, 0 switches.
+- True zero copy needs a card with scatter-gather DMA and checksum offload.
+- gzip and TLS must see the bytes, so they stop sendfile. Hence kTLS.
+- On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process. Headroom, not speed.
+- A benchmark that does not model the bottleneck measures the wrong thing.
 
 </Remember>
 
@@ -373,9 +373,9 @@ On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus
 
 <Picture breaks="the department sees only the desk. It learns who the visitor was from the note, and a visitor can write a false line in that note.">
 
-A campus librarian who fetches books for students and keeps copies is a forward proxy. The front desk of a company is a reverse proxy. Visitors talk only to the desk. The desk listens to a slow visitor for as long as it takes, writes one clean note, and gives it to the right department in one second. The department never waits for a slow visitor. Behind the desk stand a card catalogue and the book stacks. A stamp says whether a book is current, a dust rule removes a book that nobody borrowed for a minute, and a shelf limit forces the oldest book out even when it is current.
+A campus librarian who fetches books for students and keeps copies is a forward proxy. The front desk of a company is a reverse proxy. Visitors talk only to the desk. The desk listens to a slow visitor for as long as it takes, writes one clean note, and gives it to the right department in one second. Behind the desk stand a card catalogue and the book stacks. A stamp says whether a book is current, a dust rule removes a book that nobody borrowed for a minute, and a shelf limit forces the oldest book out even when it is current.
 
-The slow visitor is a phone on a 2G link, and the department is your application server. The note is the buffered request, and the line that a visitor can forge is the `X-Forwarded-For` header. The card catalogue is the cache index in shared memory, and the stacks are the cache files on disk. The stamp is `proxy_cache_valid`, the dust rule is `inactive`, and the shelf limit is `max_size`.
+The slow visitor is a phone on a 2G link, the department is your application server, and the note is the buffered request. The line that a visitor can forge is the `X-Forwarded-For` header. The card catalogue is the cache index in shared memory and the stacks are the files on disk, so the stamp is `proxy_cache_valid`, the dust rule is `inactive`, and the shelf limit is `max_size`.
 
 </Picture>
 
@@ -399,19 +399,19 @@ In the 1.31.5 code the lock covers a new cache element, which is a MISS. The ins
 
 <Remember>
 
-- Squid is a forward proxy, next to the clients. A reverse proxy sits next to the servers. Same machinery, opposite side.
+- Squid sits next to the clients. A reverse proxy sits next to the servers. Same machinery, opposite side.
 - The client does not configure a reverse proxy and usually cannot see it.
 - The feature that nobody lists: a reverse proxy absorbs slow clients.
-- Connections held = request rate times time held. That is why buffering moves the wait off the app.
+- Connections held = request rate times time held. Buffering moves the wait off the app.
 - The cache is an index in shared memory plus bodies in files on disk.
-- keys_zone sizes the index, at about 8,000 keys per MB. max_size is the disk ceiling.
-- inactive measures the time since the last read. proxy_cache_valid measures freshness.
+- keys_zone sizes the index, about 8,000 keys per MB. max_size caps the disk.
+- inactive measures time since the last read. proxy_cache_valid measures freshness.
 - The whole eviction policy on <SlideLink session={4} page={20} />: a young tail ends the pass, an old tail with no reader is deleted.
-- count == 0 stops the manager from deleting a file that a client downloads now.
-- The cache manager evicts from the LRU tail. The cache loader warms the index at startup.
+- count == 0 stops a delete while a client downloads that file.
+- The cache manager evicts from the LRU tail. The cache loader warms the index.
 - proxy_cache_lock is the anti-stampede switch, and it is off by default.
-- proxy_cache_use_stale serves a stale copy on error, timeout, updating and the 5xx codes.
-- With updating, one request refreshes and everybody else gets the stale copy at once.
+- proxy_cache_use_stale serves a stale copy on error, timeout, updating and 5xx.
+- With updating, one request refreshes and the rest get the stale copy at once.
 
 </Remember>
 
@@ -490,7 +490,7 @@ In the 1.31.5 code the lock covers a new cache element, which is a MISS. The ins
 
 A post office sorts a letter by its address. First a clerk checks a short list of exact addresses, and a hit ends the sort at once. Then the clerk walks a tree of street prefixes and remembers the longest street that fits. A "no detours" flag on that street ends the sort. If not, the clerk reads a list of pattern rules from the top, and the first pattern that fits wins. With no pattern at all, the remembered street wins.
 
-The address is the URI of the request. The short list of exact addresses is the `=` locations. The tree of streets is the prefix locations, which nginx builds one time when it reads the config. The "no detours" flag is `^~`. The list of pattern rules is the regex locations, in the order of your file.
+The address is the URI, and the short list of exact addresses is the `=` locations. The tree of streets is the prefix locations, which nginx builds one time when it reads the config, and the "no detours" flag is `^~`. The list of pattern rules is the regex locations, in the order of your file.
 
 </Picture>
 
@@ -508,22 +508,22 @@ The last piece is the directive behind almost every web framework. `try_files $u
 
 <Remember>
 
-- Location precedence ignores the order of the blocks in your file.
+- Location precedence ignores the order of your blocks.
 - An = exact match wins at once and stops the search.
 - A ^~ longest prefix suppresses the regex search.
-- Among regexes, the first in file order wins, not the longest. ~* ignores case.
+- Among regexes, the first in file order wins. ~* ignores case.
 - A plain prefix answers only when no regex matched.
-- On port 8081: /exact gives 1, /images/a.php gives 2, /other/a.php gives 3, /anything gives 4.
-- Prefixes are a tree built at parse time. Regexes are an array walked on every request.
-- The data structure is the rule: a tree gives the longest match, an array gives the first match.
-- Smooth weighted round robin: add the weights, pick the largest, subtract the total from the winner.
+- Port 8081: /exact 1, /images/a.php 2, /other/a.php 3, /anything 4.
+- Prefixes: a tree built at parse time. Regexes: an array walked on every request.
+- The data structure is the rule: a tree gives the longest match, an array the first.
+- Smooth WRR: add the weights, pick the largest, subtract the total from the winner.
 - For 3:1, <SlideLink session={4} page={24} /> gives a b a a. Same ratio, turns spread apart.
-- A failure lowers the effective weight, and each selection raises it back by one. No probe traffic.
+- A failure lowers the effective weight. Each selection raises it by one. No probe traffic.
 - Open-source nginx has no active health checks. NGINX Plus sells them.
 - try_files asks: a real file, a real directory, else the fallback.
 - The last try_files entry is never tested.
-- A named location such as @app is reachable only from try_files or error_page.
-- WordPress, Rails, Django and every SPA router are try_files plus an app that reads REQUEST_URI.
+- A named location such as @app is reachable only from try_files or error_page, never from a URL.
+- WordPress, Rails, Django and every SPA router: try_files plus an app that reads REQUEST_URI.
 
 </Remember>
 

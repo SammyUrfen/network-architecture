@@ -86,7 +86,7 @@ items:
     covers: [S04-C56]
   - id: s04-digest-c21
     front: Which copy does sendfile remove, and how many copies and mode switches does each mode cost per chunk?
-    back: The copy through your address space. read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.
+    back: 'The copy through your address space. read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.'
     covers: [S04-C60, S04-C61, S04-C62]
   - id: s04-digest-c22
     front: Why do gzip and sendfile fight, and what does sendfile need before both copies are DMA copies?
