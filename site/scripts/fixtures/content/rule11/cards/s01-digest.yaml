@@ -1,0 +1,26 @@
+items:
+  - { id: s01-digest-c01, front: Q1?, back: A1., covers: [S01-C01] }
+  - { id: s01-digest-c02, front: Q2?, back: A2., covers: [S01-C01] }
+  - { id: s01-digest-c03, front: Q3?, back: A3., covers: [S01-C01] }
+  - { id: s01-digest-c04, front: Q4?, back: A4., covers: [S01-C01] }
+  - { id: s01-digest-c05, front: Q5?, back: A5., covers: [S01-C01] }
+  - { id: s01-digest-c06, front: Q6?, back: A6., covers: [S01-C01] }
+  - { id: s01-digest-c07, front: Q7?, back: A7., covers: [S01-C01] }
+  - { id: s01-digest-c08, front: Q8?, back: A8., covers: [S01-C01] }
+  - { id: s01-digest-c09, front: Q9?, back: A9., covers: [S01-C01] }
+  - { id: s01-digest-c10, front: Q10?, back: A10., covers: [S01-C01] }
+  - { id: s01-digest-c11, front: Q11?, back: A11., covers: [S01-C01] }
+  - { id: s01-digest-c12, front: Q12?, back: A12., covers: [S01-C01] }
+  - { id: s01-digest-c13, front: Q13?, back: A13., covers: [S01-C01] }
+  - { id: s01-digest-c14, front: Q14?, back: A14., covers: [S01-C01] }
+  - { id: s01-digest-c15, front: Q15?, back: A15., covers: [S01-C01] }
+  - { id: s01-digest-c16, front: Q16?, back: A16., covers: [S01-C01] }
+  - { id: s01-digest-c17, front: Q17?, back: A17., covers: [S01-C01] }
+  - { id: s01-digest-c18, front: Q18?, back: A18., covers: [S01-C01] }
+  - { id: s01-digest-c19, front: Q19?, back: A19., covers: [S01-C01] }
+  - { id: s01-digest-c20, front: Q20?, back: A20., covers: [S01-C01] }
+  - { id: s01-digest-c21, front: Q21?, back: A21., covers: [S01-C01] }
+  - { id: s01-digest-c22, front: Q22?, back: A22., covers: [S01-C01] }
+  - { id: s01-digest-c23, front: Q23?, back: A23., covers: [S01-C01] }
+  - { id: s01-digest-c24, front: Q24?, back: A24., covers: [S01-C01] }
+  - { id: s01-digest-c25, front: Q25?, back: A25., covers: [S01-C01] }

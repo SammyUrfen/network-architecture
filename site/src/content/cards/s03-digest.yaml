@@ -1,7 +1,7 @@
 items:
   - id: s03-digest-c01
     front: "Class 3 opens with one question. What is it, and what are the three answers?"
-    back: "How does one box hold ten thousand clients at the same time? A process for each client, a thread for each client, or one loop that watches every socket and wakes for the ready ones."
+    back: "How can a single machine serve ten thousand clients at once? A process for each client, a thread for each client, or one loop that watches every socket and wakes for the ready ones."
     covers: [S03-C02, S03-C04, S03-C07, S03-C08]
 
   - id: s03-digest-c02
@@ -141,7 +141,7 @@ items:
 
   - id: s03-digest-c29
     front: "What does HAProxy hold a pool of, and what does Varnish do with an idle descriptor?"
-    back: "HAProxy holds a pool of open upstream connections, which cuts connects and disconnects. That is the persistent-connection argument, done for you by a proxy. Varnish hands an idle descriptor to a waiter: epoll on Linux, kqueue on BSD. Threads for the work, a loop for the waiting."
+    back: "HAProxy holds a pool of open upstream connections, which cuts connects and disconnects. That is the persistent-connection argument, done for you by a proxy. Varnish moves an idle descriptor to a waiter, which runs epoll on Linux and kqueue on BSD. Threads for the work, a loop for the waiting."
     covers: [S03-C146, S03-C149]
 
   - id: s03-digest-c30

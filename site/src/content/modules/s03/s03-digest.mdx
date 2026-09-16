@@ -1,13 +1,11 @@
 ---
 id: s03-digest
 session: 3
-order: 10
+order: 1
 kind: digest
 title: Class 3 in one fast read
-minutes: 26
 bigIdea: "One box holds ten thousand clients only when each client is cheap. This class prices a client three ways, keeps your program alive between requests, and ends at the law that ties how many you hold to how slow you are."
 covers: [S03-C02, S03-C04, S03-C05, S03-C06, S03-C07, S03-C08, S03-C09, S03-C11, S03-C12, S03-C14, S03-C15, S03-C19, S03-C20, S03-C21, S03-C22, S03-C28, S03-C30, S03-C31, S03-C32, S03-C33, S03-C34, S03-C35, S03-C37, S03-C38, S03-C39, S03-C40, S03-C41, S03-C43, S03-C44, S03-C45, S03-C51, S03-C52, S03-C53, S03-C54, S03-C56, S03-C57, S03-C58, S03-C59, S03-C60, S03-C62, S03-C63, S03-C64, S03-C66, S03-C67, S03-C70, S03-C71, S03-C72, S03-C73, S03-C75, S03-C77, S03-C78, S03-C79, S03-C81, S03-C82, S03-C83, S03-C84, S03-C85, S03-C87, S03-C88, S03-C89, S03-C90, S03-C91, S03-C92, S03-C93, S03-C94, S03-C96, S03-C97, S03-C99, S03-C100, S03-C102, S03-C104, S03-C105, S03-C106, S03-C107, S03-C108, S03-C109, S03-C112, S03-C113, S03-C114, S03-C115, S03-C116, S03-C117, S03-C118, S03-C119, S03-C120, S03-C121, S03-C125, S03-C126, S03-C128, S03-C130, S03-C132, S03-C133, S03-C134, S03-C135, S03-C138, S03-C139, S03-C140, S03-C146, S03-C149, S03-C151, S03-C152, S03-C158, S03-C161, S03-C162, S03-C163, S03-C165, S03-C166]
-prereqs: []
 threads: [T-setup-off-path, T-watch-list, T-framing, T-skip-unknown, T-littles-law, T-where-state-goes, T-law-or-habit, T-network-not-function]
 confidence: high
 status: ready
@@ -107,7 +105,7 @@ That number is address space, not RAM. The stack pages stay untouched until a th
 
 The third answer keeps one thread and one loop. The loop asks the kernel which sockets are ready now, and serves only those. No new process, no new stack. Go brought the thread style back by making the unit small: a goroutine starts with a 2 KB stack that grows on demand, about 4,000 times smaller than 8 MiB, and the runtime parks a blocking read on an epoll netpoller. The floor stays. More requests at the same time always need more memory, and only the price for each request changes.
 
-<Myth claim="The 80 GB is the reason that nobody ships a thread for each connection.">
+<Myth myth="The 80 GB is the reason that nobody ships a thread for each connection.">
 The companion code says that, and it goes too far. The Apache worker MPM ships a thread for each connection, and so does Varnish. On 64-bit Linux, address space is not the first wall. Resident memory, kernel stacks, scheduler work and `RLIMIT_NPROC` arrive first.
 </Myth>
 
@@ -194,11 +192,11 @@ So what ships stacks the models. At startup the master forks one worker for each
 
 One warning closes the part. A timeout does not save a loop from a slow reader. The stall happens inside a blocking `write`, outside select. Non-blocking sockets and the write set fix it. A larger timeout does not, and neither does a larger listen backlog.
 
-<Myth claim="exceptfds reports sockets that connect and close.">
+<Myth myth="exceptfds reports sockets that connect and close.">
 That is the wording on <SlideLink session={3} page={9} />, and a quiz on the deck can use it. On Linux the man page disagrees. A close shows as readable, and `read` then returns 0. A finished non-blocking connect shows as writable. exceptfds reports exceptional conditions such as TCP urgent data.
 </Myth>
 
-<Myth claim="1024 is the K in C10K.">
+<Myth myth="1024 is the K in C10K.">
 <SlideLink session={3} page={7}>The slide</SlideLink> calls 1024 one wall with three names: `FD_SETSIZE`, the default soft descriptor limit, and the K in C10K. The first two are real and linked, because systemd keeps the soft limit at 1024 while select breaks above descriptor 1023. The third is not. Dan Kegel wrote about ten thousand clients, and 1024 is a power of two with no link to that K.
 </Myth>
 
@@ -478,7 +476,7 @@ Apache went prefork, then worker, then event. Prefork keeps a pool of processes 
 
 HAProxy arrived in 2001, about a year before epoll landed in Linux 2.5.44. So it was largely select, and it moved to epoll later. It became multi-threaded only in version 1.8, in 2017. For many teams it was the first box in front of the app servers that chose between them. It also holds a pool of open upstream connections, which cuts connects and disconnects. That is the persistent-connection argument of the block above, done for you by a proxy.
 
-Varnish was the first popular caching reverse proxy. Squid cached on the way out, and Varnish cached in front of the origin. It runs a worker thread for each active connection, with pools that default to 100 threads minimum and 5000 maximum for each pool. Idle descriptors go to a waiter, which is epoll on Linux and kqueue on BSD. Threads for the work, a loop for the waiting.
+Varnish was the first popular caching reverse proxy. Squid cached on the way out, and Varnish cached in front of the origin. It runs a worker thread for each active connection, with pools that default to 100 threads minimum and 5000 maximum for each pool. An idle descriptor moves to a waiter. That waiter uses epoll on Linux, and kqueue on BSD. Threads for the work, a loop for the waiting.
 
 nginx runs one master and one worker process for each CPU core, and each worker is one thread with one epoll loop. It also made `sendfile` famous. A plain read and write copies the file from the disk to the kernel, to your buffer, back to the kernel, and then to the socket. `sendfile` goes from the kernel straight to the socket.
 

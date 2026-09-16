@@ -15,6 +15,7 @@ A living document. Update the status table when a phase changes state.
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
 | 7 | Session 5, remaining modules and project studio (10) | not started | 20–40 h of packets, 2–3 sessions |
 | 8 | Threads, practice exam, glossary, end-term pack | not started | 1–2 sessions |
+| Q | Class digests: one fast read for each class, for the quiz on 2026-09-18 | harness done 2026-09-16: the `kind` field, verify rules 5 and 11, `Remember`, `NumbersTable`, `Myth`, the route and four `draft` stubs. The four digests wait for their packets. | 4 packets |
 | R | Each new session (6, 7, 8): run `docs/ADD-A-SESSION.md` | recurring | within 48 h of the class |
 | D | Public GitHub repo, CI/CD and GitHub Pages deploy | Live on 2026-09-14: the repo is public, and CI and the Pages deploy pass on each merge to main. The site is at https://sammyurfen.github.io/network-architecture/. | — |
 
@@ -165,6 +166,30 @@ they exist.
 - **Slides.** The five deck PDFs sit in `site/public/slides/`. A slide
   citation opens a viewer at its page, and the viewer offers the download.
 
+### Digest page
+
+A **digest** is the second page type: one whole class as one fast read, for
+the quiz on that class. `docs/PEDAGOGY.md` section 3 is its contract. The
+module collection holds both types, so a digest gets the module page frame,
+the sidebar outline, the progress block and the review cards with no new
+route.
+
+- **Frontmatter.** `kind: digest`, and the ID `s0N-digest`. A module with no
+  `kind` is a lesson. A digest needs no `prereqs` and no `minutes`: it has no
+  module section in the curriculum file, so its reading time comes from the
+  contract, not from a field.
+- **Route.** `/s0N/digest/`, from the same `[session]/[module]` page, because
+  `s01-digest` splits into `s01` and `digest`.
+- **Place in the lists.** `sessionLessons()` puts the digest of a session
+  first, in the sidebar and on the session page, with the name "Fast read".
+  The curriculum file plans no digest, so the sort holds it in place. The home
+  page gives one line with a link to each digest.
+- **Blocks.** The digest uses the lesson blocks, plus `Remember`,
+  `NumbersTable` and `Myth` (`docs/COMPONENTS.md`).
+- **Packet.** One digest is one packet, and it owns
+  `src/content/modules/sNN/sNN-digest.mdx`, `src/content/quiz/sNN-digest.yaml`
+  and `src/content/cards/sNN-digest.yaml`, and nothing else.
+
 ### Loaders
 
 | Collection | Loader | Notes |
@@ -186,6 +211,7 @@ and `ModuleLink` handles that case.
 | `/` | Mastery map of all 8 sessions, cards due today, next assessment, "continue" link |
 | `/s01/` | Session overview: one paragraph, module list with minutes, source status badge |
 | `/s01/m08-framing/` | A module page |
+| `/s01/digest/` | The digest of Class 1: the whole class as one fast read |
 | `/review/` | Due cards, one at a time, with confidence |
 | `/practice/` | Phase 4. Mixed questions from the sessions the learner picks. Exam mode (Phase 8) holds feedback to the end. |
 | `/threads/` and `/threads/T-framing/` | Each thread with links to every module that uses it |
@@ -215,11 +241,12 @@ sourceStatus: complete    # complete | partial | missing. Stubs for Sessions 6 t
 **Module** (MDX frontmatter)
 
 ```yaml
-id: s01-m08-framing       # equals the file name
+id: s01-m08-framing       # equals the file name. A digest is s01-digest.
 session: 1
 order: 8
+kind: lesson              # lesson | digest. The default is lesson.
 title: Where does a message end?
-minutes: 22
+minutes: 22               # a lesson only. A digest takes its time from the contract.
 bigIdea: TCP delivers bytes with no message edges, so every protocol must say where a message ends.
 covers: [S01-C92, S01-C93]
 prereqs: [s01-m01-seven-syscalls]   # a planned module with no page yet is allowed
@@ -552,7 +579,7 @@ A packet or phase is done only when all of these pass. Show the output.
 | 2 | Unit tests | `npm run test` |
 | 3 | Content rules | `npm run verify` |
 | 4 | Build | `npm run build` |
-| 5 | Accuracy | One adversarial review subagent checks the page against the curriculum file, the sources, and the RFCs. For a module with a "Graded-work guard" or an "Integrity note", it also checks rule 4 in `CLAUDE.md`. Fix every proven finding. |
+| 5 | Accuracy | One adversarial review subagent checks the page against the curriculum file, the sources, and the RFCs. For a module with a "Graded-work guard" or an "Integrity note", it also checks rule 4 in `CLAUDE.md`. Fix every proven finding. A digest runs `docs/reviews/digest-accuracy.md` and `docs/reviews/digest-coverage.md` in place of this prompt. |
 | 6 | Visual QA | Playwright MCP on `npm run preview -- --port 4399` (4401 and up in a worktree): light and dark, 390 px and 1280 px wide, a keyboard-only pass through every widget, zero console errors |
 | 7 | Prose | `npm run lint:prose -- <module-id>` under 2.5 per 100 words. With no module ID, it lints every module. Then the `remove-ai-marks` skill on the lesson prose. |
 | 8 | Learner review | One subagent reads the built page with the prompt in `docs/reviews/learner-review.md`: first as a 10-year-old, then as a student before the exam. Fix every finding. |
@@ -573,10 +600,12 @@ which reads stdin when it gets no file.
    thread table.
 4. Every mcq and predict item has 3 or 4 options and exactly one correct
    option. Every wrong option has a `misconception` and a `feedback`.
-5. Every `ready` module has 2 or 3 pretest items, 3 to 6 checks with 1 or 2
-   for each `<Segment>` in its MDX, 2 or 3 exit items, and 3 to 8 cards. An
-   item with more than one `use` counts toward each. A `draft` module skips
-   this rule. So does a quiz file with no MDX page (a quiz pack).
+5. Every `ready` module has the counts of its kind. A lesson has 2 or 3
+   pretest items, 3 to 6 checks with 1 or 2 for each `<Segment>` in its MDX,
+   2 or 3 exit items, and 3 to 8 cards. A digest has no pretest rule, 12 to 15
+   checks with 2 or 3 for each `<Segment>`, 3 to 6 exit items, and 25 to 30
+   cards. An item with more than one `use` counts toward each. A `draft`
+   module skips this rule. So does a quiz file with no MDX page (a quiz pack).
 6. Every quiz item ID and card ID is unique.
 7. For a session whose planned modules are all `ready`: every `core` claim is
    covered by at least one module.
@@ -589,6 +618,10 @@ which reads stdin when it gets no file.
     a `<KeyIdea id="...">` in the MDX, or the anchor of a `<Segment>` from
     `segmentAnchor()`. The `id` is a plain string attribute. A `draft` module
     and a quiz pack skip this rule.
+11. For a session with a `ready` digest, every `core` claim of that session is
+    in the `covers` of the digest or of a `ready` module of the same session.
+    The failure line starts with the count of the claims that are missing, and
+    then names them. It names the first ten and counts the rest.
 
 **How the verifier reads the curriculum.** The files in `docs/curriculum/`
 stay the single source of truth. The verifier reads four things, with these

@@ -1,0 +1,5 @@
+items:
+  - { id: s01-digest-q01, use: [check], segment: 1, taughtIn: seg-one, type: recall, prompt: Q1?, model: A1. }
+  - { id: s01-digest-q02, use: [check], segment: 1, taughtIn: seg-one, type: recall, prompt: Q2?, model: A2. }
+  - { id: s01-digest-q03, use: [check], segment: 1, taughtIn: seg-one, type: recall, prompt: Q3?, model: A3. }
+  - { id: s01-digest-q04, use: [check], segment: 1, taughtIn: seg-one, type: recall, prompt: Q4?, model: A4. }

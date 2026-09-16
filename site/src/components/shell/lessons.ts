@@ -5,7 +5,15 @@
 export interface Lesson {
   id: string;
   title: string;
+  /** A lesson page, or the fast read of the whole class. */
+  kind?: 'lesson' | 'digest';
 }
+
+/** The short name of a digest in the sidebar and in the session list. */
+export const DIGEST_LABEL = 'Fast read';
+
+/** The reading time of a digest, from the contract in docs/PEDAGOGY.md section 3. */
+export const DIGEST_TIME = 'about 18 min, plus 8 min of questions';
 
 /**
  * The planned lessons of one curriculum file, in the order of their headings.
@@ -43,12 +51,17 @@ export const plannedTitle = (id: string) =>
   plannedLessons(Number(id.slice(1, 3))).find((lesson) => lesson.id === id)?.title ?? slugTitle(id.slice(8));
 
 /**
- * Every lesson of a session: the planned ones in curriculum order, then any
- * page with no heading. A lesson with a page takes the title of its page.
+ * Every lesson of a session: the digest first, then the planned lessons in
+ * curriculum order, then any page with no heading. A lesson with a page takes
+ * the title of its page. The curriculum file plans no digest, so the digest
+ * would sit last without the sort. The sort is stable, so the rest keeps its
+ * order.
  */
 export function sessionLessons(planned: Lesson[], pages: Lesson[]) {
   return [
     ...planned.map((lesson) => ({ ...lesson, ...pages.find((page) => page.id === lesson.id) })),
     ...pages.filter((page) => !planned.some((lesson) => lesson.id === page.id)),
-  ].map((lesson) => ({ ...lesson, hasPage: pages.some((page) => page.id === lesson.id) }));
+  ]
+    .map((lesson) => ({ ...lesson, hasPage: pages.some((page) => page.id === lesson.id) }))
+    .sort((a, b) => Number(b.kind === 'digest') - Number(a.kind === 'digest'));
 }
