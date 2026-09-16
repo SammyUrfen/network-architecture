@@ -2,9 +2,8 @@
 id: s01-digest
 kind: digest
 session: 1
-order: 100
+order: 1
 title: Class 1 in one fast read
-minutes: 26
 bigIdea: "Every TCP server is seven requests to the operating system. What breaks around those seven calls, and how you design the bytes that flow through them, is the whole of class 1."
 covers: [S01-C04, S01-C05, S01-C07, S01-C09, S01-C10, S01-C11,
   S01-C13, S01-C14, S01-C15, S01-C17, S01-C18, S01-C19, S01-C20, S01-C21,
@@ -19,7 +18,6 @@ covers: [S01-C04, S01-C05, S01-C07, S01-C09, S01-C10, S01-C11,
   S01-C106, S01-C107, S01-C108, S01-C109, S01-C110, S01-C112, S01-C114,
   S01-C115, S01-C117, S01-C119, S01-C120, S01-C121, S01-C122, S01-C123,
   S01-C124, S01-C126, S01-C136, S01-C138, S01-C142]
-prereqs: []
 threads: [T-framing, T-network-not-function, T-encapsulation, T-skip-unknown, T-watch-list, T-alphabets, T-setup-off-path]
 confidence: high
 status: ready
@@ -132,9 +130,9 @@ Every TCP server makes the same seven requests to the kernel: socket, bind, list
 
 </KeyIdea>
 
-Now the door number. `bind()` claims a port, and the port number carries a rule: only root may claim a port below 1024. <SlideLink session={1} page={8} /> lists the low ports 80 for HTTP, 443 for HTTPS, 25 for SMTP, 21 for FTP and 110 for POP. That rule has a security cost. A server on port 80 runs as root, so one bug in its request parser hands an attacker root on the whole machine. Real deployments bind 8080 as a normal user, and a small front proxy owns 80 and 443. The class server also binds `INADDR_ANY`, which means every network interface, including your LAN. Bind `127.0.0.1` when you mean this machine only.
+Now the door number. `bind()` claims a port, and the port number carries a rule: only root may claim a port below 1024. Any user may claim 1024 and up. <SlideLink session={1} page={8} /> lists the low ports 80 for HTTP, 443 for HTTPS, 25 for SMTP, 21 for FTP and 110 for POP. That rule has a security cost. A server on port 80 runs as root, so one bug in its request parser hands an attacker root on the whole machine. Real deployments bind 8080 as a normal user, and a small front proxy owns 80 and 443. The class server also binds `INADDR_ANY`, which means every network interface, including your LAN. Bind `127.0.0.1` when you mean this machine only.
 
-<Myth claim="Nothing can use a port below 1024 without root, ever." covers="S01-C10">
+<Myth myth="Nothing can use a port below 1024 without root, ever.">
 
 The 1024 line says **who may break the rule**, not that nobody can. Root can. A program with the `CAP_NET_BIND_SERVICE` capability can. A machine with a lower `ip_unprivileged_port_start` lets any user do it. The rule is a privilege, not a wall.
 
@@ -144,20 +142,22 @@ The second setting is the queue. Skip `bind()` and a client gets "Connection ref
 
 One more trap sits at restart. A connection that your server closed first holds its port in TIME_WAIT for about a minute, so a quick restart fails with "Address already in use". Set `SO_REUSEADDR` before `bind()` on every start, and the restart works.
 
-<Myth claim="A full accept queue refuses the next client." covers="S01-C22">
+<Myth myth="A full accept queue refuses the next client.">
 
 A full queue is **not portable**. Linux drops the new SYN in silence, so the client retries and only fails after about two minutes. Some other systems refuse at once, and some leave the client on an endless "Trying...". Never build logic on the behavior that you saw on your own machine.
 
 </Myth>
 
-<Remember items={[
-  'The seven calls, in order: socket, bind, listen, accept, read, write, close.',
-  'read() returns 0 when the peer closed its side. That is the end of the data.',
-  'No bind(): the client is refused at once. No accept(): the client hangs with no reply.',
-  'The second argument of listen() sizes the accept queue. It is not a limit on clients.',
-  'Ports below 1024 need root or the CAP_NET_BIND_SERVICE capability. Bind 8080 behind a proxy.',
-  'Set SO_REUSEADDR before bind(), or a quick restart fails with "Address already in use".',
-]} />
+<Remember>
+
+- The seven calls, in order: socket, bind, listen, accept, read, write, close.
+- read() returns 0 when the peer closed its side. That is the end of the data.
+- No bind(): the client is refused at once. No accept(): the client hangs with no reply.
+- The second argument of listen() sizes the accept queue. It is not a limit on clients.
+- Ports below 1024 need root or the CAP_NET_BIND_SERVICE capability. Bind 8080 behind a proxy.
+- Set SO_REUSEADDR before bind(), or a quick restart fails with "Address already in use".
+
+</Remember>
 
 The full lessons are <ModuleLink id="s01-m01-seven-syscalls" /> and <ModuleLink id="s01-m02-ports-and-queue" />.
 
@@ -226,14 +226,16 @@ Now turn the connection around and look at the client. The client is the same li
 
 You do not need to write a client to try any of this. Class 1 makes that point first: you already have clients. `telnet` opens any TCP port, `nc` connects to one and `nc -l` listens on one, and `openssl s_client` does the TLS handshake for an encrypted service. If a protocol is text, your keyboard is already a working client for it.
 
-<Remember items={[
-  'SIGPIPE is signal 13, and a shell shows 128 + 13 = 141 for a process that it ended.',
-  'On Linux the first write after a reset returns ECONNRESET, and the next one brings SIGPIPE.',
-  'SIGKILL cannot be caught. SIGTERM is the polite kill that a program can catch.',
-  'SO_LINGER {1, 0} makes close() send RST: no unsent data, and no TIME_WAIT.',
-  'A client is socket, connect, write, close. The kernel picks its port at connect().',
-  'Linux holds TIME_WAIT for 60 s on the side that closed first.',
-]} />
+<Remember>
+
+- SIGPIPE is signal 13, and a shell shows 128 + 13 = 141 for a process that it ended.
+- On Linux the first write after a reset returns ECONNRESET, and the next one brings SIGPIPE.
+- SIGKILL cannot be caught. SIGTERM is the polite kill that a program can catch.
+- SO_LINGER {1, 0} makes close() send RST: no unsent data, and no TIME_WAIT.
+- A client is socket, connect, write, close. The kernel picks its port at connect().
+- Linux holds TIME_WAIT for 60 s on the side that closed first.
+
+</Remember>
 
 The full lessons are <ModuleLink id="s01-m03-signals-sigpipe" /> and <ModuleLink id="s01-m04-clients" />.
 
@@ -278,7 +280,7 @@ Port 2026 is 0x07EA. A little-endian machine, which means any normal x86 or ARM 
 
 The second translation is the name. A lookup reads `/etc/hosts` first, before any network traffic at all, so a stale line in that file wins over the whole internet. For any other name it sends one UDP datagram to your resolver, and the resolver recurses through the root, the TLD and the authoritative servers. The answer stays in a cache for its TTL, so the same lookup is fast when warm and takes seconds when cold. Use `getaddrinfo()` in real code, because `gethostbyname()` handles IPv4 only and is not thread-safe.
 
-<Myth claim="gethostbyname() is a quick local lookup, like reading a variable." covers="S01-C53">
+<Myth myth="gethostbyname() is a quick local lookup, like reading a variable.">
 
 It is **a whole protocol behind one plain-looking call**. It can read files, send UDP, wait for a recursion across the internet, and block your program for seconds. The call gives you no timeout that you control. One slow lookup inside a single-process server stalls every client of that server.
 
@@ -294,22 +296,24 @@ A single process that waits inside `read()`, or inside a name lookup, serves nob
 
 </KeyIdea>
 
-<SlideLink session={1} page={29} /> says that select and epoll need "no per-client memory". Read that as no process and no stack for each client, because each connection still holds a buffer and some state. The same shortage shows up on the client side. Chrome opened at most 6 connections to one host, and requests 7 to 10 waited in a queue. `ulimit -n` is your ceiling on open descriptors, a socket counts as one, and it is often 1024. A connection pool answers all of it: open a connection one time and reuse it, so later requests skip the TCP and TLS handshakes.
+<SlideLink session={1} page={29} /> says that select and epoll need "no context switching" and "no per-client memory". Read both as no process and no stack for each client, because one process still switches between sockets, and each connection still holds a buffer and some state. The same shortage shows up on the client side. Chrome opened at most 6 connections to one host, and requests 7 to 10 waited in a queue. `ulimit -n` is your ceiling on open descriptors, a socket counts as one, and it is often 1024. A connection pool answers all of it: open a connection one time and reuse it, so later requests skip the TCP and TLS handshakes.
 
-<Myth claim="The six-connection cap is an old browser quirk." covers="S01-C77">
+<Myth myth="The six-connection cap is an old browser quirk.">
 
 It is **the client side of the same resource problem**. Descriptors, memory and handshakes cost something on both ends, so the browser rations them. No HTTP standard sets the number. Chromium still uses 6 for its normal socket pool.
 
 </Myth>
 
-<Remember items={[
-  'Network byte order is big-endian. 2026 is 0x07EA, and the wire carries 07 EA.',
-  'Forget htons() on x86 and the kernel binds 59911 in silence.',
-  'A name lookup reads /etc/hosts first, then sends one UDP query. The resolver recurses.',
-  'fork() returns 0 in the child, the child PID in the parent, and -1 on failure.',
-  'select is O(watched) and stops at 1024 descriptors. epoll is O(ready) and is Linux only.',
-  'A pool pays the TCP and TLS handshakes one time, then reuses the connection.',
-]} />
+<Remember>
+
+- Network byte order is big-endian. 2026 is 0x07EA, and the wire carries 07 EA.
+- Forget htons() on x86 and the kernel binds 59911 in silence.
+- A name lookup reads /etc/hosts first, then sends one UDP query. The resolver recurses.
+- fork() returns 0 in the child, the child PID in the parent, and -1 on failure.
+- select is O(watched) and stops at 1024 descriptors. epoll is O(ready) and is Linux only.
+- A pool pays the TCP and TLS handshakes one time, then reuses the connection.
+
+</Remember>
 
 The full lessons are <ModuleLink id="s01-m05-byte-order-dns" /> and <ModuleLink id="s01-m06-many-clients" />.
 
@@ -340,11 +344,11 @@ The full lessons are <ModuleLink id="s01-m05-byte-order-dns" /> and <ModuleLink 
   ]}
 />
 
-An HTTP client is the plain client of Part 2 with a request string added: connect to port 80, write the text, and read the reply. The rules of that text are strict. Every line ends in CR LF, and the blank line after the headers is mandatory. Miss it and the server waits for more headers that never come. `curl` is the best teaching tool for all of this: plain `curl` fetches, `curl -i` shows you the reply headers, and `curl -vv` adds the connection and TLS detail. For the packets themselves, `tcpdump -w` writes a capture of a port, `-r` reads the file back, `-A` shows the bytes as ASCII and `-X` shows hex beside ASCII.
+An HTTP client is the plain client of Part 2 with a request string added: connect to port 80, write the text, and read until the server closes. That last rule is the one the class gives, and it has a cost, because HTTP/1.1 keeps the connection open by default. A `Content-Length` header is the way a client knows where the body ends. The rules of that text are strict. Every line ends in CR LF, and the blank line after the headers is mandatory. Miss it and the server waits for more headers that never come. `curl` is the best teaching tool for all of this: plain `curl` fetches, `curl -i` shows you the reply headers, and `curl -vv` adds the connection and TLS detail. For the packets themselves, `tcpdump -w` writes a capture of a port, `-r` reads the file back, `-A` shows the bytes as ASCII and `-X` shows hex beside ASCII.
 
 Then TLS arrives and the readable bytes stop. Two sides use asymmetric cryptography to agree on a shared secret, and then switch to much faster symmetric cryptography for the actual data. A certificate binds a public key to an identity, and the chain of certificate authorities behind it is the reason you trust it. A certificate also expires, sometimes at three in the morning.
 
-<Myth claim="SSL secures HTTP." covers="S01-C85">
+<Myth myth="SSL secures HTTP.">
 
 **SSL secures TCP**, not HTTP. It sits under the application protocol, so the same machinery protects SMTP and database connections as well. That also tells you what a sniffer still sees: the IP addresses, the ports and the sizes stay in the clear, because TLS rides on TCP and does not hide it.
 
@@ -358,14 +362,16 @@ TLS is a wrapper around a reliable byte stream. Any protocol on TCP can use it, 
 
 Not every byte you meet is text. Three encodings cover the rest of class 1, and each is a fixed rule between values and bytes, with nothing secret about it. BCD packs one decimal digit into four bits, so the five digits 98765 become the three bytes `98 76 5F`, with the nibble F as padding for the odd last digit. The pleasant part is that a hex dump of BCD shows the decimal digits unchanged, so you read them by eye. Hex itself is for reading: two characters for each byte, printed next to the ASCII by `tcpdump -X`. base64 is for transport, not for reading. It carries any bytes through a channel that accepts text only, such as Basic authentication, a JWT, an email attachment or a data URI. Its cost is 33% more bytes, because every 3 bytes become 4 characters.
 
-<Remember items={[
-  'Every HTTP line ends in CR LF, and the empty line after the headers is mandatory.',
-  'curl -i shows the reply headers. tcpdump -X shows hex beside ASCII.',
-  'TLS sits under the application protocol, on TCP. It protects SMTP and databases too.',
-  'TLS agrees a secret with asymmetric crypto, then moves the data with symmetric crypto.',
-  'BCD holds one digit in four bits: 98765 packs to 98 76 5F, with F as the pad.',
-  'base64 costs 33% more bytes and hides nothing. Anyone can decode it.',
-]} />
+<Remember>
+
+- Every HTTP line ends in CR LF, and the empty line after the headers is mandatory.
+- curl -i shows the reply headers. tcpdump -X shows hex beside ASCII.
+- TLS sits under the application protocol, on TCP. It protects SMTP and databases too.
+- TLS agrees a secret with asymmetric crypto, then moves the data with symmetric crypto.
+- BCD holds one digit in four bits: 98765 packs to 98 76 5F, with F as the pad.
+- base64 costs 33% more bytes and hides nothing. Anyone can decode it.
+
+</Remember>
 
 The full lessons are <ModuleLink id="s01-m07-see-the-bytes-tls" /> and <ModuleLink id="s01-m09-encodings" />.
 
@@ -436,14 +442,16 @@ Put a type and a length before each value and you get TLV, which the class calls
 
 The class ends with RPC, which is framing plus a function name. You marshal the name and the arguments, frame them and send them, and the two steps have names: marshalling and demarshalling. But the network is not a function call. A call can fail halfway. It can time out when the work may or may not have run. It can be retried and run twice. gRPC is the modern shape of the idea: protobuf underneath, which is faster than JSON and easier to understand than ASN.1. It is schema first, so one `.proto` file generates client and server code in any language. protobuf puts tag, length and value on the wire, so new fields do not break old clients. It runs on HTTP/2, which is binary and carries many streams over one connection. The price is debuggability: plain `curl` cannot read a gRPC call at all.
 
-<Remember items={[
-  'TCP is a byte stream with no message edges. Framing is the first decision of a protocol.',
-  'Fixed length wastes padding. A delimiter needs escaping. A length prefix is binary-safe.',
-  'A fixed length is a length both sides agreed on ahead of time, so the rule is length or delimiter.',
-  'TLV lets an old parser skip an unknown type by jumping over its length.',
-  'DER INTEGER is tag 02, and it adds a leading 00 when the top bit is 1. SEQUENCE is tag 30.',
-  'A timeout tells you nothing about whether the work ran. Retry only what is idempotent.',
-]} />
+<Remember>
+
+- TCP is a byte stream with no message edges. Framing is the first decision of a protocol.
+- Fixed length wastes padding. A delimiter needs escaping. A length prefix is binary-safe.
+- A fixed length is a length both sides agreed on ahead of time, so the rule is length or delimiter.
+- TLV lets an old parser skip an unknown type by jumping over its length.
+- DER INTEGER is tag 02, and it adds a leading 00 when the top bit is 1. SEQUENCE is tag 30.
+- A timeout tells you nothing about whether the work ran. Retry only what is idempotent.
+
+</Remember>
 
 The full lessons are <ModuleLink id="s01-m08-framing" />, <ModuleLink id="s01-m11-tlv-asn1" /> and <ModuleLink id="s01-m10-rpc" />.
 
@@ -460,6 +468,7 @@ The full lessons are <ModuleLink id="s01-m08-framing" />, <ModuleLink id="s01-m1
 Every measured number below keeps the machine and the setup that produced it. A number without its conditions is worth less than no number.
 
 <NumbersTable
+  caption="The numbers of Class 1"
   rows={[
     { value: '7', what: 'system calls in a TCP server', conditions: 'socket, bind, listen, accept, read, write, close' },
     { value: '1024', what: 'the port below which a bind needs root', conditions: 'Linux, the default ip_unprivileged_port_start' },

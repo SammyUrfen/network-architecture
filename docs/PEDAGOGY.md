@@ -2,8 +2,9 @@
 
 This file turns learning research into rules for a lesson page. Every rule has
 a reason and a source. A later session that builds a lesson page obeys the
-**lesson contract** in section 2. It does not need to read the research in
-section 4.
+**lesson contract** in section 2. A page that gives one whole class as one
+fast read obeys the **digest contract** in section 3. Neither one needs to
+read the research in section 5.
 
 The research digest behind this file came from a web research pass on
 2026-09-13. Effect sizes are Hedges' g or Cohen's d: 0.2 is small, 0.5 is
@@ -46,7 +47,7 @@ In the MDX, a part is a `<Segment>`.
 The page frame shows the title, the minutes, the outline and the progress in
 the sidebar. The MDX starts at block 1. Build every module in this order.
 
-| # | Block | What the learner sees | Why (section 4) |
+| # | Block | What the learner sees | Why (section 5) |
 |---|---|---|---|
 | 1 | Opening story | One or two short paragraphs: the question that the lesson answers, why it matters, and what the reader already knows. Then "The path through this lesson": one sentence for each part, told as one story. | Signaling |
 | 2 | Pretest | 2 or 3 "guess first" questions on the key ideas. A line says that wrong guesses are normal. A confidence choice on each: sure, think so, guessing. | Prequestions, confidence |
@@ -264,7 +265,80 @@ the lesson that return on a schedule.
 
 ---
 
-## 3. Pages that do this well
+## 3. The digest contract
+
+A **digest** gives one whole class as one fast read. Bibek has a quiz on
+2026-09-18 on classes 1 to 4. He cannot read 40 lesson pages in 48 hours, so
+each class also gets one page that he can read in one sitting.
+
+A digest is not a short lesson. A lesson teaches a reader to derive an answer.
+A digest teaches a reader to recognize an idea and to reason with it. The
+lesson stays the place to learn a topic to the depth of a design question.
+
+### The frame
+
+| Part | Value |
+|---|---|
+| ID | `s0N-digest`, one for each class |
+| Route | `/s0N/digest/` |
+| Title | "Class N in one fast read" |
+| Frontmatter | `kind: digest`. No `prereqs`, and no `minutes`: a digest has no module section in the curriculum file. |
+| Size | about 3,000 words |
+| Time | about 18 minutes of reading, plus 8 minutes of questions |
+| Place | first in its session, in the sidebar and on the session page, as "Fast read" |
+
+### The shape
+
+| # | Block | What the learner sees |
+|---|---|---|
+| 1 | Opening story | One or two short paragraphs: why this class matters, and the question that it answers. Then one sentence for each part. |
+| 2 | 4 to 6 fast parts | Each part holds one `KeyIdea`, 3 to 5 story sentences in plain words, one `Remember` list, one visual, and 3 questions. A digest with six parts gives 2 questions for each part, so the total stays at 12 to 15. |
+| 3 | Numbers | One `NumbersTable` for the whole class, after the parts. |
+| 4 | Exit quiz | 3 to 6 items that ask the key ideas again, with feedback. |
+| 5 | Cards | 25 to 30 review cards, added with `CardsAdded`. |
+
+A digest has no pretest. The reader comes to a digest after the class and
+before a quiz, so the guess-first step buys nothing. The retrieval comes from
+the questions in each part and from the exit quiz.
+
+A digest also leaves out the worked examples, the "invent it first" block and
+the labs. Those teach a reader to derive, and a digest does not.
+
+### Rules
+
+1. **Every core claim of the class is named.** The prose, a card or a question
+   names it, and `covers` lists it. `npm run verify` rule 11 counts the claims
+   that no ready lesson and no digest covers (`docs/PLAN.md` section 5).
+2. **Numbers keep their conditions.** Rule 3 in `CLAUDE.md` holds.
+   `NumbersTable` needs the machine or the setup for each row, so a row with
+   no conditions fails the build.
+3. **A correction gets a myth box.** Each claim of kind `correction` in the
+   curriculum file gets one `Myth` block.
+4. **The 10-year-old rule stays.** Each part gives one plain-words line and
+   one picture. A fact does not need its own picture.
+5. **Each part points to the lesson.** A part links to the full lesson with
+   `ModuleLink`. A lesson with no page yet shows its planned title.
+6. **Questions.** 12 to 15 check items, each with `taughtIn`, and 25 to 30
+   cards. Verify rule 5 counts them.
+7. **The rules of section 2 that still hold:** plain words first (rule 19), no
+   graded solutions (rule 20), every question says where it was taught (rule
+   9), a question asks only what the page taught before it (rule 10), feedback
+   on every option (rule 12), and the three prose gates (rule 21).
+
+### The gates of a digest packet
+
+The gate in `docs/PLAN.md` section 5, with two review prompts in place of the
+accuracy prompt of a lesson:
+
+- `docs/reviews/digest-accuracy.md` checks each fact and each number against
+  the curriculum file and the sources.
+- `docs/reviews/digest-coverage.md` names each core claim that no part, card
+  or question covers.
+- `docs/reviews/learner-review.md` stays as it is.
+
+---
+
+## 4. Pages that do this well
 
 Copy one idea from each. Do not copy content.
 
@@ -283,7 +357,7 @@ Copy one idea from each. Do not copy content.
 
 ---
 
-## 4. The evidence
+## 5. The evidence
 
 | Principle | Evidence | Design move | Source |
 |---|---|---|---|

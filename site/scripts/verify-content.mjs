@@ -1,4 +1,4 @@
-// The content gate. It checks the ten rules of "What `npm run verify`
+// The content gate. It checks the eleven rules of "What `npm run verify`
 // checks" in docs/PLAN.md section 5, and prints one line for each failure.
 // The curriculum files stay the single source of truth: this script reads
 // only the four line patterns below from them, never a copy.
@@ -56,6 +56,18 @@ export function listFiles(dir, extension) {
 }
 
 const list = (value) => (Array.isArray(value) ? value : []);
+
+// Rule 5. A lesson and a digest hold different counts (docs/PEDAGOGY.md
+// sections 2 and 3). A digest has no pretest, because the reader comes to it
+// after the class, not before.
+const SIZES = {
+  lesson: { pretest: [2, 3], checks: [3, 6], exit: [2, 3], cards: [3, 8], perSegment: [1, 2] },
+  digest: { pretest: null, checks: [12, 15], exit: [3, 6], cards: [25, 30], perSegment: [2, 3] },
+};
+
+// A failure line names every missing claim while the list stays readable.
+const nameSome = (ids, most = 10) =>
+  ids.length > most ? `${ids.slice(0, most).join(', ')} and ${ids.length - most} more` : ids.join(', ');
 
 export function verify(contentDir, curriculumDir) {
   const failures = [];
@@ -170,12 +182,13 @@ export function verify(contentDir, curriculumDir) {
     };
     const checks = withUse('check');
     const segments = (body.match(/<Segment\b/g) ?? []).length;
-    range('pretest items', withUse('pretest').length, 2, 3);
-    range('checks', checks.length, 3, 6);
-    range('exit items', withUse('exit').length, 2, 3);
-    range('cards', cardsById.get(data.id)?.items.length ?? 0, 3, 8);
+    const size = SIZES[data.kind === 'digest' ? 'digest' : 'lesson'];
+    if (size.pretest) range('pretest items', withUse('pretest').length, ...size.pretest);
+    range('checks', checks.length, ...size.checks);
+    range('exit items', withUse('exit').length, ...size.exit);
+    range('cards', cardsById.get(data.id)?.items.length ?? 0, ...size.cards);
     for (let segment = 1; segment <= segments; segment++) {
-      range(`checks in segment ${segment}`, checks.filter((item) => item.segment === segment).length, 1, 2);
+      range(`checks in segment ${segment}`, checks.filter((item) => item.segment === segment).length, ...size.perSegment);
     }
     for (const item of checks) {
       if (!(Number.isInteger(item.segment) && item.segment >= 1 && item.segment <= segments)) {
@@ -211,6 +224,27 @@ export function verify(contentDir, curriculumDir) {
     if (session.modules.length === 0 || !session.modules.every((id) => ready.has(id))) continue;
     for (const [id, kind] of session.claims) {
       if (kind === 'core' && !covered.has(id)) fail(session.file, 7, `core claim ${id} is not covered by any module`);
+    }
+  }
+
+  // Rule 11. A ready digest is the fast read of its whole class, so every
+  // core claim of that session must sit in the digest or in a ready lesson.
+  for (const digest of modules) {
+    if (digest.data.kind !== 'digest' || digest.data.status !== 'ready') continue;
+    const number = String(digest.data.id).slice(1, 3);
+    const session = sessions[number];
+    if (!session) continue;
+    const readyCovers = new Set(
+      modules
+        .filter((module) => String(module.data.id).slice(1, 3) === number && module.data.status === 'ready')
+        .flatMap((module) => list(module.data.covers)),
+    );
+    const missing = [...session.claims]
+      .filter(([id, kind]) => kind === 'core' && !readyCovers.has(id))
+      .map(([id]) => id);
+    if (missing.length > 0) {
+      const claims = missing.length === 1 ? 'core claim is' : 'core claims are';
+      fail(digest.file, 11, `${missing.length} ${claims} in no ready lesson and in no digest: ${nameSome(missing)}`);
     }
   }
 

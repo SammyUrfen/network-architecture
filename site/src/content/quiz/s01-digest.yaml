@@ -1,13 +1,14 @@
 # The questions of the class 1 digest, s01-digest.
-# Three for each of the five parts, in page order. Every item carries
-# use: [check, exit, practice], so the part asks it once while you read, and
-# the exit quiz asks the same fifteen again, graded and out of order.
-# The digest has no pretest, because it is a re-read, not a first contact.
+# q01 to q15 are the checks: three for each of the five parts, in page order.
+# q16 to q20 are the exit quiz, one for each key idea of the page. They ask
+# the same ideas from another side, so a reader who only remembers the wording
+# of a check cannot pass them.
+# The digest has no pretest, because the reader comes to it after the class.
 # No item uses the types bytes, order or spot-bug with code: the check
 # islands do not show them yet (docs/COMPONENTS.md section 3).
 items:
   - id: s01-digest-q01
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 1
     type: mcq
     prompt: A web application in Flask answers requests over the network. How does it reach the network?
@@ -29,7 +30,7 @@ items:
     taughtIn: seven-calls-are-the-whole-server
 
   - id: s01-digest-q02
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 1
     type: mcq
     prompt: A server calls bind() and listen() on port 2026, and then never calls accept(). A client connects and sends data. What does the client see?
@@ -51,7 +52,7 @@ items:
     taughtIn: seg-seven-calls-and-one-door-number
 
   - id: s01-digest-q03
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 1
     type: mcq
     prompt: A server calls listen(fd, 1). It accepts each client at once and keeps every connection open. A third client connects. What happens?
@@ -73,7 +74,7 @@ items:
     taughtIn: seg-seven-calls-and-one-door-number
 
   - id: s01-digest-q04
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 2
     type: mcq
     prompt: A client sends `hello` and then hangs up the hard way, with a reset. One second later the server writes back two times, and it checks no result. What happens to the server on Linux?
@@ -95,7 +96,7 @@ items:
     taughtIn: a-dead-peer-kills-the-writer
 
   - id: s01-digest-q05
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 2
     type: numeric
     prompt: A server ends with no error message, and the shell shows the exit status 141. What is the number of the signal that ended it?
@@ -111,7 +112,7 @@ items:
     taughtIn: a-dead-peer-kills-the-writer
 
   - id: s01-digest-q06
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 2
     type: mcq
     prompt: A TCP client connects to a server. Which side picks the port number of the client, and when?
@@ -133,7 +134,7 @@ items:
     taughtIn: seg-the-write-that-kills-the-server
 
   - id: s01-digest-q07
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 3
     type: mcq
     prompt: Port 2026 is 0x07EA. Your x86 laptop holds it in memory as the bytes `EA 07`. Which two bytes must go on the wire?
@@ -155,7 +156,7 @@ items:
     taughtIn: seg-two-translations-and-many-clients
 
   - id: s01-digest-q08
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 3
     type: mcq
     prompt: A server calls fork() for each new connection. What does fork() return inside the child process?
@@ -177,7 +178,7 @@ items:
     taughtIn: one-blocked-call-stops-everyone
 
   - id: s01-digest-q09
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 3
     type: mcq
     prompt: A single-process server calls gethostbyname() while it answers a request. Why can that one call freeze every other client of the server?
@@ -199,7 +200,7 @@ items:
     taughtIn: one-blocked-call-stops-everyone
 
   - id: s01-digest-q10
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 4
     type: mcq
     prompt: Where does TLS sit, in relation to HTTP and TCP?
@@ -221,7 +222,7 @@ items:
     taughtIn: tls-wraps-tcp-not-http
 
   - id: s01-digest-q11
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 4
     type: numeric
     prompt: 'You type an HTTP request by hand: the line `GET / HTTP/1.1`, then the line `Host: google.com`, then an empty line. Every line ends in CR LF. How many bytes do you send?'
@@ -237,7 +238,7 @@ items:
     taughtIn: seg-see-the-bytes-until-a-wrapper-hides-them
 
   - id: s01-digest-q12
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 4
     type: mcq
     prompt: You put a password in an HTTP header with base64, as Basic authentication does. What does base64 give you?
@@ -259,7 +260,7 @@ items:
     taughtIn: seg-see-the-bytes-until-a-wrapper-hides-them
 
   - id: s01-digest-q13
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 5
     type: mcq
     prompt: A program calls write() two times on one TCP connection, first `hello` and then `world`. What can a single read() on the other side return?
@@ -281,7 +282,7 @@ items:
     taughtIn: every-protocol-must-say-where-a-message-ends
 
   - id: s01-digest-q14
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 5
     type: mcq
     prompt: 'A parser reads the bytes `09 03 AA BB CC`, where 09 is the type and 03 is the length. The parser does not know type 09. What must it do?'
@@ -303,7 +304,7 @@ items:
     taughtIn: seg-design-the-bytes-yourself
 
   - id: s01-digest-q15
-    use: [check, exit, practice]
+    use: [check, practice]
     segment: 5
     type: mcq
     prompt: A client makes a remote call and the call times out. What do you now know about the work on the server?
@@ -323,3 +324,108 @@ items:
     covers: [S01-C117, S01-C119, S01-C138]
     tags: []
     taughtIn: seg-design-the-bytes-yourself
+
+  - id: s01-digest-q16
+    use: [exit, practice]
+    type: mcq
+    prompt: You read the source of a small web toolkit and find no code that talks to a network card. Why not?
+    options:
+      - text: The toolkit asks the kernel with the same seven calls, and the kernel does the network work.
+        correct: true
+        feedback: strace shows the socket, bind, listen and accept calls inside any of them.
+      - text: The toolkit carries a network stack of its own, inside the language runtime.
+        correct: false
+        misconception: S01-M01
+        feedback: No user program owns a network stack. Only the kernel moves the bytes.
+      - text: The toolkit asks the kernel for finished HTTP requests.
+        correct: false
+        misconception: S01-M46
+        feedback: The kernel moves TCP bytes only. The toolkit parses the HTTP text itself.
+    explanation: socket, bind, listen, accept, read, write and close are the whole of a TCP server, and every framework wraps them.
+    covers: [S01-C04, S01-C05, S01-C07, S01-C126]
+    tags: []
+    taughtIn: seven-calls-are-the-whole-server
+
+  - id: s01-digest-q17
+    use: [exit, practice]
+    type: mcq
+    prompt: A long-running server in C must survive a client that leaves in the middle of an answer. What does it do?
+    options:
+      - text: It calls close() on the listening socket after each client.
+        correct: false
+        misconception: S01-M22
+        feedback: Closing the listening socket takes the server out of service. The trap is the write, not the listen.
+      - text: It ignores SIGPIPE, then checks the result of every write.
+        correct: true
+        feedback: With SIGPIPE ignored, a failed write returns ECONNRESET or EPIPE, and the server closes that one client.
+      - text: It reads from the socket first, because a read raises the signal, not a write.
+        correct: false
+        misconception: S01-M54
+        feedback: A read from a reset socket returns 0 or ECONNRESET. Only a write raises SIGPIPE.
+    explanation: A write to a connection that the peer already ended raises SIGPIPE, and its default action ends the process with no message. signal(SIGPIPE, SIG_IGN) or MSG_NOSIGNAL turns the signal into a plain error that the code can handle.
+    covers: [S01-C26, S01-C28]
+    tags: []
+    taughtIn: a-dead-peer-kills-the-writer
+
+  - id: s01-digest-q18
+    use: [exit, practice]
+    type: mcq
+    prompt: A single-process event loop serves 5,000 clients. One request needs a name lookup that takes two seconds. What do the other clients see?
+    options:
+      - text: Nothing changes, because an event loop keeps no state for a client.
+        correct: false
+        misconception: S01-M23
+        feedback: Each connection still holds a buffer and some state. The problem here is the time, not the memory.
+      - text: The kernel starts a second process to carry the slow client.
+        correct: false
+        misconception: S01-M65
+        feedback: An event loop makes no process for a client at all. One process watches every socket.
+      - text: They all wait two seconds, because the one process is stuck inside that call.
+        correct: true
+        feedback: 'That is the price of an event loop: one slow handler blocks every client.'
+    explanation: fork() buys isolation with one process for each client. An event loop with select or epoll keeps one process and asks the kernel who is ready, and one slow handler stops all of them. Keep a blocking name lookup off that path.
+    covers: [S01-C65, S01-C66, S01-C67, S01-C136]
+    tags: []
+    taughtIn: one-blocked-call-stops-everyone
+
+  - id: s01-digest-q19
+    use: [exit, practice]
+    type: mcq
+    prompt: Somebody captures the traffic of an HTTPS request on the network between you and the server. What can they still read?
+    options:
+      - text: Nothing at all, because TLS encrypts the whole packet.
+        correct: false
+        misconception: S01-M70
+        feedback: TLS rides on TCP. It cannot encrypt the headers that carry the packet to its destination.
+      - text: The addresses, the ports and the sizes, but not the request text.
+        correct: true
+        feedback: TLS wraps the byte stream inside TCP, so everything that routes the packet stays readable.
+      - text: The request text, because TLS only protects the reply.
+        correct: false
+        misconception: S01-M26
+        feedback: TLS protects the stream in both directions, and it is not a part of HTTP at all.
+    explanation: SSL secures TCP, not HTTP. The same machinery protects SMTP and database links. It hides the content of the stream and not the addresses, the ports or the sizes.
+    covers: [S01-C85, S01-C86, S01-C87]
+    tags: []
+    taughtIn: tls-wraps-tcp-not-http
+
+  - id: s01-digest-q20
+    use: [exit, practice]
+    type: mcq
+    prompt: You design a chat protocol, and a message can hold any byte at all, even a newline. Which framing rule fits, and why?
+    options:
+      - text: A newline delimiter, because the reader can scan for it in one pass.
+        correct: false
+        misconception: S01-M31
+        feedback: A newline inside a message ends it too early, so the sender must escape every newline in the data.
+      - text: A fixed length, because a fixed size needs no marker of any kind.
+        correct: false
+        misconception: S01-M74
+        feedback: A fixed length works, but it wastes padding on every short message and N can never change.
+      - text: A length prefix, because the reader counts bytes and never looks at them.
+        correct: true
+        feedback: The reader takes exactly that many bytes, so the data can hold any byte, a newline too.
+    explanation: TCP gives a byte stream with no message edges, so the protocol adds the edge. A length prefix is binary-safe, and most modern protocols use it. A delimiter needs escaping, and a fixed length wastes padding.
+    covers: [S01-C92, S01-C94, S01-C95, S01-C96]
+    tags: []
+    taughtIn: every-protocol-must-say-where-a-message-ends

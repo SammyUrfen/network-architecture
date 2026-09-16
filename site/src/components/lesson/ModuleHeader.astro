@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { href, sessionHref } from '../../lib/url';
-import { threadTitle } from '../shell/lessons';
+import { DIGEST_LABEL, DIGEST_TIME, threadTitle } from '../shell/lessons';
 import ModuleLink from './ModuleLink.astro';
 
 type Module = CollectionEntry<'modules'>['data'];
@@ -13,17 +13,20 @@ type Module = CollectionEntry<'modules'>['data'];
 export interface Props extends Pick<
   Module,
   'session' | 'title' | 'minutes' | 'bigIdea' | 'status' | 'prereqs' | 'threads'
-> {}
-const { session, title, minutes, bigIdea, status, prereqs, threads } = Astro.props;
+> {
+  /** A page with no kind is a lesson. */
+  kind?: Module['kind'];
+}
+const { session, kind, title, minutes, bigIdea, status, prereqs, threads } = Astro.props;
 // ", " between items, and " and " before the last one
 const sep = (i: number, length: number) => (i === 0 ? '' : i === length - 1 ? ' and ' : ', ');
 ---
 
 <header class="opening">
   <p class="eyebrow">
-    <a href={sessionHref(session)}>Session {session}</a> · {minutes} min{
-      status === 'draft' && <span class="draft">Draft</span>
-    }
+    <a href={sessionHref(session)}>Session {session}</a> · {minutes ? `${minutes} min` : DIGEST_TIME}{
+      kind === 'digest' && <span class="tag">{DIGEST_LABEL}</span>
+    }{status === 'draft' && <span class="tag">Draft</span>}
   </p>
   <h1>{title}</h1>
   <div class="big-idea">
@@ -74,9 +77,12 @@ const sep = (i: number, length: number) => (i === 0 ? '' : i === length - 1 ? ' 
     letter-spacing: 0.12em;
     color: var(--text-muted);
   }
-  .draft {
+  /* A tag never breaks inside its border, also when the line wraps. */
+  .tag {
+    display: inline-block;
     margin-left: var(--space-2);
     padding: 0 var(--space-2);
+    white-space: nowrap;
     border: 1px solid currentColor;
     border-radius: var(--radius-l);
   }
