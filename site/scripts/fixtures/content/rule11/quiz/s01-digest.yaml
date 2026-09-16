@@ -1,0 +1,16 @@
+items:
+  - { id: s01-digest-q01, use: [check], segment: 1, taughtIn: seg-part-1, type: recall, prompt: Q1?, model: A1., covers: [S01-C01] }
+  - { id: s01-digest-q02, use: [check], segment: 1, taughtIn: seg-part-1, type: recall, prompt: Q2?, model: A2., covers: [S01-C01] }
+  - { id: s01-digest-q03, use: [check], segment: 1, taughtIn: seg-part-1, type: recall, prompt: Q3?, model: A3., covers: [S01-C01] }
+  - { id: s01-digest-q04, use: [check], segment: 2, taughtIn: seg-part-2, type: recall, prompt: Q4?, model: A4., covers: [S01-C01] }
+  - { id: s01-digest-q05, use: [check], segment: 2, taughtIn: seg-part-2, type: recall, prompt: Q5?, model: A5., covers: [S01-C01] }
+  - { id: s01-digest-q06, use: [check], segment: 2, taughtIn: seg-part-2, type: recall, prompt: Q6?, model: A6., covers: [S01-C01] }
+  - { id: s01-digest-q07, use: [check], segment: 3, taughtIn: seg-part-3, type: recall, prompt: Q7?, model: A7., covers: [S01-C01] }
+  - { id: s01-digest-q08, use: [check], segment: 3, taughtIn: seg-part-3, type: recall, prompt: Q8?, model: A8., covers: [S01-C01] }
+  - { id: s01-digest-q09, use: [check], segment: 3, taughtIn: seg-part-3, type: recall, prompt: Q9?, model: A9., covers: [S01-C01] }
+  - { id: s01-digest-q10, use: [check], segment: 4, taughtIn: seg-part-4, type: recall, prompt: Q10?, model: A10., covers: [S01-C01] }
+  - { id: s01-digest-q11, use: [check], segment: 4, taughtIn: seg-part-4, type: recall, prompt: Q11?, model: A11., covers: [S01-C01] }
+  - { id: s01-digest-q12, use: [check], segment: 4, taughtIn: seg-part-4, type: recall, prompt: Q12?, model: A12., covers: [S01-C01] }
+  - { id: s01-digest-q13, use: [exit], taughtIn: seg-part-1, type: recall, prompt: Q13?, model: A13., covers: [S01-C01] }
+  - { id: s01-digest-q14, use: [exit], taughtIn: seg-part-1, type: recall, prompt: Q14?, model: A14., covers: [S01-C01] }
+  - { id: s01-digest-q15, use: [exit], taughtIn: seg-part-1, type: recall, prompt: Q15?, model: A15., covers: [S01-C01] }

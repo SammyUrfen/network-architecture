@@ -56,9 +56,27 @@ describe('content rules', () => {
     [8, 1],
     [9, 1],
     [10, 2],
+    [11, 1],
   ])('rule %i fails on its fixture, with %i failures', (rule, defects) => {
     const { failures } = verify(fixture(`content/rule${rule}`), curriculum);
     expect(failures.map((failure) => failure.rule)).toEqual(Array(defects).fill(rule));
+  });
+
+  test('rule 5 counts a digest with the digest sizes', () => {
+    const messages = verify(fixture('content/digest5'), curriculum).failures.map((failure) => failure.message);
+    expect(messages).toEqual([
+      's01-digest: 4 checks, needs 12 to 15',
+      's01-digest: 0 exit items, needs 3 to 6',
+      's01-digest: 2 cards, needs 25 to 30',
+      's01-digest: 4 checks in segment 1, needs 2 to 3',
+      's01-digest: 0 checks in segment 2, needs 2 to 3',
+    ]);
+  });
+
+  test('rule 11 counts and names the core claims that the digest misses', () => {
+    const [failure] = verify(fixture('content/rule11'), curriculum).failures;
+    expect(failure.file).toMatch(/s01-digest\.mdx$/);
+    expect(failure.message).toBe('1 core claim is in no ready lesson and in no digest: S01-C02');
   });
 
   test('rule 9 names the file and the position of the right option', () => {

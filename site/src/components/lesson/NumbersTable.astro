@@ -1,0 +1,84 @@
+---
+// The numbers of one class in one table (docs/PEDAGOGY.md section 3). Rule 3
+// in CLAUDE.md holds here: a number keeps its conditions, so the conditions
+// column is not optional. A row with no conditions fails the build.
+export interface Props {
+  /** What the table holds, such as "The numbers of Class 4". */
+  caption: string;
+  /** One row for each number. `conditions` names the machine or the setup. */
+  rows: { what: string; value: string; conditions: string }[];
+}
+const { caption, rows } = Astro.props;
+const empty = rows.find((row) => !row.what?.trim() || !row.value?.trim() || !row.conditions?.trim());
+if (empty) {
+  throw new Error(`NumbersTable "${caption}": each row needs what, value and conditions. Check "${empty.what}".`);
+}
+---
+
+<figure class="numbers" tabindex="0">
+  <table>
+    <caption>{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">What</th>
+        <th scope="col">Number</th>
+        <th scope="col">Conditions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr>
+            <th scope="row">{row.what}</th>
+            <td class="value">{row.value}</td>
+            <td class="conditions">{row.conditions}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</figure>
+
+<style>
+  /* A wide table scrolls on a phone. tabindex makes the scroll box a Tab
+     stop, so a keyboard alone can scroll it, as in Terminal. */
+  .numbers {
+    margin: var(--space-6) 0;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  caption {
+    margin-bottom: var(--space-2);
+    font-variant: small-caps;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-align: left;
+  }
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: var(--bw) solid var(--border);
+  }
+  thead th {
+    font-variant: small-caps;
+    letter-spacing: 0.08em;
+    color: var(--accent-2);
+    border-bottom: 4px double var(--border-strong);
+  }
+  tbody th {
+    font-weight: 600;
+  }
+  .value {
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+  .conditions {
+    color: var(--text-muted);
+  }
+</style>
