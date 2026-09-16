@@ -6,7 +6,8 @@ import { z } from 'astro/zod';
 // script checks that each one exists (docs/PLAN.md section 3).
 const claimId = z.string().regex(/^S\d\d-C\d+$/);
 const misconceptionId = z.string().regex(/^S\d\d-M\d+$/);
-const moduleId = z.string().regex(/^s\d\d-m\d\d-[a-z0-9-]+$/);
+// A lesson is s01-m08-framing. The one digest of a session is s01-digest.
+const moduleId = z.string().regex(/^s\d\d-(m\d\d-[a-z0-9-]+|digest)$/);
 const threadId = z.string().regex(/^T-[a-z-]+$/);
 
 const sessions = defineCollection({
@@ -28,20 +29,31 @@ const modules = defineCollection({
     base: './src/content/modules',
     generateId: ({ data }) => String(data.id),
   }),
-  schema: z.object({
-    id: moduleId,
-    session: z.number().int().min(1),
-    order: z.number().int().min(1),
-    title: z.string(),
-    minutes: z.number().int().positive(),
-    bigIdea: z.string(),
-    covers: z.array(claimId).min(1),
-    prereqs: z.array(moduleId).default([]),
-    threads: z.array(threadId).default([]),
-    confidence: z.enum(['high', 'medium', 'low']),
-    status: z.enum(['draft', 'ready']),
-    terms: z.array(z.object({ term: z.string(), meaning: z.string() })).default([]),
-  }),
+  schema: z
+    .object({
+      id: moduleId,
+      session: z.number().int().min(1),
+      order: z.number().int().min(1),
+      // A lesson page, or the fast read of a whole class (docs/PEDAGOGY.md
+      // section 3). A file with no kind is a lesson.
+      kind: z.enum(['lesson', 'digest']).default('lesson'),
+      title: z.string(),
+      // A lesson takes its minutes from its module section. A digest has no
+      // module section, so its reading time comes from the digest contract.
+      minutes: z.number().int().positive().optional(),
+      bigIdea: z.string(),
+      covers: z.array(claimId).min(1),
+      prereqs: z.array(moduleId).default([]),
+      threads: z.array(threadId).default([]),
+      confidence: z.enum(['high', 'medium', 'low']),
+      status: z.enum(['draft', 'ready']),
+      terms: z.array(z.object({ term: z.string(), meaning: z.string() })).default([]),
+    })
+    .superRefine((module, ctx) => {
+      if (module.kind === 'lesson' && module.minutes === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['minutes'], message: 'A lesson needs minutes.' });
+      }
+    }),
 });
 
 // The schema checks the shape of each question type. The content rules
@@ -57,7 +69,7 @@ const distractors = <T extends z.ZodType>(value: T) =>
   z.array(z.object({ value, misconception: misconceptionId.optional(), feedback: z.string() })).optional();
 
 const itemBase = {
-  id: z.string().regex(/^s\d\d-m\d\d-q\d+$/),
+  id: z.string().regex(/^s\d\d-(m\d\d|digest)-q\d+$/),
   use: z.array(z.enum(['pretest', 'check', 'exit', 'practice'])).min(1),
   segment: z.number().int().min(1).optional(),
   prompt: z.string(),
@@ -120,7 +132,7 @@ const cards = defineCollection({
   schema: z.object({
     items: z.array(
       z.object({
-        id: z.string().regex(/^s\d\d-m\d\d-c\d+$/),
+        id: z.string().regex(/^s\d\d-(m\d\d|digest)-c\d+$/),
         front: z.string(),
         back: z.string(),
         covers: z.array(claimId).min(1),

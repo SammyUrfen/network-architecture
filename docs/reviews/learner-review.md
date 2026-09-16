@@ -23,7 +23,8 @@ follow the page from top to bottom.
 - The module ID: `<module ID>`.
 - The quiz file: `site/src/content/quiz/<module ID>.yaml`. Some feedback text
   shows only after an answer. Read it here.
-- The lesson contract: `docs/PEDAGOGY.md` section 2.
+- The lesson contract: `docs/PEDAGOGY.md` section 2. For a digest page,
+  the contract is section 3.
 
 **How to read**
 

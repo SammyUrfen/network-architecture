@@ -1,0 +1,55 @@
+---
+// The "what to remember" list of one part of a digest (docs/PEDAGOGY.md
+// section 3). It holds the few lines that a reader must carry into the quiz.
+// The default slot takes a Markdown list, so the MDX writes plain prose.
+export interface Props {
+  /** The label over the list. The default fits a digest part. */
+  title?: string;
+}
+const { title = 'What to remember' } = Astro.props;
+---
+
+<aside class="remember" aria-label={title}>
+  <p class="label"><span aria-hidden="true">◆</span> {title}</p>
+  <slot />
+</aside>
+
+<style>
+  .remember {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-2);
+    border: var(--bw) solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+  }
+  .label {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-variant: small-caps;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent-2);
+  }
+  /* The slot holds a Markdown list. A dash marks each line, so the list reads
+     as a set of short notes and not as a sequence of steps. */
+  .remember :global(ul) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .remember :global(li) {
+    margin: 0 0 var(--space-2);
+    padding-left: var(--space-4);
+    text-indent: calc(-1 * var(--space-4));
+  }
+  .remember :global(li)::before {
+    content: '—';
+    padding-right: var(--space-2);
+    color: var(--accent);
+  }
+  .remember :global(li:last-child),
+  .remember :global(p:last-child) {
+    margin-bottom: 0;
+  }
+</style>
