@@ -11,6 +11,9 @@ import { taughtInLabel, type TaughtIn } from '../../components/check/taught';
 import Terminal from '../../components/diagram/Terminal.astro';
 import KeyIdea from '../../components/lesson/KeyIdea.astro';
 import Lab from '../../components/lesson/Lab.astro';
+import Myth from '../../components/lesson/Myth.astro';
+import NumbersTable from '../../components/lesson/NumbersTable.astro';
+import Remember from '../../components/lesson/Remember.astro';
 import Picture from '../../components/lesson/Picture.astro';
 import Segment from '../../components/lesson/Segment.astro';
 import Base from '../../layouts/Base.astro';
@@ -112,6 +115,35 @@ const exitLinks = Object.fromEntries(exit.slice(0, -1).map((item, i) => [item.id
   <h2>Exit quiz island, no confidence step</h2>
   <p>The first two items link to this page. The last item has no link.</p>
   <ExitQuizIsland client:load module="dev-v2-blocks" items={exit} misconceptions={misconceptionsOf(exit)} taughtIn={exitLinks} />
+
+  <h2>Digest blocks</h2>
+  <p>
+    The blocks of a class digest (<code>docs/PEDAGOGY.md</code> section 3). The numbers below are fixtures for the look. They are not course
+    facts.
+  </p>
+
+  {/* In MDX, the slot takes a Markdown list with a blank line before it. This page is Astro, so it writes the list itself. */}
+  <Remember>
+    <ul>
+      <li>TCP delivers every byte in order, and it keeps no mark where one write stopped.</li>
+      <li>A length prefix tells the reader how many bytes to take.</li>
+      <li>A delimiter costs an escape rule, because the data can hold the delimiter.</li>
+    </ul>
+  </Remember>
+
+  <Myth myth="A read() call returns one whole message.">
+    A read returns the bytes that wait, from one byte up to the size of the buffer. One read can hold the end of one message and the start of the
+    next.
+  </Myth>
+
+  <NumbersTable
+    caption="Fixture numbers for the look of the table, not course facts"
+    rows={[
+      { what: 'Round trip, first request', value: '150 ms', conditions: "the instructor's laptop, over loopback" },
+      { what: 'Accept queue depth', value: '128', conditions: 'Linux default of somaxconn, kernel 6.1' },
+      { what: 'Largest payload of a 1-byte length prefix', value: '255 bytes', conditions: 'one byte holds the values 0 to 255' },
+    ]}
+  />
 
   <h2>Exit quiz wrapper on the pilot</h2>
   <p>The pilot quiz has no <code>taughtIn</code> yet, so no item shows a link.</p>

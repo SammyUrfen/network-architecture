@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import SourceBadge from '../components/SourceBadge.astro';
+import { DIGEST_TIME } from '../components/shell/lessons';
 import Base from '../layouts/Base.astro';
 import { day, href, moduleHref, sessionHref } from '../lib/url';
 import Today from './_Today';
@@ -19,12 +20,28 @@ const reviewIds = [
 const assessments = (await getCollection('assessments')).sort(
   (a, b) => (a.data.date?.getTime() ?? Infinity) - (b.data.date?.getTime() ?? Infinity),
 );
-const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
+// The digest is not a lesson page: the line over the map already counts it.
+const pages = (n: number) => modules.filter((m) => m.data.session === n && m.data.kind !== 'digest').length;
+// One fast read for each class, for the reader with a quiz in two days.
+const digests = modules.filter((m) => m.data.kind === 'digest').sort((a, b) => a.data.session - b.data.session);
 ---
 
 <Base title="Map" wide>
   <h1>Network Architecture</h1>
   <p class="lead">The course, one idea at a time. Pick a session, or review what is due.</p>
+  {
+    digests.length > 0 && (
+      <p class="fast">
+        Short of time? A fast read gives one whole class in {DIGEST_TIME}:{' '}
+        {digests.map((m, i) => (
+          <>
+            {i > 0 && ' · '}
+            <a href={moduleHref(m.id)}>Class {m.data.session}</a>
+          </>
+        ))}
+      </p>
+    )
+  }
 
   <div class="columns">
     <section aria-labelledby="today">
@@ -77,6 +94,13 @@ const pages = (n: number) => modules.filter((m) => m.data.session === n).length;
     max-width: var(--measure);
     font-size: var(--text-lg);
     color: var(--text-muted);
+  }
+  .fast {
+    max-width: var(--measure);
+    padding: var(--space-2) var(--space-4);
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
   }
   /* Today and the graded work side by side, when the column is wide enough */
   .columns {

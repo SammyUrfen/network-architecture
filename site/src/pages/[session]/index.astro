@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import ModuleLink from '../../components/lesson/ModuleLink.astro';
-import { plannedLessons, sessionLessons } from '../../components/shell/lessons';
+import { DIGEST_TIME, plannedLessons, sessionLessons } from '../../components/shell/lessons';
 import SourceBadge from '../../components/SourceBadge.astro';
 import Base from '../../layouts/Base.astro';
 import { day } from '../../lib/url';
@@ -17,7 +17,7 @@ const pages = (await getCollection('modules', (m) => m.data.session === s.number
 // Sessions 6 to 8 have no curriculum file yet.
 const lessons = sessionLessons(
   plannedLessons(s.number),
-  pages.map((m) => ({ id: m.id, title: m.data.title })),
+  pages.map((m) => ({ id: m.id, title: m.data.title, kind: m.data.kind })),
 );
 const meta = new Map(pages.map((m) => [m.id, m.data]));
 ---
@@ -46,7 +46,8 @@ const meta = new Map(pages.map((m) => [m.id, m.data]));
               <ModuleLink id={id} />
               {m && (
                 <span class="minutes">
-                  {m.minutes} min{m.status === 'draft' ? ' · draft' : ''}
+                  {m.minutes ? `${m.minutes} min` : DIGEST_TIME}
+                  {m.status === 'draft' ? ' · draft' : ''}
                 </span>
               )}
             </li>

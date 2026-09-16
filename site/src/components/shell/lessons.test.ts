@@ -45,6 +45,15 @@ describe('sessionLessons', () => {
       { id: 's01-m09-x', title: 'Page X', hasPage: true },
     ]);
   });
+
+  it('puts the digest of the session first, because the curriculum file plans no digest', () => {
+    const planned = [{ id: 's01-m01-a', title: 'Planned A' }];
+    const pages = [
+      { id: 's01-m01-a', title: 'Page A' },
+      { id: 's01-digest', title: 'Class 1 in one fast read', kind: 'digest' as const },
+    ];
+    expect(sessionLessons(planned, pages).map((lesson) => lesson.id)).toEqual(['s01-digest', 's01-m01-a']);
+  });
 });
 
 describe('threadTitle', () => {

@@ -43,6 +43,21 @@ remove the mark in the same change.
   root-relative Markdown link (verify rule 8).
 - Give `WordCard` the frontmatter terms: `<WordCard terms={frontmatter.terms} />`.
 
+### Rules for a digest packet
+
+A digest is the second page type (`docs/PEDAGOGY.md` section 3). It uses the
+same page frame and the same blocks, with these changes.
+
+- The frontmatter says `kind: digest`, and the ID is `sNN-digest`. It gives no
+  `prereqs` and no `minutes`.
+- The page has no `Pretest`, no `FadedExample`, no `InventFirst` and no `Lab`.
+- Each part adds one `Remember` list under its prose. One `NumbersTable` comes
+  after the last part. Each claim of kind `correction` gets one `Myth`.
+- Each part links to its full lesson with `ModuleLink`. A lesson with no page
+  shows its planned title, so the link needs no guard.
+- The counts are the digest counts of verify rule 5: 12 to 15 checks with 2 or
+  3 for each part, 3 to 6 exit items, and 25 to 30 cards.
+
 ### Slide citations
 
 This note follows rule 5 in `CLAUDE.md`.
@@ -125,6 +140,9 @@ All in `src/components/lesson/`. The pilots are `s01-m08-framing` (m08) and
 | `ModuleLink` | Astro | `id: string`. A module with a page shows its title as a link. A module with no page shows its title from the curriculum file and "(planned)", never its ID. | both |
 | `InventFirst` | Astro | `prompt: string`. Default slot holds the full explanation. | m08 |
 | `Beyond` | Astro | `source: string`, `url?: string`. Default slot. Shows the "beyond the slides" badge. | m12 |
+| `Remember` | Astro | `title?: string`, the label over the list, "What to remember" by default. Default slot: a Markdown list of the lines that a reader must carry into the quiz. Put a blank line before the list inside the tag, so MDX makes a list and not one paragraph. A dash marks each line, so the list does not read as a sequence of steps. One for each part of a digest. | digests |
+| `NumbersTable` | Astro | `caption: string`, `rows: { what: string; value: string; conditions: string }[]`. A table with three columns: What, Number, Conditions. `conditions` names the machine or the setup, from rule 3 in `CLAUDE.md`. A row with an empty cell fails the build. One for each digest, after the last part. | digests |
+| `Myth` | Astro | `myth: string`, the wrong belief in the words of a learner. Default slot: what is true. Shows a "Myth" label, the belief in italics, then a "What is true" label and the slot. The words carry the meaning, so the colors add nothing that a reader needs. One for each claim of kind `correction`. | digests |
 | `Lab` | Astro | `title: string`, `folder?: string`, the folder in the instructor repo, such as `lesson1`. Every new lab gives `folder`. A source header says that the code comes from the course repo, with a link to https://github.com/jitendraag/cn-at-scaler. Then a `Terminal` shows `git clone https://github.com/jitendraag/cn-at-scaler.git` and `cd cn-at-scaler/<folder>`. With no `folder`, the pilot form, it shows the clone command only. A line under the commands says that `git clone` downloads a copy of the instructor repo, and that `cd` moves into the lab folder inside it. The default slot says what the program does and what the reader should see, then holds the `Terminal` blocks. | m08, m12 |
 | `SlideLink` | Astro, with a script | In `src/components/slides/`. `session: number`, `page: number` (the PDF page, from 1), `class?: string`. Default slot: the link text, "slide N" when empty. It is a link to `slides/session-0N.pdf#page=N` under the base URL. A plain click opens `SlideViewer` at that page. With no JavaScript, or with a modifier key, the browser opens the PDF at that page. `class` replaces the inline citation look, for example `class="btn"`. An unknown session, or a page outside the deck, fails the build. The PDFs sit in `site/public/slides/`. A new deck also needs its page count and size in `decks.ts`, and `decks.test.ts` checks both. | none yet |
 | `SlideViewer` | Plain Preact | In `src/components/slides/`. `url: string` (the PDF, with no `#page`), `session: number`, `page: number`, `pages: number`, `onClose: () => void`. The script of `SlideLink` loads it on the first click and calls `openSlides(link)`, so a page loads no PDF code before a click. A modal `<dialog>` shows one page with `pdfjs-dist`: previous, next, a page number field, "Open the full deck" and "Download the PDF". Arrow keys change the page. Escape, the close button or a click on the backdrop closes it, and the focus goes back to the link. | none yet |

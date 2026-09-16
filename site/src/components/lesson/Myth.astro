@@ -1,0 +1,52 @@
+---
+// A correction: a claim of kind `correction` in the curriculum file gets one
+// of these (docs/PEDAGOGY.md section 3). The words "Myth" and "What is true"
+// carry the meaning, so the colors add nothing that a reader needs.
+export interface Props {
+  /** The wrong belief, in the words that a learner uses. */
+  myth: string;
+}
+const { myth } = Astro.props;
+---
+
+<aside class="myth" aria-label="A correction">
+  <p class="label"><span aria-hidden="true">✕</span> Myth</p>
+  <p class="claim">{myth}</p>
+  <p class="label true"><span aria-hidden="true">✓</span> What is true</p>
+  <div class="body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .myth {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: var(--bw) solid var(--border);
+    border-left: 4px solid var(--wrong);
+    border-radius: var(--radius);
+  }
+  .label {
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-sm);
+    font-variant: small-caps;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--wrong);
+  }
+  .label.true {
+    margin-top: var(--space-3);
+    color: var(--correct);
+  }
+  .claim {
+    margin: 0;
+    font-style: italic;
+  }
+  .body :global(p) {
+    margin: 0 0 var(--space-2);
+  }
+  .body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+</style>

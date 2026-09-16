@@ -1,13 +1,11 @@
 ---
 id: s04-digest
 session: 4
-order: 14
+order: 1
 kind: digest
 title: Class 4 in one fast read
-minutes: 26
 bigIdea: nginx did not make the per-connection worker cheaper. It removed the worker, gave the kernel the watch list and the file bytes, and turned every cost that stayed into a directive that you can read.
 covers: [S04-C02, S04-C03, S04-C04, S04-C05, S04-C06, S04-C12, S04-C14, S04-C15, S04-C16, S04-C17, S04-C19, S04-C20, S04-C21, S04-C22, S04-C23, S04-C24, S04-C25, S04-C26, S04-C27, S04-C28, S04-C29, S04-C30, S04-C31, S04-C32, S04-C34, S04-C35, S04-C36, S04-C37, S04-C40, S04-C41, S04-C42, S04-C43, S04-C46, S04-C47, S04-C48, S04-C49, S04-C50, S04-C52, S04-C53, S04-C54, S04-C55, S04-C56, S04-C60, S04-C61, S04-C62, S04-C63, S04-C64, S04-C68, S04-C69, S04-C70, S04-C71, S04-C72, S04-C73, S04-C74, S04-C75, S04-C76, S04-C80, S04-C81, S04-C82, S04-C85, S04-C86, S04-C87, S04-C88, S04-C90, S04-C91, S04-C92, S04-C93, S04-C94, S04-C95, S04-C96, S04-C97, S04-C98, S04-C99, S04-C100, S04-C102, S04-C103, S04-C104, S04-C105, S04-C106, S04-C107, S04-C109, S04-C110, S04-C111, S04-C112, S04-C113, S04-C114, S04-C115, S04-C116, S04-C121, S04-C122, S04-C123, S04-C124, S04-C127, S04-C128, S04-C129, S04-C130, S04-C133, S04-C134, S04-C135, S04-C144, S04-C145, S04-C146, S04-C147, S04-C148, S04-C149, S04-C152, S04-C157, S04-C167, S04-C169]
-prereqs: []
 threads: [T-law-or-habit, T-watch-list, T-setup-off-path, T-honest-benchmarks, T-littles-law]
 confidence: high
 status: ready
@@ -17,10 +15,11 @@ import Myth from '../../../components/lesson/Myth.astro';
 import Remember from '../../../components/lesson/Remember.astro';
 import Beyond from '../../../components/lesson/Beyond.astro';
 import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
 import KeyIdea from '../../../components/lesson/KeyIdea.astro';
 import Picture from '../../../components/lesson/Picture.astro';
 import Segment from '../../../components/lesson/Segment.astro';
-import NumbersTable from '../../../components/diagram/NumbersTable.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
 import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
 import Stepper from '../../../components/diagram/Stepper.astro';
 import Check from '../../../components/check/Check.astro';
@@ -115,20 +114,22 @@ Three different programs hide in that sentence. The first web server was CERN ht
 
 </Myth>
 
-<Remember
-  items={[
-    'CGI pays fork, exec, interpreter load, parse, run and exit on every request.',
-    'Apache 1.3 prefork forks its pool at startup, not per request. One process still parks on one connection.',
-    'The Apache 2.4 event MPM parks idle keep-alives on epoll. It is the Unix default since 2.4.',
-    'A servlet object loads one time. Each request is a method call on a pooled thread.',
-    'Prefork, FastCGI, servlets, connection pools and upstream keep-alive are one move: pay the setup one time.',
-    'In 2002 the hardware was fast enough. A stack and a scheduler entry per connection were the limit.',
-    'nginx wanted 10,000 idle connections in one process, with another program for the dynamic pages. So it is a proxy by design.',
-    'An idle connection needs a few hundred bytes and a list entry.',
-    'The first public nginx release is 4 October 2004.',
-    'Two ideas that transfer: ask the other question, and check whether the constraint still exists.',
-  ]}
-/>
+<Remember>
+
+- CGI pays fork, exec, interpreter load, parse, run and exit on every request.
+- Apache 1.3 prefork forks its pool at startup, not per request. One process still parks on one connection.
+- The Apache 2.4 event MPM parks idle keep-alives on epoll. It is the Unix default since 2.4.
+- A servlet object loads one time. Each request is a method call on a pooled thread.
+- Prefork, FastCGI, servlets, connection pools and upstream keep-alive are one move: pay the setup one time.
+- In 2002 the hardware was fast enough. A stack and a scheduler entry per connection were the limit.
+- nginx wanted 10,000 idle connections in one process, with another program for the dynamic pages. So it is a proxy by design.
+- An idle connection needs a few hundred bytes and a list entry.
+- The first public nginx release is 4 October 2004.
+- Two ideas that transfer: ask the other question, and check whether the constraint still exists.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s04-m01-history" /> and <ModuleLink id="s04-m02-the-nginx-question" />.
 
 <Check id="s04-digest-q01" />
 
@@ -219,30 +220,32 @@ A worker is one process with one event loop. It sleeps in a single call until th
 
 The master process reads the config, binds port 80 as root, forks one worker per core, and drops the workers to an unprivileged user. After that the master only handles signals. It never touches a client connection, and a worker never forks again. So the process count of nginx does not change under load. The teaching program `forkd` and nginx both call `fork()`. Only the rate differs, and the whole story from 1994 to 2004 sits in that difference.
 
-The loop itself is six lines. Ask the timer tree for the nearest deadline. Sleep in `epoll_wait` with that deadline as the limit. Run the queued accept events. Release the accept mutex. Fire every timer that is due. Run the other queued events, and start again. A timeout therefore costs nothing while nothing times out, because nginx never polls for one. The nearest deadline is the leftmost node of a red-black tree. The slide says that a worker spends 99.9% of its life asleep in line 2. That figure is a teaching number, not a measurement.
+The loop itself is six lines. Ask the timer tree for the nearest deadline. Sleep in `epoll_wait` with that deadline as the limit. Run the queued accept events. Release the accept mutex. Fire every timer that is due. Run the other queued events, and start again. A timeout therefore costs nothing while nothing times out, because nginx never polls for one. The nearest deadline is the leftmost node of a red-black tree. The deck says on <SlideLink session={4} page={12} /> that a worker spends 99.9% of its life asleep in line 2. That figure is a teaching number, not a measurement.
 
 Each worker also decides alone when to stop taking new connections. It computes `accept_disabled = connection_n / 8 - free_connection_n`. Past 7/8 of its slots the value turns positive, and the worker gives its siblings the next connections. There is no leader, no heartbeat and no shared counter. Each worker reads a number that it already holds. The `accept_mutex` that made this work is off by default since version 1.11.3. In 2004 one new connection woke every worker, which was a real problem, and a userspace mutex fixed it. `EPOLLEXCLUSIVE` on Linux 4.5 and `SO_REUSEPORT` moved the fix into the kernel, so the mutex lost its reason and became dead weight.
 
-Now the price. A handler cannot wait for the rest of a request, so the HTTP parser is a state machine that resumes. It holds 27 states for the request line alone, it reads one byte at a time, and it uses no regular expression, no substring and no allocation. It saves `r->state` between calls, because a request line can arrive in three TCP segments. That is the source-level cost of non-blocking input and output, and a thread-per-connection server can simply wait until the blank line. The request resumes in the same way. Eleven phases run in a four-line loop: POST_READ, SERVER_REWRITE, FIND_CONFIG, REWRITE, POST_REWRITE, PREACCESS, ACCESS, POST_ACCESS, PRECONTENT, CONTENT and LOG. Slide 31 reads a return from that loop as "suspended", not "done", and calls the engine a coroutine, hand-rolled in C. `limit_req` runs in PREACCESS, `auth_basic` in ACCESS, `try_files` in PRECONTENT, and `proxy_pass`, `fastcgi_pass` and the static handler in CONTENT.
+Now the price. A handler cannot wait for the rest of a request, so the HTTP parser is a state machine that resumes. It holds 27 states for the request line alone, it reads one byte at a time, and it uses no regular expression, no substring and no allocation. It saves `r->state` between calls, because a request line can arrive in three TCP segments. That is the source-level cost of non-blocking input and output, and a thread-per-connection server can simply wait until the blank line. The request resumes in the same way. Eleven phases run in a four-line loop: POST_READ, SERVER_REWRITE, FIND_CONFIG, REWRITE, POST_REWRITE, PREACCESS, ACCESS, POST_ACCESS, PRECONTENT, CONTENT and LOG. On <SlideLink session={4} page={31} />, a return from that loop means "suspended", not "done", and the deck calls the engine a coroutine, hand-rolled in C. `limit_req` runs in PREACCESS, `auth_basic` in ACCESS, `try_files` in PRECONTENT, and `proxy_pass`, `fastcgi_pass` and the static handler in CONTENT.
 
-<Remember
-  items={[
-    'One process per core, one loop in each. No connection owns a thread or a process.',
-    'The master binds the ports, reads the config, forks the workers and handles signals. It never touches a connection.',
-    'The worker count does not change under load. fork happens at startup and on reload.',
-    'The six lines: nearest timer, epoll_wait, accept events, release the mutex, expire timers, other events.',
-    'The epoll_wait timeout is the time to the nearest deadline, the leftmost node of a red-black tree.',
-    '"99.9% asleep" is a teaching number, not a measurement.',
-    'accept_disabled = connection_n / 8 - free_connection_n. It turns positive past 7/8 full.',
-    'The balance needs no coordinator. Each worker reads a number that it already has.',
-    'accept_mutex is off by default since 1.11.3, because EPOLLEXCLUSIVE and SO_REUSEPORT do the job.',
-    'The request-line parser holds 27 states, reads one byte at a time and allocates nothing.',
-    '`r->state` survives between reads, because a request line can arrive in three segments.',
-    'That state machine is the source-level cost of non-blocking I/O.',
-    'Eleven phases, POST_READ to LOG. A return from the phase loop can mean "suspended", not "done".',
-    'limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT, proxy_pass and static in CONTENT.',
-  ]}
-/>
+<Remember>
+
+- One process per core, one loop in each. No connection owns a thread or a process.
+- The master binds the ports, reads the config, forks the workers and handles signals. It never touches a connection.
+- The worker count does not change under load. fork happens at startup and on reload.
+- The six lines: nearest timer, epoll_wait, accept events, release the mutex, expire timers, other events.
+- The epoll_wait timeout is the time to the nearest deadline, the leftmost node of a red-black tree.
+- "99.9% asleep" is a teaching number, not a measurement.
+- accept_disabled = connection_n / 8 - free_connection_n. It turns positive past 7/8 full.
+- The balance needs no coordinator. Each worker reads a number that it already has.
+- accept_mutex is off by default since 1.11.3, because EPOLLEXCLUSIVE and SO_REUSEPORT do the job.
+- The request-line parser holds 27 states, reads one byte at a time and allocates nothing.
+- `r->state` survives between reads, because a request line can arrive in three segments.
+- That state machine is the source-level cost of non-blocking I/O.
+- Eleven phases, POST_READ to LOG. A return from the phase loop can mean "suspended", not "done".
+- limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT, proxy_pass and static in CONTENT.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s04-m03-process-model" />, <ModuleLink id="s04-m04-event-loop" /> and <ModuleLink id="s04-m11-parser-phases" />.
 
 <Check id="s04-digest-q04" />
 
@@ -321,24 +324,26 @@ On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus
 
 </Myth>
 
-<Remember
-  items={[
-    'select costs O(watched). epoll costs O(active).',
-    'The select list lives in your process and is rebuilt on each call. The epoll list lives in the kernel.',
-    'select: O(n) build, O(n) in the kernel, O(n) scan. epoll: O(ready events).',
-    '10,000 idle and 10 active: about 30,000 units against 10.',
-    'ulimit -n does nothing for select and everything for epoll.',
-    'Every row of the comparison follows from one decision: who owns the watch list.',
-    'A batch of events can name a connection that an earlier handler in the same batch closed.',
-    'nginx keeps an instance bit in the low bit of the connection pointer and skips a mismatch.',
-    'Alignment keeps that bit zero, so the flag costs no memory and one branch.',
-    'read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.',
-    'True zero copy needs a network card with scatter-gather DMA and checksum offload.',
-    'gzip and TLS must see the bytes, so they stop sendfile. kTLS exists for that reason.',
-    'On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process.',
-    'The win is CPU headroom under concurrency, not a faster single transfer.',
-  ]}
-/>
+<Remember>
+
+- select costs O(watched). epoll costs O(active).
+- The select list lives in your process and is rebuilt on each call. The epoll list lives in the kernel.
+- select: O(n) build, O(n) in the kernel, O(n) scan. epoll: O(ready events).
+- 10,000 idle and 10 active: about 30,000 units against 10.
+- ulimit -n does nothing for select and everything for epoll.
+- Every row of the comparison follows from one decision: who owns the watch list.
+- A batch of events can name a connection that an earlier handler in the same batch closed.
+- nginx keeps an instance bit in the low bit of the connection pointer and skips a mismatch.
+- Alignment keeps that bit zero, so the flag costs no memory and one branch.
+- read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.
+- True zero copy needs a network card with scatter-gather DMA and checksum offload.
+- gzip and TLS must see the bytes, so they stop sendfile. kTLS exists for that reason.
+- On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process.
+- The win is CPU headroom under concurrency, not a faster single transfer.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s04-m05-select-vs-epoll" /> and <ModuleLink id="s04-m06-sendfile" />.
 
 <Check id="s04-digest-q07" />
 
@@ -382,7 +387,7 @@ A reverse proxy is the same caching machine as a forward proxy, moved to the oth
 
 Squid, from 1996, is a forward proxy next to the clients. It caches for a campus and protects the uplink. A reverse proxy is the same machinery on the opposite side: it caches, routes, balances, moves to another server on a failure, terminates TLS, and holds slow clients. The client does not configure it and usually cannot see it, so a reverse proxy can do things that a client would never agree to. The feature lists leave out the one that matters most. A phone that needs 10 seconds to read a response would hold an application worker for 10 seconds, and at 100 requests per second that is 1,000 busy workers. With nginx in front, the app answers in 20 ms, so 100 times 0.02 gives 2. The 1,000 idle connections move to nginx, where a connection is cheap.
 
-The cache is two structures. An index lives in shared memory, and the bodies live in files on disk. `keys_zone=demo:10m` reserves 10 MB for the red-black tree and the LRU queue, at about 8,000 keys per MB, so about 80,000 keys. It sizes the index, not the data. `max_size=100m` is the disk ceiling, and the cache manager deletes from the LRU tail to stay under it. Three clocks run at the same time. `proxy_cache_valid` says how long a stored answer stays fresh. `inactive=60s` deletes an entry that nobody read for 60 seconds, whatever its freshness. And a full cache deletes the least recently used entry even when it is fresh. Slide 20 reduces eviction to one check on the tail: a young tail ends the pass, and an old tail that no client reads is deleted. The test `count == 0` stops a delete while a client downloads that file. Add `X-Cache-Status` from `$upstream_cache_status` to every cache config, and two calls to `curl` show MISS and then HIT.
+The cache is two structures. An index lives in shared memory, and the bodies live in files on disk. `keys_zone=demo:10m` reserves 10 MB for the red-black tree and the LRU queue, at about 8,000 keys per MB, so about 80,000 keys. It sizes the index, not the data. `max_size=100m` is the disk ceiling, and the cache manager deletes from the LRU tail to stay under it. Three clocks run at the same time. `proxy_cache_valid` says how long a stored answer stays fresh. `inactive=60s` deletes an entry that nobody read for 60 seconds, whatever its freshness. And a full cache deletes the least recently used entry even when it is fresh. On <SlideLink session={4} page={20} />, eviction is one check on the tail: a young tail ends the pass, and an old tail that no client reads is deleted. The test `count == 0` stops a delete while a client downloads that file. Add `X-Cache-Status` from `$upstream_cache_status` to every cache config, and two calls to `curl` show MISS and then HIT.
 
 Two switches handle the stampede. `proxy_cache_lock` is the anti-stampede switch, and it is off by default. Without it, a popular object that expires sends every request of the next 200 ms to the origin. With it, one request goes and the rest wait. `proxy_cache_use_stale` with `error`, `timeout`, `updating` and the 5xx codes serves the old copy in place of an error. With `updating`, one request refreshes the entry and everybody else gets the stale copy at once.
 
@@ -392,23 +397,25 @@ In the 1.31.5 code the lock covers a new cache element, which is a MISS. The ins
 
 </Beyond>
 
-<Remember
-  items={[
-    'Squid is a forward proxy, next to the clients. A reverse proxy sits next to the servers. Same machinery, opposite side.',
-    'The client does not configure a reverse proxy and usually cannot see it.',
-    'The feature that nobody lists: a reverse proxy absorbs slow clients.',
-    'Connections held = request rate times time held. That is why buffering moves the wait off the app.',
-    'The cache is an index in shared memory plus bodies in files on disk.',
-    'keys_zone sizes the index, at about 8,000 keys per MB. max_size is the disk ceiling.',
-    'inactive measures the time since the last read. proxy_cache_valid measures freshness.',
-    'The whole eviction policy on the slide: a young tail ends the pass, an old tail with no reader is deleted.',
-    'count == 0 stops the manager from deleting a file that a client downloads now.',
-    'The cache manager evicts from the LRU tail. The cache loader warms the index at startup.',
-    'proxy_cache_lock is the anti-stampede switch, and it is off by default.',
-    'proxy_cache_use_stale serves a stale copy on error, timeout, updating and the 5xx codes.',
-    'With updating, one request refreshes and everybody else gets the stale copy at once.',
-  ]}
-/>
+<Remember>
+
+- Squid is a forward proxy, next to the clients. A reverse proxy sits next to the servers. Same machinery, opposite side.
+- The client does not configure a reverse proxy and usually cannot see it.
+- The feature that nobody lists: a reverse proxy absorbs slow clients.
+- Connections held = request rate times time held. That is why buffering moves the wait off the app.
+- The cache is an index in shared memory plus bodies in files on disk.
+- keys_zone sizes the index, at about 8,000 keys per MB. max_size is the disk ceiling.
+- inactive measures the time since the last read. proxy_cache_valid measures freshness.
+- The whole eviction policy on <SlideLink session={4} page={20} />: a young tail ends the pass, an old tail with no reader is deleted.
+- count == 0 stops the manager from deleting a file that a client downloads now.
+- The cache manager evicts from the LRU tail. The cache loader warms the index at startup.
+- proxy_cache_lock is the anti-stampede switch, and it is off by default.
+- proxy_cache_use_stale serves a stale copy on error, timeout, updating and the 5xx codes.
+- With updating, one request refreshes and everybody else gets the stale copy at once.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s04-m07-reverse-proxy" /> and <ModuleLink id="s04-m08-cache" />.
 
 <Check id="s04-digest-q10" />
 
@@ -495,30 +502,32 @@ nginx keeps prefix locations in a tree and regex locations in a plain array. A t
 
 Location precedence does not follow the order in which you wrote the blocks. An `=` location is an exact match, and it wins at once. A `^~` location is a longest prefix that suppresses the regex search. A `~` location is a regular expression, and the first match in file order wins, not the longest one. `~*` ignores case. A plain prefix such as `location /` answers only when no regex matched. On the class config at port 8081, `/exact` gives 1, `/images/a.php` gives 2, `/other/a.php` gives 3, and `/anything` gives 4. About half the room gets `/images/a.php` wrong and expects the regex to win. The reason is the structure: prefixes form a ternary search tree that nginx builds at config parse time, and regexes form a plain array that it walks in order on every request. So 500 prefix locations are cheap and 500 regex locations are not.
 
-The same reading works on the choice of an upstream server. Smooth weighted round robin adds the weight of each server to its current weight, picks the largest current weight, then subtracts the total of all weights from the winner. For weights 3 and 1, slide 24 writes the result as `a b a a`: the same ratio as the naive `a a a b`, with the turns of the heavy server spread apart. A failure lowers the effective weight of a server, and each selection raises it back by one. That is passive health checking, with no probe traffic. Open-source nginx has no active health checks, and NGINX Plus sells them.
+The same reading works on the choice of an upstream server. Smooth weighted round robin adds the weight of each server to its current weight, picks the largest current weight, then subtracts the total of all weights from the winner. For weights 3 and 1, <SlideLink session={4} page={24} /> writes the result as `a b a a`: the same ratio as the naive `a a a b`, with the turns of the heavy server spread apart. A failure lowers the effective weight of a server, and each selection raises it back by one. That is passive health checking, with no probe traffic. Open-source nginx has no active health checks, and NGINX Plus sells them.
 
 The last piece is the directive behind almost every web framework. `try_files $uri $uri/ /index.html?$args` asks three questions in order: is there a real file, is there a real directory, and if not, hand the request to the app. The last entry is never tested. It is the fallback, not a candidate. `try_files $uri @app` tries the disk first and then the upstream, and a named location such as `@app` is reachable only from `try_files` or `error_page`, never from a URL. WordPress, Rails, Django and every single-page-application router are this one directive plus an app that reads `REQUEST_URI`.
 
-<Remember
-  items={[
-    'Location precedence ignores the order of the blocks in your file.',
-    'An = exact match wins at once and stops the search.',
-    'A ^~ longest prefix suppresses the regex search.',
-    'Among regexes, the first in file order wins, not the longest. ~* ignores case.',
-    'A plain prefix answers only when no regex matched.',
-    'On port 8081: /exact gives 1, /images/a.php gives 2, /other/a.php gives 3, /anything gives 4.',
-    'Prefixes are a tree built at parse time. Regexes are an array walked on every request.',
-    'The data structure is the rule: a tree gives the longest match, an array gives the first match.',
-    'Smooth weighted round robin: add the weights, pick the largest, subtract the total from the winner.',
-    'For 3:1 the slide gives a b a a. Same ratio, turns spread apart.',
-    'A failure lowers the effective weight, and each selection raises it back by one. No probe traffic.',
-    'Open-source nginx has no active health checks. NGINX Plus sells them.',
-    'try_files asks: a real file, a real directory, else the fallback.',
-    'The last try_files entry is never tested.',
-    'A named location such as @app is reachable only from try_files or error_page.',
-    'WordPress, Rails, Django and every SPA router are try_files plus an app that reads REQUEST_URI.',
-  ]}
-/>
+<Remember>
+
+- Location precedence ignores the order of the blocks in your file.
+- An = exact match wins at once and stops the search.
+- A ^~ longest prefix suppresses the regex search.
+- Among regexes, the first in file order wins, not the longest. ~* ignores case.
+- A plain prefix answers only when no regex matched.
+- On port 8081: /exact gives 1, /images/a.php gives 2, /other/a.php gives 3, /anything gives 4.
+- Prefixes are a tree built at parse time. Regexes are an array walked on every request.
+- The data structure is the rule: a tree gives the longest match, an array gives the first match.
+- Smooth weighted round robin: add the weights, pick the largest, subtract the total from the winner.
+- For 3:1, <SlideLink session={4} page={24} /> gives a b a a. Same ratio, turns spread apart.
+- A failure lowers the effective weight, and each selection raises it back by one. No probe traffic.
+- Open-source nginx has no active health checks. NGINX Plus sells them.
+- try_files asks: a real file, a real directory, else the fallback.
+- The last try_files entry is never tested.
+- A named location such as @app is reachable only from try_files or error_page.
+- WordPress, Rails, Django and every SPA router are try_files plus an app that reads REQUEST_URI.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s04-m09-routing" /> and <ModuleLink id="s04-m10-upstreams" />.
 
 <Check id="s04-digest-q13" />
 
@@ -530,14 +539,14 @@ The last piece is the directive behind almost every web framework. `try_files $u
 
 ## Reading the machine
 
-One skill survives every release of nginx. Line numbers drift and function names do not, so find a function by its name at the start of a line. nginx puts the return type on its own line, which makes that search exact. Three protocol trees, `src/http`, `src/stream` and `src/mail`, sit on one shared core, and the repetition is the argument for the design. nginx never frees the memory of a request piece by piece. It allocates from a pool that belongs to the request and destroys the whole pool at the end, so the hot path has no `free()`, no refcounting and almost no cleanup branches. Each of the 100 or more modules has the same four parts: a directive table, config callbacks, the module struct, and handlers in a phase. The class ladder runs `01-fork`, `02-thread`, `03-select`, `04-epoll`, `05-sendfile`, `06-fastcgi` and `07-nginx`. That repo is about 1,200 lines and nginx is about 200,000, and the difference is every error path.
+One skill survives every release of nginx. Line numbers drift and function names do not, so find a function by its name at the start of a line. nginx puts the return type on its own line, which makes that search exact. Three protocol trees, `src/http`, `src/stream` and `src/mail`, sit on one shared core, and the repetition is the argument for the design. nginx never frees the memory of a request piece by piece. It allocates from a pool that belongs to the request and destroys the whole pool at the end, so the hot path has no `free()`, no refcounting and almost no cleanup branches. Each of the 100 or more modules has the same four parts: a directive table, config callbacks, the module struct, and handlers in a phase. The class ladder runs `01-fork`, `02-thread`, `03-select`, `04-epoll`, `05-sendfile`, `06-fastcgi` and `07-nginx`. That repo is about 1,200 lines and nginx is about 200,000, and the difference is every error path. The full lesson is <ModuleLink id="s04-m12-reading-the-source" />.
 
 <NumbersTable
   caption="The numbers of class 4, with the conditions that each one needs"
   rows={[
     { value: '8 MB', what: 'the default Linux thread stack, so 10,000 threads reserve about 80 GB of address space', conditions: 'the default ulimit -s of 8192 KiB' },
     { value: '1024', what: 'FD_SETSIZE, the width of the select bitmap', conditions: 'fixed in a header at compile time. ulimit does not change it.' },
-    { value: '30,000 against 10', what: 'work units for one select call against one epoll_wait', conditions: '10,000 idle sockets and 10 active. Slide 14 counts three passes over n.' },
+    { value: '30,000 against 10', what: 'work units for one select call against one epoll_wait', conditions: '10,000 idle sockets and 10 active. The class counts three passes over n.' },
     { value: '7/8', what: 'how full a worker gets before accept_disabled turns positive', conditions: 'accept_disabled = connection_n / 8 - free_connection_n' },
     { value: '37.4 / 23.3 / 33.2 ms', what: 'wall time for read, mmap and sendfile', conditions: 'a 64 MB file over loopback, on the instructor laptop' },
     { value: '2048 / 4 / 1', what: 'syscalls for the same three modes', conditions: 'the same run: a 64 MB file in 64 KiB chunks over loopback' },

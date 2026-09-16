@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import { href, sessionHref, moduleHref } from '../../lib/url';
 import ModuleProgress from '../lesson/ModuleProgress.tsx';
 import ThemeToggle from '../ThemeToggle.astro';
-import { plannedLessons, sessionLessons } from './lessons';
+import { DIGEST_LABEL, plannedLessons, sessionLessons } from './lessons';
 import Outline from './Outline.astro';
 
 // The site navigation. On a wide screen it is a fixed column at the left. On a
@@ -29,7 +29,7 @@ const sessions = (await getCollection('sessions'))
       modules
         .filter((m) => m.data.session === s.number)
         .sort((a, b) => a.data.order - b.data.order)
-        .map((m) => ({ id: m.id, title: m.data.title })),
+        .map((m) => ({ id: m.id, title: m.data.title, kind: m.data.kind })),
     ),
   }));
 const links = [
@@ -89,8 +89,8 @@ const current = (path: string) => (here === path ? 'page' : undefined);
                   {s.lessons.map((l) =>
                     l.hasPage ? (
                       <li>
-                        <a href={moduleHref(l.id)} aria-current={current(moduleHref(l.id))}>
-                          {l.title}
+                        <a href={moduleHref(l.id)} aria-current={current(moduleHref(l.id))} title={l.title}>
+                          {l.kind === 'digest' ? DIGEST_LABEL : l.title}
                         </a>
                       </li>
                     ) : (
