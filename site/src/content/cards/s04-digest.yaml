@@ -94,8 +94,8 @@ items:
     covers: [S04-C63, S04-C64, S04-C167]
   - id: s04-digest-c23
     front: sendfile shows no wall-time win over loopback. What is the real win, and why does loopback hide it?
-    back: 2,048 syscalls become 1 and 64 MB never enters the process, which is CPU headroom under concurrency. Loopback has no network card and no DMA, and curl shares the CPU.
-    covers: [S04-C69, S04-C70, S04-C71, S04-C72]
+    back: 2,048 syscalls become 1 and 64 MB never enters the process. That is CPU headroom, and the wall-clock win shows at 10,000 concurrent clients on a real network card. Loopback has no card and no DMA, and curl shares the CPU.
+    covers: [S04-C69, S04-C70, S04-C71, S04-C72, S04-C167]
   - id: s04-digest-c24
     front: Where does a forward proxy sit, where does a reverse proxy sit, and which feature do the lists leave out?
     back: A forward proxy next to the clients, a reverse proxy next to the servers. The missing feature is that it absorbs slow clients, so the app never serves a 2G phone itself.
