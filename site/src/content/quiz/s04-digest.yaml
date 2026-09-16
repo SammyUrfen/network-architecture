@@ -1,0 +1,325 @@
+# The questions of the class 4 digest. Three for each of the five parts, in
+# page order. q01, q09 and q13 come back in the exit quiz, one from the
+# history, one from the kernel part and one from the routing part.
+# The misconceptions come from docs/curriculum/session-04.md. Session 4 gives
+# most checks one distractor (its Open questions 31), so a second distractor
+# here reuses a named misconception from a neighbouring module.
+# Segments: 1 the ten years, 2 the loop, 3 the kernel, 4 the desk, 5 the blocks.
+items:
+  - id: s04-digest-q01
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: Apache spent ten years on the per-connection worker. What did nginx change?
+    options:
+      - text: It removed the worker that each connection owned.
+        correct: true
+        feedback: One idle connection keeps a small state record and one slot in a list.
+      - text: It made each worker thread cheaper than an Apache thread.
+        correct: false
+        misconception: S04-M04
+        feedback: Apache already worked on that for ten years. nginx asked why a sleeping connection needs a worker.
+      - text: It forks one process for each request, but much faster than CGI.
+        correct: false
+        misconception: S04-M02
+        feedback: That is CGI. Even prefork moved the fork to startup, and nginx forks only at startup and on reload.
+    explanation: nginx did not make the worker cheaper. It saw that an idle connection needs a small state record and a list entry, so one worker per core can hold thousands of them.
+    covers: [S04-C02, S04-C28]
+    tags: []
+    taughtIn: nginx-deleted-the-worker
+
+  - id: s04-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: Which program was the first web server?
+    options:
+      - text: Mosaic, from NCSA in 1993.
+        correct: false
+        misconception: S04-M01
+        feedback: Mosaic was a browser. It brought inline images and made the web popular.
+      - text: Apache, which grew out of a shared patch set in 1995.
+        correct: false
+        misconception: S04-M01
+        feedback: Apache came five years later, and it descends from NCSA HTTPd.
+      - text: CERN httpd, written by Berners-Lee on a NeXT machine in 1990.
+        correct: true
+        feedback: Three different programs hide in this story, and two of them came from NCSA.
+    explanation: CERN httpd (1990) was the first web server. NCSA HTTPd (1993) was a second server and it invented CGI. Mosaic (1993) was a browser from the same lab. Apache descends from NCSA HTTPd, not from Mosaic.
+    covers: [S04-C04, S04-C05, S04-C06]
+    tags: []
+    taughtIn: seg-ten-years-of-making-the-worker-cheaper
+
+  - id: s04-digest-q03
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: In 2002 one machine was fast enough to serve ten thousand people. What stopped the software?
+    options:
+      - text: The CPUs and the memory of 2002 were still too slow for that load.
+        correct: false
+        misconception: S04-M05
+        feedback: The class says the opposite. The hardware was ready, and the software models were the limit.
+      - text: nginx could not run application code, so it could not make the pages.
+        correct: false
+        misconception: S04-M40
+        feedback: nginx gives dynamic work to another program so that the loop stays free. That is a design choice, not a limit.
+      - text: A stack and a scheduler entry for every connection, and a select bitmap fixed at 1024.
+        correct: true
+        feedback: Three costs, and every one of them belongs to the per-connection worker or to a 1983 API.
+    explanation: A Linux thread took an 8 MB stack by default, every connection took a scheduler entry, and FD_SETSIZE stopped select at 1024 descriptors. So nginx set the goal at 10,000 mostly idle connections in one process.
+    covers: [S04-C21, S04-C22, S04-C23, S04-C27]
+    tags: []
+    taughtIn: seg-ten-years-of-making-the-worker-cheaper
+
+  - id: s04-digest-q04
+    use: [check, practice]
+    segment: 2
+    type: numeric
+    prompt: A worker has `worker_connections 4096` and 400 free slots. What is its accept_disabled value?
+    answer: { value: 112, tolerance: 0, unit: null }
+    distractors:
+      - value: 512
+        feedback: 512 is only the first half, 4096 / 8. Now subtract the free slots from it.
+      - value: 3696
+        feedback: 3696 is the number of slots in use. The formula divides the total by 8 first, then subtracts the free slots.
+    explanation: 'accept_disabled = connection_n / 8 - free_connection_n. So 4096 / 8 = 512, and 512 - 400 = 112. The value is positive, so the worker is past 7/8 full. With the accept mutex on, it then skips the lock for the next 112 loop turns.'
+    covers: [S04-C40, S04-C41]
+    tags: []
+    taughtIn: seg-one-loop-for-each-core-and-the-price-it-charges
+
+  - id: s04-digest-q05
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A client opens a connection and then goes quiet past its timeout. How does the worker notice?
+    options:
+      - text: A tick every 100 ms scans every connection for a deadline that passed.
+        correct: false
+        misconception: S04-M09
+        feedback: A tick wastes a wakeup each time that nothing is due. nginx never polls for a timeout.
+      - text: The nearest deadline is the sleep limit of epoll_wait, and the due timers fire right after the wait.
+        correct: true
+        feedback: Line 1 of the loop reads the nearest deadline, and line 5 fires the timers that passed.
+      - text: The master watches the workers and forks a fresh worker for that connection.
+        correct: false
+        misconception: S04-M06
+        feedback: The master never touches a connection, and the worker count is fixed at startup.
+    explanation: The timer is an argument to the sleep. The nearest deadline is the leftmost node of a red-black tree, so a timeout costs nothing while nothing times out.
+    covers: [S04-C35, S04-C36, S04-C37]
+    tags: []
+    taughtIn: seg-one-loop-for-each-core-and-the-price-it-charges
+
+  - id: s04-digest-q06
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A request line arrives in three TCP segments. What does the nginx parser do with the first segment?
+    options:
+      - text: It saves a state number and pointers into its buffer, and the next call continues from the byte where it stopped.
+        correct: true
+        feedback: 27 states for the request line alone, one byte at a time, and no allocation.
+      - text: Nothing special, because one read always returns the whole request line.
+        correct: false
+        misconception: S04-M32
+        feedback: TCP is a byte stream. A read can stop at any byte of the line.
+      - text: It waits inside the handler for the rest of the line, which delays only that one connection.
+        correct: false
+        misconception: S04-M10
+        feedback: One worker runs one loop. A handler that waits stalls every connection on that worker.
+    explanation: A worker may never wait, so every parser in nginx keeps its state between calls. That resumable state machine is the source-level cost of non-blocking input and output.
+    covers: [S04-C127, S04-C128, S04-C129, S04-C130]
+    tags: []
+    taughtIn: one-loop-one-thing-at-a-time
+
+  - id: s04-digest-q07
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: A worker watches 10,000 sockets and 10 of them have data. Why does one epoll_wait cost about 10 units of work and not 10,000?
+    options:
+      - text: The kernel scans all 10,000 sockets, and it does that faster than select can.
+        correct: false
+        misconception: S04-M12
+        feedback: Nothing scans an idle socket on each call. That is the whole point of the ready list.
+      - text: Nothing changes until you raise `ulimit -n`, which makes select cheap in the same way.
+        correct: false
+        misconception: S04-M11
+        feedback: ulimit does nothing for select, because FD_SETSIZE is a bitmap width of 1024 fixed at compile time.
+      - text: The kernel puts a socket on a ready list when data arrives, and epoll_wait reads only that list.
+        correct: true
+        feedback: The list lives in the kernel, so the cost follows the active sockets and not the watched ones.
+    explanation: select rebuilds its watch list in your process on every call and pays O(n) three times. epoll keeps the list in the kernel, so the cost is O(ready events). Every other difference follows from who owns the list.
+    covers: [S04-C46, S04-C47, S04-C48, S04-C49, S04-C52]
+    tags: []
+    taughtIn: move-the-work-into-the-kernel
+
+  - id: s04-digest-q08
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: epoll_wait returns 8 events. The handler of event 1 closes descriptor 9, and event 4 in the same batch is also for descriptor 9. What can go wrong with no extra check?
+    options:
+      - text: Nothing. The kernel removed descriptor 9 from its list, so the event cannot arrive.
+        correct: false
+        misconception: S04-M13
+        feedback: The batch already sits in your array. The kernel copied it out before the first handler ran.
+      - text: The old event reaches a new client that an accept put on descriptor 9.
+        correct: true
+        feedback: Every author of an event loop writes this bug one time.
+      - text: Nothing, because a test for a closed descriptor catches every stale event.
+        correct: false
+        misconception: S04-M43
+        feedback: After an accept reuses the number, the descriptor is open again and the test passes.
+    explanation: nginx stores an instance flag in the low bit of the connection pointer and flips it on reuse. An event whose flag does not match is skipped. Struct alignment keeps that bit zero, so the flag costs no memory and one branch.
+    covers: [S04-C53, S04-C54, S04-C55, S04-C56]
+    tags: []
+    taughtIn: move-the-work-into-the-kernel
+
+  - id: s04-digest-q09
+    use: [check, exit, practice]
+    segment: 3
+    type: mcq
+    prompt: On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus write and 33.2 ms with sendfile. What is the right conclusion?
+    options:
+      - text: sendfile is not worth the trouble, because 4 ms is inside the noise.
+        correct: false
+        misconception: S04-M17
+        feedback: The saved CPU appears at 10,000 concurrent clients, not in one wall-time number.
+      - text: sendfile makes every single transfer faster, and those 4 ms prove it.
+        correct: false
+        misconception: S04-M15
+        feedback: Over loopback there is no network card and no DMA, so this run cannot show the real win.
+      - text: The benchmark does not model the bottleneck. The real change is 2,048 syscalls down to 1, and 64 MB that never enters the process.
+        correct: true
+        feedback: Loopback lies. The CPU that you do not spend on copies serves the next request.
+    explanation: sendfile removes the copy through your address space and the two mode switches per 64 KiB chunk. On loopback the kernel still copies into the receiver buffer in every mode, and curl competes for the same CPU, so wall time stays flat.
+    covers: [S04-C68, S04-C69, S04-C70, S04-C71, S04-C72]
+    tags: [measured]
+    taughtIn: move-the-work-into-the-kernel
+
+  - id: s04-digest-q10
+    use: [check, practice]
+    segment: 4
+    type: numeric
+    prompt: 100 requests arrive each second. Each client needs 10 s to read its answer, and the application itself takes 20 ms. nginx buffers the response. How many application workers stay busy?
+    answer: { value: 2, tolerance: 0, unit: null }
+    distractors:
+      - value: 1000
+        feedback: 1,000 is the count with no buffering, 100 times 10 s. nginx holds those connections instead, where they are cheap.
+      - value: 100
+        feedback: 100 is the arrival rate. Multiply it by the time that one application worker is held, 0.02 s.
+    explanation: Connections held = request rate times time held. With buffering the app is held for 20 ms, so 100 times 0.02 gives 2. The 1,000 slow connections move to nginx.
+    covers: [S04-C76]
+    tags: []
+    taughtIn: the-proxy-absorbs-the-slow-client
+
+  - id: s04-digest-q11
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: A config has `proxy_cache_path temp/cache keys_zone=demo:10m max_size=100m inactive=60s;`. What does the 10m limit?
+    options:
+      - text: The total size of the cached bodies on disk.
+        correct: false
+        misconception: S04-M20
+        feedback: max_size limits the disk. keys_zone sizes the index only.
+      - text: The index in shared memory, which holds about 80,000 keys.
+        correct: true
+        feedback: About 8,000 keys per MB, for the red-black tree and the LRU queue.
+      - text: How long a stored answer stays fresh.
+        correct: false
+        misconception: S04-M21
+        feedback: That is proxy_cache_valid. inactive is a third clock, the time since the last read.
+    explanation: The cache is two structures. keys_zone sizes the index in shared memory, at about 8,000 keys per MB. max_size caps the bodies on disk, and the cache manager deletes entries from the LRU tail to stay under it.
+    covers: [S04-C81, S04-C82, S04-C85]
+    tags: []
+    taughtIn: the-proxy-absorbs-the-slow-client
+
+  - id: s04-digest-q12
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: An entry sits at the tail of the cache LRU queue and nobody read it for a long time. A client downloads that exact file right now. What does the cache manager do?
+    options:
+      - text: It deletes the file, because the entry reached the tail of the queue.
+        correct: false
+        misconception: S04-M22
+        feedback: A cache file serves many readers at once, so a delete during a download would break them.
+      - text: It skips the entry, because the reader count of the entry is not zero.
+        correct: true
+        feedback: The test count == 0 is the guard, and it is the reason that the reader count exists.
+      - text: It waits 60 more seconds, because inactive marks the entry stale and not deletable.
+        correct: false
+        misconception: S04-M21
+        feedback: inactive measures the time since the last read, and freshness belongs to proxy_cache_valid.
+    explanation: The eviction pass reads the LRU tail. A young tail ends the pass. An old tail is deleted only when count == 0, so a client that downloads the file blocks the delete.
+    covers: [S04-C86, S04-C87, S04-C88]
+    tags: []
+    taughtIn: seg-the-desk-in-front-of-your-servers
+
+  - id: s04-digest-q13
+    use: [check, exit, practice]
+    segment: 5
+    type: predict
+    prompt: 'A config lists four blocks in this order: `location = /exact`, `location ^~ /images/`, `location ~ \.php$`, `location /`. Which block answers a request for /images/a.php?'
+    options:
+      - text: The regex `~ \.php$`, because a regex always beats a prefix.
+        correct: false
+        misconception: S04-M39
+        feedback: A regex beats a plain prefix. It does not beat an = match or a longest prefix with ^~.
+      - text: '`^~ /images/`, because it is the longest matching prefix and `^~` stops the regex search.'
+        correct: true
+        feedback: About half the room gets this one wrong and expects the regex to win.
+      - text: '`location /`, because it stands last in the file and it matches everything.'
+        correct: false
+        misconception: S04-M24
+        feedback: File order matters only inside the regex array. Prefixes sit in a tree that reports the longest match.
+    explanation: nginx walks the prefix tree first and remembers the longest match. That match carries ^~, so the regex array is never tested. The answer is block 2.
+    covers: [S04-C94, S04-C96, S04-C99, S04-C100]
+    tags: []
+    taughtIn: the-data-structure-is-the-rule
+
+  - id: s04-digest-q14
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: A config lists `location ~ \.php$` first and `location ~ ^/admin/.*\.php$` second. Which block answers /admin/x.php?
+    options:
+      - text: 'The first block, `~ \.php$`.'
+        correct: true
+        feedback: Regexes are an array, and nginx walks it in file order until the first match.
+      - text: The second block, because its pattern is the more specific one.
+        correct: false
+        misconception: S04-M25
+        feedback: An array can report only the first match. It has no way to rank two patterns.
+      - text: Neither block, because a prefix location always beats a regex.
+        correct: false
+        misconception: S04-M39
+        feedback: A plain prefix answers only when no regex matched.
+    explanation: A tree gives you the longest match, and an array gives you the first match. The data structure is the whole precedence rule, for prefixes and for regexes alike.
+    covers: [S04-C97, S04-C103, S04-C104]
+    tags: []
+    taughtIn: the-data-structure-is-the-rule
+
+  - id: s04-digest-q15
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: A location has `try_files $uri $uri/ /index.html;` and no file named /index.html exists on disk. A request arrives for /dashboard. What does nginx do?
+    options:
+      - text: It returns 404 at once, because it tests /index.html and finds nothing there.
+        correct: false
+        misconception: S04-M27
+        feedback: The last argument is the fallback, not a candidate. nginx never tests it.
+      - text: It makes an internal redirect to /index.html anyway, and the location search runs again.
+        correct: true
+        feedback: This is the directive behind WordPress, Rails, Django and every SPA router.
+      - text: It answers from `location @app`, the named fallback that try_files always uses.
+        correct: false
+        misconception: S04-M28
+        feedback: A named location is reachable only when try_files or error_page names it, and this line names none.
+    explanation: try_files tests each candidate in order and takes the first real one. When none exists, it redirects internally to the last argument without a test. The app then reads the original path from REQUEST_URI.
+    covers: [S04-C111, S04-C112, S04-C113, S04-C115]
+    tags: []
+    taughtIn: seg-which-block-wins
