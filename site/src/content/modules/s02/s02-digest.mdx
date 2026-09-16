@@ -8,7 +8,7 @@ bigIdea: "Every network wraps a message in envelopes, and each stack picks a dif
 covers: [S02-C01, S02-C13, S02-C14, S02-C15, S02-C16, S02-C17, S02-C18, S02-C19, S02-C20, S02-C22, S02-C24, S02-C25, S02-C26, S02-C27, S02-C28, S02-C30, S02-C32, S02-C34, S02-C35, S02-C36, S02-C37, S02-C38, S02-C39, S02-C40, S02-C45, S02-C47, S02-C48, S02-C49, S02-C50, S02-C51, S02-C52, S02-C53, S02-C54, S02-C55, S02-C56, S02-C57, S02-C58, S02-C59, S02-C60, S02-C62, S02-C63, S02-C64, S02-C65, S02-C67, S02-C68, S02-C69, S02-C70, S02-C72, S02-C73, S02-C77, S02-C79, S02-C80, S02-C81, S02-C82, S02-C83, S02-C84, S02-C87, S02-C88, S02-C89, S02-C90, S02-C91, S02-C92, S02-C93, S02-C94, S02-C95, S02-C96, S02-C97, S02-C98, S02-C99, S02-C100, S02-C101, S02-C102, S02-C103, S02-C104, S02-C105, S02-C106, S02-C107, S02-C108, S02-C109, S02-C110, S02-C111, S02-C112, S02-C113, S02-C115, S02-C116, S02-C117, S02-C118, S02-C120, S02-C121, S02-C122, S02-C123, S02-C124, S02-C125, S02-C127, S02-C128, S02-C129, S02-C130, S02-C131, S02-C132, S02-C135, S02-C136, S02-C137, S02-C138, S02-C139, S02-C141, S02-C143, S02-C144, S02-C145, S02-C146, S02-C147, S02-C148, S02-C149, S02-C150, S02-C151, S02-C152, S02-C153, S02-C154, S02-C155, S02-C156, S02-C158, S02-C159, S02-C160, S02-C161, S02-C162, S02-C163, S02-C164]
 threads: [T-encapsulation, T-framing, T-alphabets, T-round-trip-tax, T-where-state-goes]
 confidence: medium
-status: draft
+status: ready
 terms:
   - term: header
     meaning: a small block of fields that one layer puts in front of the data it got from the layer above
@@ -469,7 +469,7 @@ This part types mail and file protocols by hand, then lands the second design qu
 
 <Terminal
   slot="visual"
-  title="A mail session by hand, against a local test server on port 3025. C: is what you type, S: is the answer."
+  title="The shape of a mail session by hand, against a local test server on port 3025. C: is what you type, and S: is the reply. The reply codes come from RFC 5321. The words next to a code differ from server to server."
   runs={[
     {
       cmd: 'nc -C 127.0.0.1 3025',
