@@ -5,7 +5,7 @@ order: 1
 kind: digest
 title: Class 4 in one fast read
 bigIdea: nginx did not make the per-connection worker cheaper. It removed the worker, gave the kernel the watch list and the file bytes, and turned every cost that stayed into a directive that you can read.
-covers: [S04-C02, S04-C03, S04-C04, S04-C05, S04-C06, S04-C12, S04-C14, S04-C15, S04-C16, S04-C17, S04-C19, S04-C20, S04-C21, S04-C22, S04-C23, S04-C24, S04-C25, S04-C26, S04-C27, S04-C28, S04-C29, S04-C30, S04-C31, S04-C32, S04-C34, S04-C35, S04-C36, S04-C37, S04-C40, S04-C41, S04-C42, S04-C43, S04-C46, S04-C47, S04-C48, S04-C49, S04-C50, S04-C52, S04-C53, S04-C54, S04-C55, S04-C56, S04-C60, S04-C61, S04-C62, S04-C63, S04-C64, S04-C68, S04-C69, S04-C70, S04-C71, S04-C72, S04-C73, S04-C74, S04-C75, S04-C76, S04-C80, S04-C81, S04-C82, S04-C85, S04-C86, S04-C87, S04-C88, S04-C90, S04-C91, S04-C92, S04-C93, S04-C94, S04-C95, S04-C96, S04-C97, S04-C98, S04-C99, S04-C100, S04-C102, S04-C103, S04-C104, S04-C105, S04-C106, S04-C107, S04-C109, S04-C110, S04-C111, S04-C112, S04-C113, S04-C114, S04-C115, S04-C116, S04-C121, S04-C122, S04-C123, S04-C124, S04-C127, S04-C128, S04-C129, S04-C130, S04-C133, S04-C134, S04-C135, S04-C144, S04-C145, S04-C146, S04-C147, S04-C148, S04-C149, S04-C152, S04-C157, S04-C167, S04-C169]
+covers: [S04-C02, S04-C03, S04-C04, S04-C05, S04-C06, S04-C12, S04-C14, S04-C15, S04-C16, S04-C17, S04-C19, S04-C20, S04-C21, S04-C22, S04-C23, S04-C24, S04-C25, S04-C26, S04-C27, S04-C28, S04-C29, S04-C30, S04-C31, S04-C32, S04-C34, S04-C35, S04-C36, S04-C37, S04-C40, S04-C41, S04-C42, S04-C43, S04-C46, S04-C47, S04-C48, S04-C49, S04-C50, S04-C52, S04-C53, S04-C54, S04-C55, S04-C56, S04-C60, S04-C61, S04-C62, S04-C63, S04-C64, S04-C68, S04-C69, S04-C70, S04-C71, S04-C72, S04-C73, S04-C74, S04-C75, S04-C76, S04-C80, S04-C81, S04-C82, S04-C85, S04-C86, S04-C87, S04-C88, S04-C90, S04-C91, S04-C92, S04-C93, S04-C94, S04-C95, S04-C96, S04-C97, S04-C98, S04-C99, S04-C100, S04-C102, S04-C103, S04-C104, S04-C105, S04-C106, S04-C107, S04-C109, S04-C110, S04-C111, S04-C112, S04-C113, S04-C114, S04-C115, S04-C116, S04-C121, S04-C122, S04-C123, S04-C124, S04-C127, S04-C128, S04-C129, S04-C130, S04-C133, S04-C134, S04-C135, S04-C136, S04-C144, S04-C145, S04-C146, S04-C147, S04-C148, S04-C149, S04-C152, S04-C157, S04-C167, S04-C169]
 threads: [T-law-or-habit, T-watch-list, T-setup-off-path, T-honest-benchmarks, T-littles-law]
 confidence: high
 status: ready
@@ -26,7 +26,7 @@ import Check from '../../../components/check/Check.astro';
 import ExitQuiz from '../../../components/check/ExitQuiz.astro';
 import SlideLink from '../../../components/slides/SlideLink.astro';
 
-A web server in 1999 obeyed one rule that nobody questioned. One connection gets one worker. A worker was a process, then a thread, and for ten years good engineers made that worker cheaper. In 2002 an engineer at a large Russian news portal asked a different question. His servers failed under the number of connections that did nothing at all, not under the number of requests. Why does a sleeping connection need a worker?
+A web server in 1999 obeyed one rule that nobody questioned. One connection gets one worker. A worker was a process, then a thread, and for ten years good engineers made that worker cheaper. In 2002 an engineer at a large Russian portal asked a different question. His servers failed under the number of connections that did nothing at all, not under the number of requests. Why does a sleeping connection need a worker?
 
 This class is the answer to that question, followed into the real nginx source. It matters because almost every web request today passes through a proxy of this shape. Each line of an nginx config is one small, readable piece of that machine. When you can read the machine, you can say what a config does before you deploy it.
 
@@ -98,11 +98,11 @@ Each waiter is a worker: a process, and later a thread. Each guest is a connecti
 
 <KeyIdea id="nginx-deleted-the-worker" title="nginx deleted the worker, it did not make it cheaper">
 
-From 1993 to 2002 every new server design answered one question: how do we make the per-connection worker cheaper? nginx answered a different question. An idle connection needs a few hundred bytes of state and a place in a list. It does not need a process or a thread.
+From 1993 to 2002 every new server design answered one question: how do we make the per-connection worker cheaper? nginx answered a different question. One idle connection needs only a small state record, a few hundred bytes, plus one slot in a list. It needs no process and no thread.
 
 </KeyIdea>
 
-CGI, from 1993, paid for a whole program start on every request: fork, exec, the load of an interpreter, a parse, the run, and the exit. Prefork moved that fork to startup, but one process still sat on one connection for its whole life. Threads made the worker lighter in the Apache 2.0 worker MPM, and the Apache 2.4 event MPM parked idle keep-alive connections on epoll and woke a thread only for real work. All three designs answered the same question. The same move appeared on the application side with another name: a servlet from 1997 loads one time, each request is a method call on a pooled thread, and a connection pool does this for the database handshake. The one goal was to stop the creation of a process.
+CGI, from 1993, paid for a whole program start on every request: fork, exec, the load of an interpreter, a parse, the run, and the exit. Prefork moved that fork to startup, but one process still sat on one connection for its whole life. Threads made the worker lighter in the Apache 2.0 worker MPM, and the Apache 2.4 event MPM parked idle keep-alive connections on epoll, the list of ready sockets that the kernel keeps for you, and woke a thread only for real work. Part 3 opens that list. All three designs answered the same question. The same move appeared on the application side with another name: a servlet from 1997 loads one time, each request is a method call on a pooled thread, and a connection pool does this for the database handshake. FastCGI does the same for CGI, because it keeps one program alive between requests. The one goal was to stop the creation of a process.
 
 Dan Kegel named the C10K problem in 1999: ten thousand concurrent connections on one box. By 2002 the hardware was ready and the software was not. A Linux thread got an 8 MB stack by default, every connection got a scheduler entry, and the 1983 `select` API stopped at 1024 descriptors. So the goal of nginx was ten thousand mostly idle connections in one process, with another program to make the dynamic pages. That single choice is the reason nginx is a reverse proxy.
 
@@ -123,7 +123,7 @@ Three different programs hide in that sentence. The first web server was CERN ht
 - Prefork, FastCGI, servlets, pools and upstream keep-alive: pay the setup one time.
 - In 2002 the hardware was ready. A stack and a scheduler entry per connection were the limit.
 - 10,000 idle connections in one process, with another program for the dynamic pages. So nginx is a proxy by design.
-- An idle connection needs a few hundred bytes and a list entry.
+- An idle connection needs a small state record and one slot in a list.
 - The first public nginx release is 4 October 2004.
 - Two ideas that transfer: ask the other question, and check whether the constraint still exists.
 
@@ -224,7 +224,13 @@ The loop itself is six lines. Ask the timer tree for the nearest deadline. Sleep
 
 Each worker also decides alone when to stop taking new connections. It computes `accept_disabled = connection_n / 8 - free_connection_n`. Past 7/8 of its slots the value turns positive, and the worker gives its siblings the next connections. There is no leader, no heartbeat and no shared counter. Each worker reads a number that it already holds. The `accept_mutex` that made this work is off by default since version 1.11.3. In 2004 one new connection woke every worker, which was a real problem, and a userspace mutex fixed it. `EPOLLEXCLUSIVE` on Linux 4.5 and `SO_REUSEPORT` moved the fix into the kernel, so the mutex lost its reason and became dead weight.
 
-Now the price. A handler cannot wait for the rest of a request, so the HTTP parser is a state machine that resumes. It holds 27 states for the request line alone, it reads one byte at a time, and it uses no regular expression, no substring and no allocation. It saves `r->state` between calls, because a request line can arrive in three TCP segments. That is the source-level cost of non-blocking input and output, and a thread-per-connection server can simply wait until the blank line. The request resumes in the same way. Eleven phases run in a four-line loop: POST_READ, SERVER_REWRITE, FIND_CONFIG, REWRITE, POST_REWRITE, PREACCESS, ACCESS, POST_ACCESS, PRECONTENT, CONTENT and LOG. On <SlideLink session={4} page={31} />, a return from that loop means "suspended", not "done", and the deck calls the engine a coroutine, hand-rolled in C. `limit_req` runs in PREACCESS, `auth_basic` in ACCESS, `try_files` in PRECONTENT, and `proxy_pass`, `fastcgi_pass` and the static handler in CONTENT.
+Now the price. A handler cannot wait for the rest of a request, so the HTTP parser is a state machine that resumes. It holds 27 states for the request line alone, it reads one byte at a time, and it uses no regular expression, no substring and no allocation. It saves `r->state` between calls, because a request line can arrive in three TCP segments. That is the source-level cost of non-blocking input and output, and a thread-per-connection server can simply wait until the blank line. The request resumes in the same way. Eleven phases run in a four-line loop. First POST_READ and SERVER_REWRITE, then FIND_CONFIG, then REWRITE and POST_REWRITE, then PREACCESS, ACCESS and POST_ACCESS, and last PRECONTENT, CONTENT and LOG. On <SlideLink session={4} page={31} />, a return from that loop means "suspended", not "done", and the deck calls the engine a coroutine, hand-rolled in C. `limit_req` runs in PREACCESS, `auth_basic` in ACCESS, `try_files` in PRECONTENT, and `proxy_pass`, `fastcgi_pass` and the static handler in CONTENT. Only the static handler sits in the CONTENT handler array. `proxy_pass` and `fastcgi_pass` set the content handler of their own location, so a grep of the phase arrays never lists them.
+
+<Beyond source="nginx 1.31.5, ngx_event.c and ngx_event_accept.c" url="https://nginx.org/en/docs/ngx_core_module.html#accept_mutex">
+
+The loop reads `accept_disabled` only while `accept_mutex` is on. With the default off on Linux, a positive value instead makes the worker add its listen socket back, so `EPOLLEXCLUSIVE` wakes a sibling for the next connection. The 7/8 rule holds either way, by two different routes.
+
+</Beyond>
 
 <Remember>
 
@@ -241,7 +247,7 @@ Now the price. A handler cannot wait for the rest of a request, so the HTTP pars
 - `r->state` survives between reads, because a line can arrive in three segments.
 - That state machine is the source-level cost of non-blocking I/O.
 - Eleven phases, POST_READ to LOG. A return can mean "suspended", not "done".
-- limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT, proxy_pass and static in CONTENT.
+- limit_req PREACCESS, auth_basic ACCESS, try_files PRECONTENT, static CONTENT. proxy_pass sets its own location handler.
 
 </Remember>
 
@@ -316,11 +322,11 @@ epoll gives the kernel the watch list, so one call costs the ready sockets and n
 
 epoll brings one trap. `epoll_wait` returns a batch of events. When you handle event 1, you can close the connection that event 7 points at. A new client can then land on the same recycled descriptor, and event 7 reaches the wrong connection. Every author of an event loop writes this bug one time. nginx stores an instance flag in the low bit of the connection pointer, flips the flag when it reuses the connection, and skips an event whose flag does not match. Structs are aligned, so that low bit is always zero. The flag costs no memory and one branch.
 
-The second move is about bytes, not sockets. A `read()` and a `write()` make four copies and two mode switches for each chunk: disk to page cache, page cache to your buffer, your buffer to the socket buffer, socket buffer to the network card. One `sendfile()` call names the file and the socket, and the data never enters your process. With a network card that has scatter-gather DMA and checksum offload, both copies that stay are DMA copies. Bytes that you must change have to come into user space, so gzip and TLS force the file bytes into memory. That is why gzip and sendfile fight, and why kTLS exists. `sendfile on` is a permission, not an order.
+The second move is about bytes, not sockets. A `read()` and a `write()` make four copies and two mode switches for each chunk: disk to page cache, page cache to your buffer, your buffer to the socket buffer, socket buffer to the network card. One `sendfile()` call names the file and the socket, and the data never enters your process. With a network card that has scatter-gather DMA and checksum offload, both copies that stay are DMA copies. Bytes that you must change have to come into user space, so gzip and TLS force the file bytes into memory. That is why gzip and sendfile fight, and why kTLS exists, which moves the encryption itself into the kernel. `sendfile on` is a permission, not an order.
 
 <Myth myth="sendfile makes every transfer faster.">
 
-On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus write and 33.2 ms with sendfile. That difference is not the win. Over loopback there is no network card and no DMA, the kernel copies into the receiver buffer in every mode, and `curl` competes for the same CPU. What really changed is the syscall count: 2,048 calls became 1, and 64 MB never entered the process. A benchmark that does not model the bottleneck measures the wrong thing.
+On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus write and 33.2 ms with sendfile. That difference is not the win. Over loopback there is no network card and no DMA, the kernel copies into the receiver buffer in every mode, and `curl` competes for the same CPU. What really changed is the syscall count: 2,048 calls became 1, and 64 MB never entered the process. When a benchmark does not model the real bottleneck, it measures the wrong thing.
 
 </Myth>
 
@@ -339,7 +345,7 @@ On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus
 - True zero copy needs a card with scatter-gather DMA and checksum offload.
 - gzip and TLS must see the bytes, so they stop sendfile. Hence kTLS.
 - On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process. Headroom, not speed.
-- A benchmark that does not model the bottleneck measures the wrong thing.
+- A benchmark that misses the real bottleneck measures the wrong thing.
 
 </Remember>
 
@@ -409,7 +415,7 @@ In the 1.31.5 code the lock covers a new cache element, which is a MISS. The ins
 - The whole eviction policy on <SlideLink session={4} page={20} />: a young tail ends the pass, an old tail with no reader is deleted.
 - count == 0 stops a delete while a client downloads that file.
 - The cache manager evicts from the LRU tail. The cache loader warms the index.
-- proxy_cache_lock is the anti-stampede switch, and it is off by default.
+- proxy_cache_lock is the switch against a stampede. It is off by default.
 - proxy_cache_use_stale serves a stale copy on error, timeout, updating and 5xx.
 - With updating, one request refreshes and the rest get the stale copy at once.
 
@@ -504,7 +510,7 @@ Location precedence does not follow the order in which you wrote the blocks. An 
 
 The same reading works on the choice of an upstream server. Smooth weighted round robin adds the weight of each server to its current weight, picks the largest current weight, then subtracts the total of all weights from the winner. For weights 3 and 1, <SlideLink session={4} page={24} /> writes the result as `a b a a`: the same ratio as the naive `a a a b`, with the turns of the heavy server spread apart. A failure lowers the effective weight of a server, and each selection raises it back by one. That is passive health checking, with no probe traffic. Open-source nginx has no active health checks, and NGINX Plus sells them.
 
-The last piece is the directive behind almost every web framework. `try_files $uri $uri/ /index.html?$args` asks three questions in order: is there a real file, is there a real directory, and if not, hand the request to the app. The last entry is never tested. It is the fallback, not a candidate. `try_files $uri @app` tries the disk first and then the upstream, and a named location such as `@app` is reachable only from `try_files` or `error_page`, never from a URL. WordPress, Rails, Django and every single-page-application router are this one directive plus an app that reads `REQUEST_URI`.
+The last piece is the directive behind almost every web framework. `try_files $uri $uri/ /index.html?$args` asks three questions in order: is there a real file, is there a real directory, and if not, hand the request to the app. The last entry is never tested. It is the fallback, not a candidate. `try_files $uri @app` tries the disk first and then the upstream, and only `try_files` or `error_page` can reach a named location such as `@app`. A URL never reaches one. WordPress, Rails, Django and every single-page-application router are this one directive plus an app that reads `REQUEST_URI`.
 
 <Remember>
 
@@ -522,7 +528,7 @@ The last piece is the directive behind almost every web framework. `try_files $u
 - Open-source nginx has no active health checks. NGINX Plus sells them.
 - try_files asks: a real file, a real directory, else the fallback.
 - The last try_files entry is never tested.
-- A named location such as @app is reachable only from try_files or error_page, never from a URL.
+- Only try_files or error_page reaches a named location such as @app. A URL never does.
 - WordPress, Rails, Django and every SPA router: try_files plus an app that reads REQUEST_URI.
 
 </Remember>
@@ -539,7 +545,7 @@ The last piece is the directive behind almost every web framework. `try_files $u
 
 ## Reading the machine
 
-One skill survives every release of nginx. Line numbers drift and function names do not, so find a function by its name at the start of a line. nginx puts the return type on its own line, which makes that search exact. Three protocol trees, `src/http`, `src/stream` and `src/mail`, sit on one shared core, and the repetition is the argument for the design. nginx never frees the memory of a request piece by piece. It allocates from a pool that belongs to the request and destroys the whole pool at the end, so the hot path has no `free()`, no refcounting and almost no cleanup branches. Each of the 100 or more modules has the same four parts: a directive table, config callbacks, the module struct, and handlers in a phase. The callbacks are eight functions that create and merge configs, and `merge_loc_conf` decides what a location inherits from its server. The class ladder runs `01-fork`, `02-thread`, `03-select`, `04-epoll`, `05-sendfile`, `06-fastcgi` and `07-nginx`. That repo is about 1,200 lines and nginx is about 200,000, and the difference is every error path. The full lesson is <ModuleLink id="s04-m12-reading-the-source" />.
+One skill survives every release of nginx. Line numbers drift and function names do not, so find a function by its name at the start of a line. nginx puts the return type on its own line, which makes that search exact. Three protocol trees, `src/http`, `src/stream` and `src/mail`, sit on one shared core, and the repetition is the argument for the design. nginx never frees the memory of a request piece by piece. It allocates from a pool that belongs to the request and destroys the whole pool at the end, so the hot path has no `free()`, no refcounting and almost no cleanup branches. Each of the 100 or more modules has the same four parts: a directive table, config callbacks, the module struct, and handlers in a phase. The callbacks are eight functions that create and merge configs, and `merge_loc_conf` decides what a location inherits from its server. The class ladder is seven small servers in the instructor repo, and each one adds the next fix: `01-fork`, `02-thread`, `03-select`, `04-epoll`, `05-sendfile`, `06-fastcgi` and `07-nginx`. That repo is about 1,200 lines and nginx is about 200,000, and the difference is every error path. The full lesson is <ModuleLink id="s04-m12-reading-the-source" />.
 
 <NumbersTable
   caption="The numbers of class 4, with the conditions that each one needs"

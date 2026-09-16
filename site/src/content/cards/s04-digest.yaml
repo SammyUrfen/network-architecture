@@ -22,7 +22,7 @@ items:
     covers: [S04-C14]
   - id: s04-digest-c05
     front: What does an idle connection need in nginx, and why is nginx a reverse proxy?
-    back: A few hundred bytes of state and a place in a list. Dynamic work goes to another program so that the loop stays free.
+    back: One small state record of a few hundred bytes, plus one slot in a list. Dynamic work goes to another program so that the loop stays free.
     covers: [S04-C27, S04-C28]
   - id: s04-digest-c06
     front: Name five mechanisms that are the same move, "pay the setup one time".
@@ -62,7 +62,7 @@ items:
     covers: [S04-C127, S04-C128, S04-C129, S04-C130]
   - id: s04-digest-c15
     front: How many HTTP phases does nginx have, and which phase runs limit_req, auth_basic and try_files?
-    back: Eleven, from POST_READ to LOG. limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT. A return from the phase loop can mean suspended, not done.
+    back: Eleven, from POST_READ to LOG. PREACCESS runs limit_req, ACCESS runs auth_basic, and PRECONTENT runs try_files. A return from the phase loop can mean suspended, not done.
     covers: [S04-C133, S04-C134, S04-C135]
   - id: s04-digest-c16
     front: Where does the select watch list live, and where does the epoll watch list live?

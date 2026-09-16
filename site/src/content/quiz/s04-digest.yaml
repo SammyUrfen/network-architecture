@@ -14,7 +14,7 @@ items:
     options:
       - text: It removed the worker that each connection owned.
         correct: true
-        feedback: An idle connection keeps a few hundred bytes of state and a place in a list.
+        feedback: One idle connection keeps a small state record and one slot in a list.
       - text: It made each worker thread cheaper than an Apache thread.
         correct: false
         misconception: S04-M04
@@ -83,7 +83,7 @@ items:
         feedback: 512 is only the first half, 4096 / 8. Now subtract the free slots from it.
       - value: 3696
         feedback: 3696 is the number of slots in use. The formula divides the total by 8 first, then subtracts the free slots.
-    explanation: accept_disabled = connection_n / 8 - free_connection_n. So 4096 / 8 = 512, and 512 - 400 = 112. The value is positive, so the worker is past 7/8 full and gives its siblings the next connections.
+    explanation: 'accept_disabled = connection_n / 8 - free_connection_n. So 4096 / 8 = 512, and 512 - 400 = 112. The value is positive, so the worker is past 7/8 full. With the accept mutex on, it then skips the lock for the next 112 loop turns.'
     covers: [S04-C40, S04-C41]
     tags: []
     taughtIn: seg-one-loop-for-each-core-and-the-price-it-charges
