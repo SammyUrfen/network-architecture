@@ -270,7 +270,7 @@ The locker is one SS7 signal unit, the bag is the MAP field for user data, and t
 
 An SMS nests like a web request, fifty years apart. MTP2 holds MTP3, which holds SCCP, which holds TCAP, which holds MAP, which holds the message. The MAP invoke carries opCode 46, mo-ForwardSM, which means a phone sends a text. Inside it sits the SMS-SUBMIT unit, with the message type, a reference number, the destination number, the alphabet setting, a validity time and the user data length.
 
-Three limits stack, and the smallest wins. One signal unit carries at most 272 octets, the MAP user data field holds about 200, and the text field, TP-UD, holds 140. So an SMS is 140 bytes because a 1980s signalling packet caps at 272. That buys something real: the whole operation fits in one signal unit, so nothing splits, nothing reassembles and nobody keeps state. SMS ran on 1980s hardware for that reason, and it still works when the data network is down.
+Three limits stack, and the smallest wins. One signal unit carries at most 272 octets, the MAP user data field holds about 200, and the text field, TP-UD, holds 140. The 140 therefore traces back to a 1980s signalling packet that stops at 272 octets. That buys something real: the whole operation fits in one signal unit, so nothing splits, nothing reassembles and nobody keeps state. SMS ran on 1980s hardware for that reason, and it still works when the data network is down.
 
 <Beyond source="ITU-T Q.703 and Q.704">
 
