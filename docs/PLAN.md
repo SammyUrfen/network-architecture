@@ -10,6 +10,7 @@ A living document. Update the status table when a phase changes state.
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
 | 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | v2 done 2026-09-14: both pilots rebuilt to lesson contract v2, and all 15 feedback items fixed. Session 1 lessons 1 to 3 also built. All five lessons are `ready`. Next: Bibek reviews the five lessons. | Bibek's review |
+| Q | Quiz sprint: one class digest for classes 1 to 4 | done 2026-09-16: 4 digests, 410 core claims covered, verify rule 11 guards it | — |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
 | 5 | Sessions 1 and 2, remaining modules (20) | Session 1 m01 to m03 built 2026-09-14, ahead of the hard gate (section 10). 17 modules wait for Bibek's review of the format. | 34–68 h of packets for the 17 |
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
