@@ -7,8 +7,7 @@ items:
     answer: { value: 78.125, tolerance: 0.5, unit: GiB }
     distractors:
       - value: 80
-        misconception: S03-M01
-        feedback: 80,000 MiB is the total in MiB. Divide by 1,024 to get GiB. The deck rounds the decimal form to "80 GB".
+        feedback: "80 GB is the decimal rounding of the deck. The question asks for GiB, so divide 80,000 MiB by 1,024."
     explanation: 10,000 × 8 MiB = 80,000 MiB. 80,000 / 1,024 = 78.125 GiB. That is address space, not RAM.
     covers: [S03-C20, S03-C21, S03-C22]
     tags: []
@@ -165,8 +164,7 @@ items:
     answer: { value: 1000, tolerance: 0, unit: requests }
     distractors:
       - value: 10000
-        misconception: S03-M40
-        feedback: 10,000 is the arrival rate for one second. Multiply it by the mean time for one request, 0.1 s.
+        feedback: 10,000 is the arrival rate, not the number in flight. Multiply it by the mean time for one request, 0.1 s.
     explanation: L = lambda times W. 10,000 per second × 0.1 s = 1,000 in flight. At 1 s each, the same traffic holds 10,000.
     covers: [S03-C132, S03-C133]
     tags: []
