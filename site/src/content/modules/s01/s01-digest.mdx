@@ -1,0 +1,486 @@
+---
+id: s01-digest
+kind: digest
+session: 1
+order: 100
+title: Class 1 in one fast read
+minutes: 26
+bigIdea: "Every TCP server is seven requests to the operating system. What breaks around those seven calls, and how you design the bytes that flow through them, is the whole of class 1."
+covers: [S01-C04, S01-C05, S01-C07, S01-C09, S01-C10, S01-C11,
+  S01-C13, S01-C14, S01-C15, S01-C17, S01-C18, S01-C19, S01-C20, S01-C21,
+  S01-C22, S01-C24, S01-C25, S01-C26, S01-C27, S01-C28, S01-C30, S01-C31,
+  S01-C32, S01-C34, S01-C35, S01-C36, S01-C42, S01-C43, S01-C44, S01-C45,
+  S01-C46, S01-C47, S01-C48, S01-C49, S01-C50, S01-C51, S01-C52, S01-C53,
+  S01-C54, S01-C55, S01-C56, S01-C57, S01-C58, S01-C60, S01-C61, S01-C62,
+  S01-C63, S01-C64, S01-C65, S01-C66, S01-C67, S01-C69, S01-C70, S01-C72,
+  S01-C73, S01-C74, S01-C76, S01-C77, S01-C78, S01-C79, S01-C80, S01-C83,
+  S01-C84, S01-C85, S01-C86, S01-C87, S01-C89, S01-C90, S01-C91, S01-C92,
+  S01-C93, S01-C94, S01-C95, S01-C96, S01-C97, S01-C98, S01-C99, S01-C102,
+  S01-C106, S01-C107, S01-C108, S01-C109, S01-C110, S01-C112, S01-C114,
+  S01-C115, S01-C117, S01-C119, S01-C120, S01-C121, S01-C122, S01-C123,
+  S01-C124, S01-C126, S01-C136, S01-C138, S01-C142]
+prereqs: []
+threads: [T-framing, T-network-not-function, T-encapsulation, T-skip-unknown, T-watch-list, T-alphabets, T-setup-off-path]
+confidence: high
+status: ready
+terms:
+  - term: system call
+    meaning: a request from a program to the kernel, the core of the operating system. A program never touches the network itself.
+  - term: port
+    meaning: a number from 0 to 65535 that picks one program on one computer. A server claims one, and clients aim at it.
+  - term: accept queue
+    meaning: the line of finished connections that wait for the program to take them
+  - term: byte stream
+    meaning: bytes in order, with no mark between one write and the next
+  - term: framing
+    meaning: the rule that says where one message ends and the next one starts
+  - term: signal
+    meaning: a short message with a name and a number, such as SIGPIPE, 13. The kernel sends it to a program and interrupts its work.
+---
+
+import ByteView from '../../../components/diagram/ByteView.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import Terminal from '../../../components/diagram/Terminal.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import Myth from '../../../components/lesson/Myth.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import WordCard from '../../../components/lesson/WordCard.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+Class 1 builds a working network server out of nothing, then breaks it on purpose. This page is the fast read of that whole class. It takes about 18 minutes, plus about 8 minutes of questions at the end.
+
+The class matters because the bugs that look like magic in Express, Flask or nginx all live at this layer. A server that hangs and answers nobody. A server that dies with no error message at all. A message that arrives cut in half. Each one has a plain cause, and class 1 shows every one of them.
+
+**The path through this digest.** Part 1 builds a TCP server out of seven requests to the operating system, and gives it a door number. Part 2 meets the one write that kills a server in silence, and the client program on the other end of it. Part 3 opens two translations that hide inside a twenty-line client, and then the two ways to serve many clients at once. Part 4 reads the real bytes with curl and tcpdump, and meets the wrapper that hides them. Part 5 designs bytes of your own: where a message ends, how a parser skips a field it never saw, and why a call over a network is not a function call.
+
+Each part ends with three questions. After the parts come the numbers of the class, an exit quiz and the review cards. Where a full lesson already exists, the part links to it.
+
+<WordCard terms={frontmatter.terms} />
+
+<Segment title="Seven calls and one door number">
+
+**In this part.** Class 1 starts with a server of about twenty lines of C. You learn the seven requests that it makes to the operating system, and the two settings that decide what a client sees before your own code runs at all.
+
+<Stepper
+  slot="visual"
+  title="The seven calls of a TCP server"
+  steps={[
+    {
+      caption: 'socket() asks the kernel for an endpoint. The kernel gives back the number 3, a file descriptor, the handle for that endpoint.',
+      lanes: [
+        { label: 'The server program', chunks: ['socket() → 3'] },
+        { label: 'The kernel holds', chunks: ['fd 3: a new endpoint'] },
+        { label: 'A client sees', chunks: [] },
+      ],
+    },
+    {
+      caption: 'bind() claims port 2026 on every network address of the machine. listen() turns the endpoint into a listening socket with a queue.',
+      lanes: [
+        { label: 'The server program', chunks: ['socket() → 3', 'bind(3, 0.0.0.0:2026) → 0', 'listen(3, 1) → 0'] },
+        { label: 'The kernel holds', chunks: ['fd 3: listening on 2026', 'accept queue: empty'] },
+        { label: 'A client sees', chunks: [] },
+      ],
+    },
+    {
+      caption: 'A client connects. The kernel finishes the whole TCP handshake on its own and puts the finished connection in the queue. The program still knows nothing.',
+      lanes: [
+        { label: 'The server program', chunks: ['listen(3, 1) → 0', 'accept(3) → waiting'] },
+        { label: 'The kernel holds', chunks: ['fd 3: listening on 2026', 'accept queue: 1 connection'] },
+        { label: 'A client sees', chunks: ['connect() → 0, connected'] },
+      ],
+    },
+    {
+      caption: 'accept() takes that connection out of the queue and gives back a second descriptor, 4. Descriptor 3 stays open for the next client.',
+      lanes: [
+        { label: 'The server program', chunks: ['accept(3) → 4'] },
+        { label: 'The kernel holds', chunks: ['fd 3: listening on 2026', 'fd 4: this one client', 'accept queue: empty'] },
+        { label: 'A client sees', chunks: ['connected'] },
+      ],
+    },
+    {
+      caption: 'read() and write() move bytes on descriptor 4. The echo server sends back exactly the bytes that it got.',
+      lanes: [
+        { label: 'The server program', chunks: ['read(4) → 6 bytes', 'write(4, hello) → 6'] },
+        { label: 'The kernel holds', chunks: ['fd 3: listening on 2026', 'fd 4: this one client'] },
+        { label: 'A client sees', chunks: ['hello'] },
+      ],
+    },
+    {
+      caption: 'The client closes its side, so read() returns 0. close(4) ends this client, and the loop goes back to accept() on descriptor 3.',
+      lanes: [
+        { label: 'The server program', chunks: ['read(4) → 0', 'close(4)', 'accept(3) → waiting'] },
+        { label: 'The kernel holds', chunks: ['fd 3: listening on 2026', 'accept queue: empty'] },
+        { label: 'A client sees', chunks: ['the connection ended'] },
+      ],
+    },
+  ]}
+/>
+
+A program never touches the network itself. It asks the kernel, and the kernel does the work. A TCP server asks seven times, always in the same order: `socket()`, `bind()`, `listen()`, `accept()`, `read()`, `write()`, `close()`. The class echo server reads one time, writes the same bytes back, closes, and loops to the next client. The persistent version of it loops on one client until `read()` returns 0, which is how the kernel says that the client closed its side.
+
+Think of a shop in a mall. The shopkeeper cannot build walls or doors, so the mall office does that work. The office gives a shop, a number on the door and a guard who lines customers up. The shopkeeper calls "next, please", hears a word, says it back, says goodbye, and calls the next customer. Where this breaks: the guard only lines customers up, but the kernel finishes the whole TCP handshake before your program hears about the client at all.
+
+<KeyIdea id="seven-calls-are-the-whole-server" title="Seven calls are the whole server">
+
+Every TCP server makes the same seven requests to the kernel: socket, bind, listen, accept, read, write, close. Express, Flask and the Go `net/http` package wrap those calls under their own names. They do not replace them. Run your framework under `strace` and you can find the `accept()` inside it.
+
+</KeyIdea>
+
+Now the door number. `bind()` claims a port, and the port number carries a rule: only root may claim a port below 1024. <SlideLink session={1} page={8} /> lists the low ports 80 for HTTP, 443 for HTTPS, 25 for SMTP, 21 for FTP and 110 for POP. That rule has a security cost. A server on port 80 runs as root, so one bug in its request parser hands an attacker root on the whole machine. Real deployments bind 8080 as a normal user, and a small front proxy owns 80 and 443. The class server also binds `INADDR_ANY`, which means every network interface, including your LAN. Bind `127.0.0.1` when you mean this machine only.
+
+<Myth claim="Nothing can use a port below 1024 without root, ever." covers="S01-C10">
+
+The 1024 line says **who may break the rule**, not that nobody can. Root can. A program with the `CAP_NET_BIND_SERVICE` capability can. A machine with a lower `ip_unprivileged_port_start` lets any user do it. The rule is a privilege, not a wall.
+
+</Myth>
+
+The second setting is the queue. Skip `bind()` and a client gets "Connection refused" at once, because the kernel answers the SYN with an RST. Call `bind()` and `listen()` but never `accept()`, and the opposite happens: the kernel finishes the handshake anyway, the connection waits in a queue, and the client hangs with no reply. The first failure is fast and loud. The second is silent and slow, and it looks exactly like an overloaded server. The second argument of `listen()` sizes that queue. When `accept()` finally returns, the TCP connection already exists, because the client already waited in line. Linux caps the backlog at `net.core.somaxconn`, so the number in your code may not be the number in use. The backlog is the depth of that queue, not a limit on how many clients you can serve.
+
+One more trap sits at restart. A connection that your server closed first holds its port in TIME_WAIT for about a minute, so a quick restart fails with "Address already in use". Set `SO_REUSEADDR` before `bind()` on every start, and the restart works.
+
+<Myth claim="A full accept queue refuses the next client." covers="S01-C22">
+
+A full queue is **not portable**. Linux drops the new SYN in silence, so the client retries and only fails after about two minutes. Some other systems refuse at once, and some leave the client on an endless "Trying...". Never build logic on the behavior that you saw on your own machine.
+
+</Myth>
+
+<Remember items={[
+  'The seven calls, in order: socket, bind, listen, accept, read, write, close.',
+  'read() returns 0 when the peer closed its side. That is the end of the data.',
+  'No bind(): the client is refused at once. No accept(): the client hangs with no reply.',
+  'The second argument of listen() sizes the accept queue. It is not a limit on clients.',
+  'Ports below 1024 need root or the CAP_NET_BIND_SERVICE capability. Bind 8080 behind a proxy.',
+  'Set SO_REUSEADDR before bind(), or a quick restart fails with "Address already in use".',
+]} />
+
+The full lessons are <ModuleLink id="s01-m01-seven-syscalls" /> and <ModuleLink id="s01-m02-ports-and-queue" />.
+
+<Check id="s01-digest-q01" />
+
+<Check id="s01-digest-q02" />
+
+<Check id="s01-digest-q03" />
+
+</Segment>
+
+<Segment title="The write that kills the server">
+
+**In this part.** Part 1 left the server alive and looping. Now one client leaves in the middle of an answer, and the server is gone with no error message. You learn the signal behind that, and then you meet the client program itself, which is the same seven calls with three of them removed.
+
+<Stepper
+  slot="visual"
+  title="A client that leaves the hard way"
+  steps={[
+    {
+      caption: 'The client connects and sends the 5 bytes of hello. The server reads them, then sleeps for 1 second on purpose.',
+      lanes: [
+        { label: 'The client', chunks: ['connect() → 0', 'write(hello) → 5'] },
+        { label: 'The server', chunks: ['read(4, hello) → 5', 'sleep 1 second'] },
+        { label: 'Exit status', chunks: [] },
+      ],
+    },
+    {
+      caption: 'The client sets SO_LINGER to {1, 0} and calls close(). That option makes the kernel send RST, a reset, in place of the polite FIN.',
+      lanes: [
+        { label: 'The client', chunks: ['setsockopt(SO_LINGER {1, 0})', 'close() → sends RST'] },
+        { label: 'The server', chunks: ['sleep 1 second'] },
+        { label: 'Exit status', chunks: [] },
+      ],
+    },
+    {
+      caption: 'The server wakes and writes. On Linux the first write reports the plain error ECONNRESET. No signal yet, and the code checks no result.',
+      lanes: [
+        { label: 'The client', chunks: ['gone'] },
+        { label: 'The server', chunks: ['write(4, hello) → -1 ECONNRESET'] },
+        { label: 'Exit status', chunks: [] },
+      ],
+    },
+    {
+      caption: 'The second write gets EPIPE, and the kernel sends SIGPIPE. Its default action ends the server at once, and the server prints nothing.',
+      lanes: [
+        { label: 'The client', chunks: ['gone'] },
+        { label: 'The server', chunks: ['write(4, hello) → -1 EPIPE', 'killed by SIGPIPE'] },
+        { label: 'Exit status', chunks: ['141 = 128 + 13'] },
+      ],
+    },
+  ]}
+/>
+
+A write to a socket that the peer already closed kills your process by default, and it prints no error message. The killer is SIGPIPE, signal 13. Class 1 lists the numbers you meet most: 2 is SIGINT from Control-C, 9 is SIGKILL, 13 is SIGPIPE and 15 is SIGTERM. SIGTERM is the polite kill, because a program can catch it and clean up first. No program can catch SIGKILL at all. When a signal ends a process, the shell reports 128 plus the signal number, so the demo server leaves the exit status 141.
+
+The demo makes the death certain. The server reads one time, sleeps one second, then writes two times, and the second write never runs. The client sets the socket option `SO_LINGER` to `{1, 0}`, which makes `close()` send RST in place of FIN. A normal close sends FIN and leaves the closing side in TIME_WAIT. A linger-zero close sends RST, drops any unsent data and skips TIME_WAIT. It is fast and lossy, so use it to show the difference, never in production.
+
+<KeyIdea id="a-dead-peer-kills-the-writer" title="A dead peer kills the program that writes to it">
+
+Writing to a connection that the other side already ended raises SIGPIPE, and the default action of SIGPIPE ends your process with no message. A server must opt out, with `signal(SIGPIPE, SIG_IGN)` or the `MSG_NOSIGNAL` flag, and then check the result of every write.
+
+</KeyIdea>
+
+Now turn the connection around and look at the client. The client is the same list of calls with three of them gone: `socket()`, `connect()`, `write()`, `close()`. It has no bind, no listen and no accept. `connect()` is the call that starts the TCP handshake. Clients do not bind, because the kernel picks the client port at `connect()` time, from the ephemeral range, which is 32768 to 60999 on a normal Linux machine. A server binds a known port for the opposite reason: clients need a fixed address to aim at. After a close, the side that closed first holds the port in TIME_WAIT for about 60 seconds on Linux, which RFC 9293 states as 2 MSL. A busy client that opens and closes connections fast runs out of ports.
+
+You do not need to write a client to try any of this. Class 1 makes that point first: you already have clients. `telnet` opens any TCP port, `nc` connects to one and `nc -l` listens on one, and `openssl s_client` does the TLS handshake for an encrypted service. If a protocol is text, your keyboard is already a working client for it.
+
+<Remember items={[
+  'SIGPIPE is signal 13, and a shell shows 128 + 13 = 141 for a process that it ended.',
+  'On Linux the first write after a reset returns ECONNRESET, and the next one brings SIGPIPE.',
+  'SIGKILL cannot be caught. SIGTERM is the polite kill that a program can catch.',
+  'SO_LINGER {1, 0} makes close() send RST: no unsent data, and no TIME_WAIT.',
+  'A client is socket, connect, write, close. The kernel picks its port at connect().',
+  'Linux holds TIME_WAIT for 60 s on the side that closed first.',
+]} />
+
+The full lessons are <ModuleLink id="s01-m03-signals-sigpipe" /> and <ModuleLink id="s01-m04-clients" />.
+
+<Check id="s01-digest-q04" />
+
+<Check id="s01-digest-q05" />
+
+<Check id="s01-digest-q06" />
+
+</Segment>
+
+<Segment title="Two translations and many clients">
+
+**In this part.** Two steps hide inside the twenty-line client before its first byte leaves: a number swap and a name lookup. The name lookup can block for seconds, and that leads straight to the last question of the class demo. How does one program serve more than one client at a time?
+
+<ByteView
+  slot="visual"
+  caption="Port 2026 as a number, in the memory of an x86 laptop, and on the wire"
+  messages={[
+    {
+      name: 'The value in your code: 2026, which is 0x07EA',
+      fields: [
+        { hex: 'EA 07', label: 'x86 memory: the low byte first' },
+      ],
+    },
+    {
+      name: 'After htons(2026): the same value in network byte order',
+      fields: [
+        { hex: '07 EA', kind: 'length', label: 'the wire: the high byte first' },
+      ],
+    },
+    {
+      name: 'Forget htons, and the kernel reads EA 07 as the port number',
+      fields: [
+        { hex: 'EA 07', label: '0xEA07 = port 59911, not 2026' },
+      ],
+    },
+  ]}
+/>
+
+Port 2026 is 0x07EA. A little-endian machine, which means any normal x86 or ARM laptop, stores that as `EA 07`, with the low byte first. Network byte order is the opposite: the high byte goes first, so the wire carries `07 EA`. The call `htons()` makes that swap, and its name says "host to network, short". `htonl()` does the same for four bytes, and `ntohs()` and `ntohl()` convert back. Forget the swap on x86 and your server binds port 59911 in silence, and every client that aims at 2026 gets refused.
+
+The second translation is the name. A lookup reads `/etc/hosts` first, before any network traffic at all, so a stale line in that file wins over the whole internet. For any other name it sends one UDP datagram to your resolver, and the resolver recurses through the root, the TLD and the authoritative servers. The answer stays in a cache for its TTL, so the same lookup is fast when warm and takes seconds when cold. Use `getaddrinfo()` in real code, because `gethostbyname()` handles IPv4 only and is not thread-safe.
+
+<Myth claim="gethostbyname() is a quick local lookup, like reading a variable." covers="S01-C53">
+
+It is **a whole protocol behind one plain-looking call**. It can read files, send UDP, wait for a recursion across the internet, and block your program for seconds. The call gives you no timeout that you control. One slow lookup inside a single-process server stalls every client of that server.
+
+</Myth>
+
+That last sentence is the bridge. Twenty lines of C already touch three layers: the echo text is layer 7, TCP and the port are layer 4, and the IP address is layer 3. But the echo server serves exactly one client at a time, and class 1 gives two ways past that. The first is `fork()` for each connection. It is simple, the operating system does the scheduling, and a crash stays inside one child. `fork()` returns twice, which surprises everyone the first time: 0 in the child, the child process ID in the parent, and -1 on failure. The parent must close its own copy of the client descriptor and go back to `accept()`, or the client never sees the end of the data. The cost is one process for each client. That is fine for hundreds and hopeless at ten thousand.
+
+The second way is to ask the kernel which sockets are ready. `select()` is portable and O(n): you rebuild the set on each call, and the kernel walks all of it. It also cannot watch a descriptor number above FD_SETSIZE, which is 1024. `epoll` is Linux only and O(ready): you register interest one time, and you get back only the descriptors that changed. nginx and Node are built this way. The event loop is harder to write, and one slow handler blocks every client at once. Both designs still ship in production today.
+
+<KeyIdea id="one-blocked-call-stops-everyone" title="In one process, one blocked call stops everyone">
+
+A single process that waits inside `read()`, or inside a name lookup, serves nobody else while it waits. `fork()` buys isolation with one process for each client. An event loop with `select` or `epoll` keeps one process and asks the kernel who is ready, and it pays for that with a slow handler that blocks all of them.
+
+</KeyIdea>
+
+<SlideLink session={1} page={29} /> says that select and epoll need "no per-client memory". Read that as no process and no stack for each client, because each connection still holds a buffer and some state. The same shortage shows up on the client side. Chrome opened at most 6 connections to one host, and requests 7 to 10 waited in a queue. `ulimit -n` is your ceiling on open descriptors, a socket counts as one, and it is often 1024. A connection pool answers all of it: open a connection one time and reuse it, so later requests skip the TCP and TLS handshakes.
+
+<Myth claim="The six-connection cap is an old browser quirk." covers="S01-C77">
+
+It is **the client side of the same resource problem**. Descriptors, memory and handshakes cost something on both ends, so the browser rations them. No HTTP standard sets the number. Chromium still uses 6 for its normal socket pool.
+
+</Myth>
+
+<Remember items={[
+  'Network byte order is big-endian. 2026 is 0x07EA, and the wire carries 07 EA.',
+  'Forget htons() on x86 and the kernel binds 59911 in silence.',
+  'A name lookup reads /etc/hosts first, then sends one UDP query. The resolver recurses.',
+  'fork() returns 0 in the child, the child PID in the parent, and -1 on failure.',
+  'select is O(watched) and stops at 1024 descriptors. epoll is O(ready) and is Linux only.',
+  'A pool pays the TCP and TLS handshakes one time, then reuses the connection.',
+]} />
+
+The full lessons are <ModuleLink id="s01-m05-byte-order-dns" /> and <ModuleLink id="s01-m06-many-clients" />.
+
+<Check id="s01-digest-q07" />
+
+<Check id="s01-digest-q08" />
+
+<Check id="s01-digest-q09" />
+
+</Segment>
+
+<Segment title="See the bytes until a wrapper hides them">
+
+**In this part.** The bytes of a text protocol are readable, and two tools show them to you. Then TLS wraps them and they are gone. You also learn the three encodings that let you read bytes that were never text.
+
+<ByteView
+  slot="visual"
+  caption="A whole HTTP request by hand: 36 bytes, and every line ends in CR LF"
+  view="text"
+  messages={[
+    {
+      fields: [
+        { text: 'GET / HTTP/1.1\r\n', label: 'the request line, 16 bytes' },
+        { text: 'Host: google.com\r\n', label: 'one header line, 18 bytes' },
+        { text: '\r\n', kind: 'delimiter', label: 'the empty line ends the headers, 2 bytes' },
+      ],
+    },
+  ]}
+/>
+
+An HTTP client is the plain client of Part 2 with a request string added: connect to port 80, write the text, and read the reply. The rules of that text are strict. Every line ends in CR LF, and the blank line after the headers is mandatory. Miss it and the server waits for more headers that never come. `curl` is the best teaching tool for all of this: plain `curl` fetches, `curl -i` shows you the reply headers, and `curl -vv` adds the connection and TLS detail. For the packets themselves, `tcpdump -w` writes a capture of a port, `-r` reads the file back, `-A` shows the bytes as ASCII and `-X` shows hex beside ASCII.
+
+Then TLS arrives and the readable bytes stop. Two sides use asymmetric cryptography to agree on a shared secret, and then switch to much faster symmetric cryptography for the actual data. A certificate binds a public key to an identity, and the chain of certificate authorities behind it is the reason you trust it. A certificate also expires, sometimes at three in the morning.
+
+<Myth claim="SSL secures HTTP." covers="S01-C85">
+
+**SSL secures TCP**, not HTTP. It sits under the application protocol, so the same machinery protects SMTP and database connections as well. That also tells you what a sniffer still sees: the IP addresses, the ports and the sizes stay in the clear, because TLS rides on TCP and does not hide it.
+
+</Myth>
+
+<KeyIdea id="tls-wraps-tcp-not-http" title="TLS wraps TCP, not HTTP">
+
+TLS is a wrapper around a reliable byte stream. Any protocol on TCP can use it, which is why one library covers HTTPS, mail and databases. It hides the content of the stream. It does not hide who is talking to whom, on which port, or how much.
+
+</KeyIdea>
+
+Not every byte you meet is text. Three encodings cover the rest of class 1, and each is a fixed rule between values and bytes, with nothing secret about it. BCD packs one decimal digit into four bits, so the five digits 98765 become the three bytes `98 76 5F`, with the nibble F as padding for the odd last digit. The pleasant part is that a hex dump of BCD shows the decimal digits unchanged, so you read them by eye. Hex itself is for reading: two characters for each byte, printed next to the ASCII by `tcpdump -X`. base64 is for transport, not for reading. It carries any bytes through a channel that accepts text only, such as Basic authentication, a JWT, an email attachment or a data URI. Its cost is 33% more bytes, because every 3 bytes become 4 characters.
+
+<Remember items={[
+  'Every HTTP line ends in CR LF, and the empty line after the headers is mandatory.',
+  'curl -i shows the reply headers. tcpdump -X shows hex beside ASCII.',
+  'TLS sits under the application protocol, on TCP. It protects SMTP and databases too.',
+  'TLS agrees a secret with asymmetric crypto, then moves the data with symmetric crypto.',
+  'BCD holds one digit in four bits: 98765 packs to 98 76 5F, with F as the pad.',
+  'base64 costs 33% more bytes and hides nothing. Anyone can decode it.',
+]} />
+
+The full lessons are <ModuleLink id="s01-m07-see-the-bytes-tls" /> and <ModuleLink id="s01-m09-encodings" />.
+
+<Check id="s01-digest-q10" />
+
+<Check id="s01-digest-q11" />
+
+<Check id="s01-digest-q12" />
+
+</Segment>
+
+<Segment title="Design the bytes yourself">
+
+**In this part.** The last third of class 1 turns you into the protocol designer. You answer the one question that every protocol must answer, then you learn the trick that lets an old parser survive a new field, and the hard truth about a call that crosses a network.
+
+<ByteView
+  slot="visual"
+  caption="The two messages hi and hello, framed three ways"
+  messages={[
+    {
+      name: 'Fixed length, N = 5: the reader always counts 5 bytes',
+      fields: [
+        { text: 'hi', label: 'message 1' },
+        { hex: '00 00 00', kind: 'pad', label: 'padding, and it is wasted' },
+        { text: 'hello', label: 'message 2' },
+      ],
+    },
+    {
+      name: 'Delimiter: the reader scans for the newline byte',
+      fields: [
+        { text: 'hi', label: 'message 1' },
+        { hex: '0A', kind: 'delimiter', label: 'newline ends it' },
+        { text: 'hello', label: 'message 2' },
+        { hex: '0A', kind: 'delimiter', label: 'newline ends it' },
+      ],
+    },
+    {
+      name: 'Length prefix: the reader reads the count, then takes exactly that many bytes',
+      fields: [
+        { hex: '02', kind: 'length', label: 'length: 2' },
+        { text: 'hi', label: 'message 1' },
+        { hex: '05', kind: 'length', label: 'length: 5' },
+        { text: 'hello', label: 'message 2' },
+      ],
+    },
+  ]}
+/>
+
+Start with text against binary. Text won the web, because a person can telnet in and read it, and read it again in a log or a capture. The cost of text is that it is verbose, ambiguous at the edges and slow to parse. Binary is compact, unambiguous and cheap to parse, and it needs tools, which is why hex and base64 fluency matters. Protocols are going binary again: HTTP/1.1 is text and HTTP/2 is binary.
+
+Then the central question. TCP gives you a byte stream, not messages, so framing is the most important decision in any protocol. <SlideLink session={1} page={39} /> gives three answers. A fixed length is trivial and unambiguous, but it wastes padding and N can never change. A delimiter, like the blank line in HTTP, is simple until the delimiter turns up inside the data. A length prefix, like `Content-Length: 219`, is binary-safe, and most modern protocols use it. Later decks in this course say only "length or delimiter", with no third option. Both statements hold, because a fixed length is a length that both sides agreed on ahead of time. It lives in the specification instead of in each message.
+
+<KeyIdea id="every-protocol-must-say-where-a-message-ends" title="Every protocol must say where a message ends">
+
+TCP keeps every byte and its order, and it keeps no mark where one `write()` stopped. So the protocol adds the mark. Either the reader knows the count ahead of time or reads it from a prefix, or it scans for a delimiter and pays the escaping cost.
+
+</KeyIdea>
+
+Put a type and a length before each value and you get TLV, which the class calls "ASN.1 you can write on a napkin". The payoff is forward compatibility. A parser that meets a type it never saw reads the length and jumps exactly that many bytes, so a version 1 parser survives a version 2 sender. TLS extensions, ISO 8583 and protobuf all use the idea. ASN.1 is the grown-up form: write the grammar one time and a tool generates the encoder and the decoder for you. Its DER rules give you the bytes. A DER INTEGER is the tag `0x02`, a length and the value, and DER adds a leading `00` when the top bit of the value is 1, so that the number does not read as negative. A DER SEQUENCE is the tag `0x30`, a length and then its child records.
+
+<Terminal
+  title="The class sample, cn-at-scaler/lesson1, re-run on 2026-09-13"
+  runs={[
+    { cmd: './10_tlv', out: 'TLV: 01 05 68 65 6C 6C 6F' },
+    { cmd: './11_asn1_der', out: 'DER SEQUENCE: 30 07 02 01 05 02 02 00 C8' },
+  ]}
+/>
+
+The class ends with RPC, which is framing plus a function name. You marshal the name and the arguments, frame them and send them, and the two steps have names: marshalling and demarshalling. But the network is not a function call. A call can fail halfway. It can time out when the work may or may not have run. It can be retried and run twice. gRPC is the modern shape of the idea: protobuf underneath, which is faster than JSON and easier to understand than ASN.1. It is schema first, so one `.proto` file generates client and server code in any language. protobuf puts tag, length and value on the wire, so new fields do not break old clients. It runs on HTTP/2, which is binary and carries many streams over one connection. The price is debuggability: plain `curl` cannot read a gRPC call at all.
+
+<Remember items={[
+  'TCP is a byte stream with no message edges. Framing is the first decision of a protocol.',
+  'Fixed length wastes padding. A delimiter needs escaping. A length prefix is binary-safe.',
+  'A fixed length is a length both sides agreed on ahead of time, so the rule is length or delimiter.',
+  'TLV lets an old parser skip an unknown type by jumping over its length.',
+  'DER INTEGER is tag 02, and it adds a leading 00 when the top bit is 1. SEQUENCE is tag 30.',
+  'A timeout tells you nothing about whether the work ran. Retry only what is idempotent.',
+]} />
+
+The full lessons are <ModuleLink id="s01-m08-framing" />, <ModuleLink id="s01-m11-tlv-asn1" /> and <ModuleLink id="s01-m10-rpc" />.
+
+<Check id="s01-digest-q13" />
+
+<Check id="s01-digest-q14" />
+
+<Check id="s01-digest-q15" />
+
+</Segment>
+
+## The numbers of class 1
+
+Every measured number below keeps the machine and the setup that produced it. A number without its conditions is worth less than no number.
+
+<NumbersTable
+  rows={[
+    { value: '7', what: 'system calls in a TCP server', conditions: 'socket, bind, listen, accept, read, write, close' },
+    { value: '1024', what: 'the port below which a bind needs root', conditions: 'Linux, the default ip_unprivileged_port_start' },
+    { value: '4096', what: 'the cap on the listen() backlog', conditions: 'net.core.somaxconn on the verification machine. 4096 since Linux 5.4, 128 before' },
+    { value: '13, then 141', what: 'the SIGPIPE signal number, and the exit status a shell shows', conditions: '128 + 13. Any Linux shell' },
+    { value: '60 s', what: 'how long a closed connection sits in TIME_WAIT', conditions: 'Linux, a fixed value. RFC 9293 states it as 2 MSL' },
+    { value: '32768 to 60999', what: 'the ephemeral port range, which is 28,232 ports', conditions: 'the Linux default ip_local_port_range' },
+    { value: '0x07EA', what: 'port 2026, which the wire carries as 07 EA', conditions: 'x86 memory holds EA 07. Without htons the kernel binds 59911' },
+    { value: '1024', what: 'the highest descriptor number that select() can watch', conditions: 'FD_SETSIZE, on Linux' },
+    { value: '6', what: 'connections per host that Chrome opened, with 7 to 10 in a queue', conditions: 'slide 33. Chromium still uses 6 for its normal socket pool' },
+    { value: '219', what: 'the Content-Length of the 301 that Google sent to telnet', conditions: 'the instructor Mac laptop, live google.com over the internet, 2026-08-12. A curl re-run on 2026-09-13 matched' },
+    { value: '133 and 136 s', what: 'how long connect() took to fail against a full accept queue', conditions: 'two runs, Linux 7.1, loopback, default settings, no client timeout, 2026-09-14' },
+    { value: '33%', what: 'the size cost of base64', conditions: 'every 3 bytes become 4 characters' },
+    { value: '255', what: 'the largest message that a 1-byte length prefix can describe', conditions: 'two length bytes give 65,535' },
+  ]}
+/>
+
+## Check yourself
+
+The exit quiz asks the fifteen questions of this page again, now graded and out of order. Answer them without scrolling back.
+
+<ExitQuiz module="s01-digest" />
+
+<CardsAdded id="s01-digest" />
