@@ -301,7 +301,7 @@ Think of one tutor in a room of students. The tutor helps one student, and the r
 
 Port 2026 is 0x07EA. Any normal x86 or ARM laptop is little-endian and stores that as `EA 07`, low byte first. Network byte order is the opposite, so the wire carries `07 EA`. The call `htons()` makes that swap: "host to network, short". `htonl()` does four bytes, and `ntohs()` and `ntohl()` convert back. Forget the swap on x86 and your server binds port 59911 in silence, and every client that aims at 2026 gets refused.
 
-The second translation is the name. A lookup reads `/etc/hosts` first, before any network traffic, so a stale line there beats the whole internet. For any other name it sends one UDP datagram to your resolver, which recurses through the root, the TLD and the authoritative servers. The answer stays in a cache for its TTL, so the lookup is fast when warm and slow when cold. Use `getaddrinfo()` in real code: `gethostbyname()` is IPv4 only and not thread-safe.
+The second translation is the name. A lookup reads `/etc/hosts` first, before any network traffic, so a stale line there beats the whole internet. For any other name it sends one UDP datagram to your resolver, which recurses through the root, the TLD and the authoritative servers. The answer stays in a cache for its TTL, so the lookup is fast when warm and slow when cold. Real code calls `getaddrinfo()` instead. The older `gethostbyname()` handles IPv4 alone, and two threads cannot share it.
 
 <Myth myth="gethostbyname() is a quick local lookup, like reading a variable.">
 
