@@ -251,9 +251,9 @@ items:
         correct: false
         misconception: S03-M30
         feedback: The set still holds 1,024 bits. Descriptor 2000 has no bit, whatever else is open.
-      - text: None of these. Use `poll` or `epoll` instead.
+      - text: None of these. Use `epoll` instead.
         correct: true
-        feedback: FD_SETSIZE is a compile-time constant. poll takes an array, and epoll keeps the list in the kernel.
+        feedback: FD_SETSIZE is a compile-time constant. epoll keeps the watch list inside the kernel, with no bitmap and no width.
     explanation: The select wall is the width of a bitmap in a header, so no run-time setting moves it.
     covers: [S03-C39, S03-C44, S03-C166]
     tags: []
