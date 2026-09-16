@@ -1,0 +1,155 @@
+# The review cards of the class 1 digest, s01-digest. 30 cards, in page order.
+# c29 and c30 sit next to the cards that they split from, c04 and c13. Each
+# card asks one fact, so no card bundles two scenarios (learner review of
+# 2026-09-16, findings 14 to 18).
+# No card asks which slide or deck says what (lesson contract rule 11).
+items:
+  - id: s01-digest-c01
+    front: Which seven system calls does a TCP server make, in order?
+    back: socket, bind, listen, accept, read, write, close.
+    covers: [S01-C04]
+
+  - id: s01-digest-c02
+    front: A server calls read() on a client connection and gets 0 bytes. What happened?
+    back: The client closed its side. 0 is how the kernel reports the end of the data.
+    covers: [S01-C19]
+
+  - id: s01-digest-c03
+    front: What has already happened by the time accept() returns a connection?
+    back: The kernel finished the whole TCP handshake, and the connection waited in the accept queue.
+    covers: [S01-C21]
+
+  - id: s01-digest-c04
+    front: A server skips bind() and then listens. What does a client that aims at the intended port see?
+    back: A refusal at once. Nothing holds that port, so the kernel answers the connection request with an RST.
+    covers: [S01-C15]
+
+  - id: s01-digest-c29
+    front: A server calls bind() and listen() but never calls accept(). What does a client see?
+    back: The client connects, and then it waits with no reply. The kernel finished the handshake and queued the connection, so it looks like an overloaded server.
+    covers: [S01-C17, S01-C18]
+
+  - id: s01-digest-c05
+    front: What does the second argument of listen() set, and which Linux setting can override it?
+    back: The depth of the accept queue, not a limit on how many clients you serve. Linux caps it at net.core.somaxconn.
+    covers: [S01-C20, S01-C24, S01-C25]
+
+  - id: s01-digest-c06
+    front: Why does a real deployment bind port 8080 and not port 80?
+    back: A port below 1024 needs root, and a bug in a request parser that runs as root gives an attacker root. A small front proxy owns 80 and 443 instead.
+    covers: [S01-C09, S01-C13, S01-C14]
+
+  - id: s01-digest-c07
+    front: What does INADDR_ANY mean for a listening socket, and which option lets a quick restart bind again?
+    back: INADDR_ANY listens on every interface, including the LAN. SO_REUSEADDR, set before bind(), lets the bind succeed while old sockets sit in TIME_WAIT.
+    covers: [S01-C80, S01-C83]
+
+  - id: s01-digest-c08
+    front: A process ends with the exit status 141 and no message. Which signal ended it, and how do you get the number?
+    back: SIGPIPE. A shell reports 128 plus the signal number, and 141 - 128 = 13, which is SIGPIPE.
+    covers: [S01-C27, S01-C34]
+
+  - id: s01-digest-c09
+    front: Which two signals can no handler catch, and which signal is the polite kill?
+    back: No handler can catch SIGKILL or SIGSTOP. SIGTERM is the polite kill, because a program can catch it and clean up first.
+    covers: [S01-C28]
+
+  - id: s01-digest-c10
+    front: On Linux, a server writes two times to a connection that the client reset. What does each write get?
+    back: The first write returns the error ECONNRESET. The second returns EPIPE and brings SIGPIPE, which ends the process by default.
+    covers: [S01-C26, S01-C30]
+
+  - id: s01-digest-c11
+    front: What does SO_LINGER set to {1, 0} make close() send, and what does that change?
+    back: It sends RST in place of FIN. Unsent bytes are dropped, and neither side waits in TIME_WAIT. It is fast and lossy, so it belongs in a demo.
+    covers: [S01-C31, S01-C32]
+
+  - id: s01-digest-c12
+    front: Which four system calls make a TCP client, and which one starts the handshake?
+    back: socket, connect, write, close. connect() starts the handshake. A client makes no bind, listen or accept call.
+    covers: [S01-C44, S01-C45]
+
+  - id: s01-digest-c13
+    front: Where does the port number of a client come from, and what is the range on Linux?
+    back: The kernel picks it at connect(), from the ephemeral range 32768 to 60999.
+    covers: [S01-C46, S01-C48]
+
+  - id: s01-digest-c30
+    front: After a connection closes, which side waits in TIME_WAIT, and for how long on Linux?
+    back: The side that called close() first, for 60 s. RFC 9293 states the same wait as 2 MSL.
+    covers: [S01-C49, S01-C142]
+
+  - id: s01-digest-c14
+    front: Which command-line tool talks to a service on port 443 by hand, and why can telnet not do it?
+    back: openssl s_client. telnet and plain nc send raw bytes, and neither one can do the TLS handshake.
+    covers: [S01-C35, S01-C42]
+
+  - id: s01-digest-c15
+    front: What is network byte order, and which two bytes carry port 2026?
+    back: Big-endian, the most significant byte first. 2026 is 0x07EA, so the wire carries 07 EA. An x86 laptop holds it as EA 07.
+    covers: [S01-C50, S01-C51]
+
+  - id: s01-digest-c16
+    front: What does htons() do on a big-endian CPU, and what happens on x86 if you skip it?
+    back: On a big-endian CPU it does nothing, because host order already matches the wire. Skip it on x86 and the kernel binds port 59911 in silence.
+    covers: [S01-C52]
+
+  - id: s01-digest-c17
+    front: Which steps does a name lookup take, in order, before it returns an address?
+    back: It reads /etc/hosts first, with no network traffic. Then it sends one UDP query to the resolver, and the resolver recurses through the root, the TLD and the authoritative servers, and caches the answer for its TTL.
+    covers: [S01-C54, S01-C55, S01-C56]
+
+  - id: s01-digest-c18
+    front: What does fork() return, and what must the parent do right after it?
+    back: 0 in the child, the child process ID in the parent, and -1 on failure. The parent must close its own copy of the client descriptor, or the client never sees the end of the data.
+    covers: [S01-C69, S01-C70]
+
+  - id: s01-digest-c19
+    front: What does one select() call cost, against one epoll_wait() call?
+    back: select is O(watched descriptors), because the kernel walks the whole set each time. epoll is O(ready descriptors).
+    covers: [S01-C72, S01-C74]
+
+  - id: s01-digest-c20
+    front: Which bytes end the header block of an HTTP message, and why two pairs?
+    back: CR LF CR LF. The first pair ends the last header line, and the empty line after it adds the second pair.
+    covers: [S01-C61]
+
+  - id: s01-digest-c21
+    front: Which tcpdump flag shows hex beside the ASCII, and which one shows the ASCII alone?
+    back: -X shows hex beside the ASCII. -A shows the ASCII alone.
+    covers: [S01-C84]
+
+  - id: s01-digest-c22
+    front: Why does TLS use two different kinds of cryptography, and what does the certificate add?
+    back: Asymmetric cryptography agrees on a shared secret, and then symmetric cryptography moves the data, because it is much faster. The certificate binds the key to an identity, and the chain of certificate authorities is why you trust it.
+    covers: [S01-C86, S01-C87]
+
+  - id: s01-digest-c23
+    front: How does BCD pack the digits 98765, and what does a hex dump of it show?
+    back: 'Four bits for each digit, two digits in each byte: 98 76 5F, with the nibble F as the pad for the odd last digit. A hex dump shows the decimal digits unchanged.'
+    covers: [S01-C98, S01-C99]
+
+  - id: s01-digest-c24
+    front: What does TCP deliver to the reader, and what are the two framing rules?
+    back: A byte stream in order, with no mark where one write stopped. Either a length or a delimiter must say where a message ends.
+    covers: [S01-C92, S01-C97]
+
+  - id: s01-digest-c25
+    front: What does each of the three framing answers cost?
+    back: A fixed length wastes padding and can never change N. A delimiter needs escaping when the data holds it. A length prefix needs the size up front, and its field width caps the message.
+    covers: [S01-C93, S01-C94, S01-C95, S01-C96]
+
+  - id: s01-digest-c26
+    front: Why is text still the usual choice for a protocol, and what does binary buy?
+    back: A person can read text with telnet, tcpdump and a log, and that readability is most of why HTTP won. Binary is compact, unambiguous and cheap to parse, and it needs tools. HTTP/1.1 is text and HTTP/2 is binary.
+    covers: [S01-C89, S01-C90, S01-C91]
+
+  - id: s01-digest-c27
+    front: Which DER tag byte marks an INTEGER, which marks a SEQUENCE, and when does DER add a leading 00?
+    back: 0x02 for INTEGER and 0x30 for SEQUENCE. DER adds a leading 00 when the top bit of the value is 1, so that the number does not read as negative. An ASN.1 schema generates the encoder and the decoder for you.
+    covers: [S01-C102, S01-C106, S01-C107]
+
+  - id: s01-digest-c28
+    front: What does gRPC use to encode its messages, and which transport carries them?
+    back: protobuf messages, over HTTP/2.
+    covers: [S01-C120, S01-C123]
