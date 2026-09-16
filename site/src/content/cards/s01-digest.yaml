@@ -1,5 +1,7 @@
-# The review cards of the class 1 digest, s01-digest. 28 cards, in page order:
-# 7 for part 1, 6 for part 2, 5 for part 3, 4 for part 4, 6 for part 5.
+# The review cards of the class 1 digest, s01-digest. 30 cards, in page order.
+# c29 and c30 sit next to the cards that they split from, c04 and c13. Each
+# card asks one fact, so no card bundles two scenarios (learner review of
+# 2026-09-16, findings 14 to 18).
 # No card asks which slide or deck says what (lesson contract rule 11).
 items:
   - id: s01-digest-c01
@@ -18,9 +20,14 @@ items:
     covers: [S01-C21]
 
   - id: s01-digest-c04
-    front: A server skips bind(), and a second server calls bind() and listen() but never accept(). What does a client see in each case?
-    back: With no bind, a refusal at once, because the kernel answers the SYN with an RST. With no accept, the client connects and then waits with no reply, which looks like an overloaded server.
-    covers: [S01-C15, S01-C17, S01-C18]
+    front: A server skips bind() and then listens. What does a client that aims at the intended port see?
+    back: A refusal at once. Nothing holds that port, so the kernel answers the connection request with an RST.
+    covers: [S01-C15]
+
+  - id: s01-digest-c29
+    front: A server calls bind() and listen() but never calls accept(). What does a client see?
+    back: The client connects, and then it waits with no reply. The kernel finished the handshake and queued the connection, so it looks like an overloaded server.
+    covers: [S01-C17, S01-C18]
 
   - id: s01-digest-c05
     front: What does the second argument of listen() set, and which Linux setting can override it?
@@ -63,9 +70,14 @@ items:
     covers: [S01-C44, S01-C45]
 
   - id: s01-digest-c13
-    front: Which port does a client use, where does that number come from, and what happens to it after the close?
-    back: The kernel lends it a port at connect(), from 32768 to 60999 on Linux. The side that closed first holds the port in TIME_WAIT for 60 s, which RFC 9293 states as 2 MSL.
-    covers: [S01-C46, S01-C48, S01-C49, S01-C142]
+    front: Where does the port number of a client come from, and what is the range on Linux?
+    back: The kernel picks it at connect(), from the ephemeral range 32768 to 60999.
+    covers: [S01-C46, S01-C48]
+
+  - id: s01-digest-c30
+    front: After a connection closes, which side waits in TIME_WAIT, and for how long on Linux?
+    back: The side that called close() first, for 60 s. RFC 9293 states the same wait as 2 MSL.
+    covers: [S01-C49, S01-C142]
 
   - id: s01-digest-c14
     front: Which command-line tool talks to a service on port 443 by hand, and why can telnet not do it?
@@ -93,9 +105,9 @@ items:
     covers: [S01-C69, S01-C70]
 
   - id: s01-digest-c19
-    front: What does one select() call cost, what does one epoll_wait() call cost, and what caps select?
-    back: select is O(watched descriptors), because the kernel walks the whole set each time, and FD_SETSIZE caps it at 1024. epoll is O(ready descriptors), and it is Linux only.
-    covers: [S01-C72, S01-C73, S01-C74]
+    front: What does one select() call cost, against one epoll_wait() call?
+    back: select is O(watched descriptors), because the kernel walks the whole set each time. epoll is O(ready descriptors).
+    covers: [S01-C72, S01-C74]
 
   - id: s01-digest-c20
     front: Which bytes end the header block of an HTTP message, and why two pairs?
@@ -103,9 +115,9 @@ items:
     covers: [S01-C61]
 
   - id: s01-digest-c21
-    front: Which curl flag shows the reply headers, and which tcpdump flag shows hex beside ASCII?
-    back: curl -i shows the reply headers, and curl -vv adds the connection and TLS detail. tcpdump -X shows hex beside ASCII, and -A shows ASCII alone.
-    covers: [S01-C62, S01-C84]
+    front: Which tcpdump flag shows hex beside the ASCII, and which one shows the ASCII alone?
+    back: -X shows hex beside the ASCII. -A shows the ASCII alone.
+    covers: [S01-C84]
 
   - id: s01-digest-c22
     front: Why does TLS use two different kinds of cryptography, and what does the certificate add?
@@ -138,6 +150,6 @@ items:
     covers: [S01-C102, S01-C106, S01-C107]
 
   - id: s01-digest-c28
-    front: What does gRPC use for its messages, what does it run on, and what does that cost you?
-    back: protobuf messages, which are schema first from a .proto file, over HTTP/2, which is binary and carries many streams on one connection. The cost is that plain curl cannot read a call.
-    covers: [S01-C120, S01-C121, S01-C122, S01-C123, S01-C124]
+    front: What does gRPC use to encode its messages, and which transport carries them?
+    back: protobuf messages, over HTTP/2.
+    covers: [S01-C120, S01-C123]

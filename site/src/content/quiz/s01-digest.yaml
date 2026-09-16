@@ -351,10 +351,10 @@ items:
     type: mcq
     prompt: A long-running server in C must survive a client that leaves in the middle of an answer. What does it do?
     options:
-      - text: It calls close() on the listening socket after each client.
+      - text: It writes as usual, because a write only fills the send buffer and always succeeds.
         correct: false
-        misconception: S01-M22
-        feedback: Closing the listening socket takes the server out of service. The trap is the write, not the listen.
+        misconception: S01-M53
+        feedback: After a reset the kernel knows that the connection is dead, so it fails the write at once.
       - text: It ignores SIGPIPE, then checks the result of every write.
         correct: true
         feedback: With SIGPIPE ignored, a failed write returns ECONNRESET or EPIPE, and the server closes that one client.
@@ -400,10 +400,10 @@ items:
       - text: The addresses, the ports and the sizes, but not the request text.
         correct: true
         feedback: TLS wraps the byte stream inside TCP, so everything that routes the packet stays readable.
-      - text: The request text, because TLS only protects the reply.
+      - text: The request text, because TLS is a part of HTTP and starts after the request goes out.
         correct: false
         misconception: S01-M26
-        feedback: TLS protects the stream in both directions, and it is not a part of HTTP at all.
+        feedback: TLS is not a part of HTTP. It wraps the whole TCP stream, in both directions, from the first byte.
     explanation: SSL secures TCP, not HTTP. The same machinery protects SMTP and database links. It hides the content of the stream and not the addresses, the ports or the sizes.
     covers: [S01-C85, S01-C86, S01-C87]
     tags: []
@@ -418,10 +418,10 @@ items:
         correct: false
         misconception: S01-M31
         feedback: A newline inside a message ends it too early, so the sender must escape every newline in the data.
-      - text: A fixed length, because a fixed size needs no marker of any kind.
+      - text: A fixed length, because the reader counts N bytes and then finds the end marker.
         correct: false
         misconception: S01-M74
-        feedback: A fixed length works, but it wastes padding on every short message and N can never change.
+        feedback: A fixed length needs no marker at all. The reader counts N bytes and stops. Its real cost is the padding on every short message.
       - text: A length prefix, because the reader counts bytes and never looks at them.
         correct: true
         feedback: The reader takes exactly that many bytes, so the data can hold any byte, a newline too.
