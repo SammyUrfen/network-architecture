@@ -68,7 +68,7 @@ items:
         correct: false
         misconception: S01-M06
         feedback: A connection leaves the queue as soon as accept() returns it, so open clients take no slot.
-    explanation: The second argument of listen() sets the depth of the accept queue, not a limit on how many clients you can serve. Linux also caps it at net.core.somaxconn, so the number in your code may not be the number in use.
+    explanation: The second argument of listen() sets the depth of the accept queue, not a limit on how many clients you can serve. Linux holds its own ceiling in net.core.somaxconn, and that ceiling wins over a larger backlog in your code.
     covers: [S01-C20, S01-C21, S01-C24, S01-C25]
     tags: []
     taughtIn: seg-seven-calls-and-one-door-number
