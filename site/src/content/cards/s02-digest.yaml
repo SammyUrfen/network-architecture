@@ -1,0 +1,124 @@
+# The review cards of the Class 2 digest, from docs/curriculum/session-02.md.
+# Six for each of the five parts, 30 in all. They hold the facts that the
+# post-class quiz can ask for as a number, a name or an order.
+items:
+  - id: s02-digest-c01
+    front: Which two IPv4 header fields change at every router on the path?
+    back: The TTL, and the header checksum that the new TTL breaks. A NAT box also rewrites the addresses.
+    covers: [S02-C24]
+  - id: s02-digest-c02
+    front: MTU 1500, IPv4, TCP with no options. How many data bytes fit in one segment?
+    back: 1460. That number is the MSS. With IPv6 the header is 40 bytes, so it drops to 1440.
+    covers: [S02-C39]
+  - id: s02-digest-c03
+    front: How many bytes does one full Ethernet II frame take on the wire around a 1500-byte IP packet?
+    back: 1518. The 1500-byte packet, plus a 14-byte header in front and a 4-byte check value behind.
+    covers: [S02-C35, S02-C39]
+  - id: s02-digest-c04
+    front: Why does Wi-Fi acknowledge every frame at layer 2, when Ethernet does not?
+    back: A radio cannot listen while it transmits, so it cannot detect a collision. The missing ACK is the only sign.
+    covers: [S02-C18, S02-C20]
+  - id: s02-digest-c05
+    front: Name the four CSMA/CA steps that a Wi-Fi station takes before its frame leaves.
+    back: Sense the channel, wait while it is busy, back off for a random time, then send and wait for an ACK.
+    covers: [S02-C19]
+  - id: s02-digest-c06
+    front: Which OSI layers hold TCP, IP and Ethernet?
+    back: TCP on layer 4, transport. IP on layer 3, network. Ethernet on layer 2, the data link.
+    covers: [S02-C13, S02-C14]
+  - id: s02-digest-c07
+    front: What is the one big idea of SS7, in one line?
+    back: Take the signalling out of the voice channel and put it on its own packet network.
+    covers: [S02-C25, S02-C27]
+  - id: s02-digest-c08
+    front: Name the three ISUP messages that set up a phone call, in order.
+    back: IAM with the number, ACM which gives the caller ringback, then ANM which cuts the voice path through.
+    covers: [S02-C63]
+  - id: s02-digest-c09
+    front: How does an SS7 node decide to trust a message that arrives?
+    back: By the point code in the message. There is no sender check of any kind.
+    covers: [S02-C79]
+  - id: s02-digest-c10
+    front: Why is "SS7 against TCP" the wrong comparison?
+    back: SS7 is a whole stack, from MTP1 up to MAP. TCP is one protocol at layer 4. Compare stack to stack.
+    covers: [S02-C30, S02-C34]
+  - id: s02-digest-c11
+    front: How wide is the SS7 forward sequence number, and how wide is the TCP sequence number?
+    back: The FSN is 7 bits and counts signal units, so it wraps at 128. The TCP number is 32 bits and counts bytes.
+    covers: [S02-C73]
+  - id: s02-digest-c12
+    front: In 5G, what carries call setup, and what carries the audio?
+    back: SIP text over IP carries the setup, through a proxy. RTP over UDP carries the audio, on its own path.
+    covers: [S02-C67, S02-C68, S02-C69]
+  - id: s02-digest-c13
+    front: How many octets of user data does one SMS carry?
+    back: 140. The limit is a size in bytes, not a count of characters.
+    covers: [S02-C49]
+  - id: s02-digest-c14
+    front: How many characters fit in one SMS with GSM 7-bit, and how many with UCS-2?
+    back: 160 with GSM 7-bit, because 140 × 8 ÷ 7 = 160. Only 70 with UCS-2, which spends 16 bits per character.
+    covers: [S02-C52, S02-C55]
+  - id: s02-digest-c15
+    front: Name the three size limits that stack above the text of an SMS, and say which one wins.
+    back: The SIF at 272 octets, the MAP user data field at about 200, and TP-UD at 140. The smallest wins, so 140.
+    covers: [S02-C50]
+  - id: s02-digest-c16
+    front: Pack the text Hello World! as GSM 7-bit. How many characters, bits and octets?
+    back: 12 characters, 84 bits, and 11 octets with 4 zero bits of padding.
+    covers: [S02-C48, S02-C54]
+  - id: s02-digest-c17
+    front: Which node holds a text message while the other phone is unreachable?
+    back: The SMSC. The HLR only knows which switch serves the phone right now.
+    covers: [S02-C56, S02-C59]
+  - id: s02-digest-c18
+    front: Your switch gets a TCAP END from the SMSC. What has happened, and what has not?
+    back: The SMSC accepted the message and queued it. It has not yet asked the HLR, and the other phone has nothing.
+    covers: [S02-C58]
+  - id: s02-digest-c19
+    front: Why does TCP open with three messages instead of two?
+    back: Each direction picks its own start number, and each number needs an ack. The middle message carries both jobs at once.
+    covers: [S02-C87, S02-C88]
+  - id: s02-digest-c20
+    front: A SYN carries no data. Why does the answer ack 1001 for a SYN with seq 1000?
+    back: SYN and FIN each consume one sequence number. That lets the peer ack a bare SYN without confusing it with a copy.
+    covers: [S02-C89, S02-C91]
+  - id: s02-digest-c21
+    front: With SYN cookies on, where does the server keep the half-open connection state?
+    back: Nowhere. It hides the details inside its own start number, and the client hands that number back in message 3.
+    covers: [S02-C96, S02-C97]
+  - id: s02-digest-c22
+    front: Thousands of sockets sit in CLOSE_WAIT. Where is the fault?
+    back: In the application. The peer sent its FIN, and the local code never called close().
+    covers: [S02-C104]
+  - id: s02-digest-c23
+    front: Which side of a closed connection waits in TIME_WAIT, and for how long?
+    back: The side that closes first, for 2 MSL. The spec makes that 4 minutes, and Linux uses 60 seconds.
+    covers: [S02-C102, S02-C105]
+  - id: s02-digest-c24
+    front: Which two numbers does BBR measure, and what does it do with them?
+    back: The bottleneck bandwidth and the round-trip propagation time. It paces at that bandwidth and keeps the queue near empty.
+    covers: [S02-C84]
+  - id: s02-digest-c25
+    front: 'Round trips before the first byte of application data: TCP with TLS 1.2, TCP with TLS 1.3, and QUIC?'
+    back: Three, two and one, as the deck draws them. Plain TCP alone costs one.
+    covers: [S02-C107]
+  - id: s02-digest-c26
+    front: Name the four fields of a UDP header and give the header size.
+    back: Source port, destination port, length and checksum, 2 bytes each, so 8 bytes in all.
+    covers: [S02-C112]
+  - id: s02-digest-c27
+    front: One packet is lost. How many HTTP/2 streams stall over TCP, and how many over QUIC?
+    back: Every stream stalls over TCP, because TCP hands bytes up in order. Under QUIC only the stream that lost the packet waits.
+    covers: [S02-C117]
+  - id: s02-digest-c28
+    front: Which two SMTP commands make the envelope, and which parts are only the letter?
+    back: 'MAIL FROM and RCPT TO are the envelope and decide delivery. The From: and To: headers inside DATA are text, and nothing checks them.'
+    covers: [S02-C136]
+  - id: s02-digest-c29
+    front: Where does POP keep mailbox state, and where does IMAP keep it?
+    back: POP keeps mail and read state on your device. IMAP keeps both on the server, as flags such as \Seen.
+    covers: [S02-C143, S02-C145, S02-C148]
+  - id: s02-digest-c30
+    front: How do you turn the last two numbers of a 227 reply into a port?
+    back: port = p1 × 256 + p2, high byte first. So (…,117,48) gives 117 × 256 + 48 = 30000.
+    covers: [S02-C161, S02-C162]

@@ -1,0 +1,321 @@
+# The questions of the Class 2 digest, from docs/curriculum/session-02.md.
+# Three for each of the five parts, 15 in all. One question of each part also
+# carries use: exit, so the exit quiz asks one question from every part.
+items:
+  - id: s02-digest-q01
+    use: [check, practice]
+    segment: 1
+    type: numeric
+    prompt: The link carries 1500 bytes. The packet uses IPv4 and TCP with no options. How many bytes of your data fit in one segment?
+    answer: { value: 1460, tolerance: 0, unit: bytes }
+    distractors:
+      - value: 1500
+        misconception: S02-M03
+        feedback: The 1500 is the largest IP packet. Both the IP header and the TCP header live inside it.
+      - value: 1518
+        misconception: S02-M03
+        feedback: The 1518 is the Ethernet frame around the packet, which is larger, not smaller.
+    explanation: 1500 − 20 for the IP header − 20 for the TCP header = 1460. That number is the MSS. With IPv6 the header is 40 bytes, so the answer drops to 1440.
+    covers: [S02-C39]
+    tags: []
+    taughtIn: a-header-wraps-an-opaque-body
+
+  - id: s02-digest-q02
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: A router forwards your IPv4 packet to the next link. What does it change in the packet?
+    options:
+      - text: The TTL, and the IP header checksum that the new TTL breaks.
+        correct: true
+        feedback: A NAT box on the path also rewrites the addresses. Nothing above IP changes.
+      - text: The TCP ports, so the next hop can find the right connection.
+        correct: false
+        misconception: S02-M01
+        feedback: A router reads the IP header only. The TCP header is payload that it never opens.
+      - text: The whole header, because a satellite hop rebuilds the packet.
+        correct: false
+        misconception: S02-M04
+        feedback: A satellite is a physical layer. The IP packet crosses it with the same addresses.
+    explanation: Each router throws the old link frame away and builds a new one. Inside, only the TTL and the checksum change, plus the addresses when a NAT box rewrites them.
+    covers: [S02-C24, S02-C38]
+    tags: []
+    taughtIn: seg-every-layer-wraps-the-one-above
+
+  - id: s02-digest-q03
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: Why does Wi-Fi avoid collisions instead of detecting them, as Ethernet does?
+    options:
+      - text: The check value at the end of a frame finds a collision after the fact.
+        correct: false
+        misconception: S02-M02
+        feedback: The check value finds damage after the frame arrives. It cannot stop a collision while it happens.
+      - text: A radio cannot listen while it transmits, because its own signal drowns everything else.
+        correct: true
+        feedback: So Wi-Fi waits, backs off for a random time, sends, and then waits for an ACK.
+      - text: A radio sends and receives at the same time, so two frames never collide.
+        correct: false
+        misconception: S02-M40
+        feedback: Two stations can start to send at the same moment, and neither one hears the other.
+    explanation: A wire lets a sender compare what it sends with what it hears, so it stops early. A radio cannot, so Wi-Fi acknowledges each frame at layer 2 instead.
+    covers: [S02-C17, S02-C18, S02-C19, S02-C20]
+    tags: []
+    taughtIn: seg-every-layer-wraps-the-one-above
+
+  - id: s02-digest-q04
+    use: [check, exit, practice]
+    segment: 2
+    type: mcq
+    prompt: Two people talk on a phone call for ten minutes. What carries their voice?
+    options:
+      - text: SS7 signal units, one for each piece of the audio.
+        correct: false
+        misconception: S02-M06
+        feedback: SS7 works at the edges only. Between the answer and the hang-up it sends nothing.
+      - text: One channel that carries the voice and the control tones together.
+        correct: false
+        misconception: S02-M41
+        feedback: That was the design before SS7, and it is exactly what SS7 removed.
+      - text: A 64 kbps bearer circuit, with no SS7 message at all.
+        correct: true
+        feedback: SS7 sets the circuit up with IAM, ACM and ANM, then stays silent until REL.
+    explanation: The one big idea of SS7 is to get the signalling out of the voice channel. The voice gets its own circuit, and control gets its own packet network.
+    covers: [S02-C27, S02-C64, S02-C63]
+    tags: []
+    taughtIn: control-left-the-voice-path
+
+  - id: s02-digest-q05
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: An SS7 message arrives at a node. How does the node decide to trust it?
+    options:
+      - text: By the point code in the message, with no check of the sender at all.
+        correct: true
+        feedback: This trust model is why location tracking and message interception are real SS7 attacks.
+      - text: It checks a signature that the sending operator attached.
+        correct: false
+        misconception: S02-M05
+        feedback: The base protocol has no authentication. TCP has none either, and TLS sits above it.
+      - text: It accepts a message only from inside its own operator network.
+        correct: false
+        misconception: S02-M42
+        feedback: SS7 links hundreds of operators, and it trusts any point code that reaches it on a link.
+    explanation: 'SS7 trusts by point code. The deck lists security as one of the eleven jobs, and both stacks fail it: SS7 has none, and TCP relies on TLS above it.'
+    covers: [S02-C79, S02-C80]
+    tags: []
+    taughtIn: seg-ss7-moved-control-off-the-voice-path
+
+  - id: s02-digest-q06
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A path has three signalling links. Link 2 loses a unit. Which node sends it again?
+    options:
+      - text: The node that first sent the message, across all three links again.
+        correct: false
+        misconception: S02-M07
+        feedback: That is the TCP answer. TCP makes only the two endpoints reliable.
+      - text: The node at the start of link 2, because MTP2 makes each link reliable.
+        correct: true
+        feedback: MTP2 numbers each unit with a 7-bit FSN, and the far end of that one link acks it.
+      - text: Nobody, because SS7 is connectionless and never sends anything again.
+        correct: false
+        misconception: S02-M66
+        feedback: SS7 is connectionless, and MTP2 still asks for a lost unit again on each link.
+    explanation: Reliability has an address. SS7 put it at layer 2 per hop, TCP put it at layer 4 end to end, and QUIC put it in userspace. Each answer fits its own network.
+    covers: [S02-C72, S02-C73, S02-C77]
+    tags: []
+    taughtIn: seg-ss7-moved-control-off-the-voice-path
+
+  - id: s02-digest-q07
+    use: [check, exit, practice]
+    segment: 3
+    type: numeric
+    prompt: A text holds 160 GSM 7-bit characters. How many octets of user data does it take?
+    answer: { value: 140, tolerance: 0, unit: octets }
+    distractors:
+      - value: 160
+        misconception: S02-M09
+        feedback: That counts one octet per character. GSM 7-bit packs each character into 7 bits, not 8.
+      - value: 272
+        misconception: S02-M12
+        feedback: 272 is the largest SIF in one signal unit, several layers below the text itself.
+    explanation: 160 × 7 = 1120 bits, and 1120 ÷ 8 = 140 octets. The limit is a size in bytes. The character count depends on the alphabet.
+    covers: [S02-C52, S02-C53]
+    tags: []
+    taughtIn: the-smallest-limit-wins
+
+  - id: s02-digest-q08
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: Three size limits stack above the text of an SMS. Which one sets the 140 that you feel?
+    options:
+      - text: The SIF, at 272 octets, because that is the largest signal unit.
+        correct: false
+        misconception: S02-M12
+        feedback: The headers of MTP3, SCCP, TCAP and MAP use part of those 272 octets.
+      - text: The MAP field for user data, at about 200 octets.
+        correct: false
+        misconception: S02-M12
+        feedback: That field also carries addresses and a header, so the text gets less than 200.
+      - text: TP-UD, the text field itself, at 140 octets.
+        correct: true
+        feedback: The smallest limit always wins, and in a layered design that is the one your product feels.
+    explanation: The SIF allows 272, the MAP user data field allows about 200, and TP-UD allows 140. The 140 keeps the whole operation inside one signal unit, so nothing splits and nobody keeps state.
+    covers: [S02-C49, S02-C50, S02-C51]
+    tags: []
+    taughtIn: the-smallest-limit-wins
+
+  - id: s02-digest-q09
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: You send a text. The switch that serves you gets a TCAP END back from the SMSC. What does that prove?
+    options:
+      - text: The SMSC accepted the message and put it in its queue.
+        correct: true
+        feedback: Only a status report says that the other phone got it, and only if you asked for one.
+      - text: The other phone received the message.
+        correct: false
+        misconception: S02-M38
+        feedback: The END arrives before the SMSC even knows which switch serves the other phone.
+      - text: The HLR found the other phone and returned its switch address.
+        correct: false
+        misconception: S02-M64
+        feedback: The END comes first. The SMSC asks the HLR after it accepts the message.
+    explanation: 'Delivery is a store first, then a lookup, then a send. The order matters: SMS-SUBMIT, mo-ForwardSM, TCAP END, sendRoutingInfoForSM, then mt-ForwardSM with the SMS-DELIVER.'
+    covers: [S02-C56, S02-C57, S02-C58, S02-C59, S02-C60]
+    tags: []
+    taughtIn: seg-one-sms-fits-in-one-signalling-unit
+
+  - id: s02-digest-q10
+    use: [check, exit, practice]
+    segment: 4
+    type: mcq
+    prompt: A SYN flood sends SYNs from spoofed addresses and never answers. Which table on the server fills up?
+    options:
+      - text: The limit on connected clients that listen() sets.
+        correct: false
+        misconception: S02-M13
+        feedback: listen() sizes a queue, not a client limit, and that queue holds finished handshakes.
+      - text: The half-open entries that sit between message 1 and message 3.
+        correct: true
+        feedback: SYN cookies remove this table. The server hides the details inside its own start number.
+      - text: The accept queue of finished handshakes that wait for accept().
+        correct: false
+        misconception: S02-M45
+        feedback: The attacker never sends message 3, so no handshake finishes and nothing reaches that queue.
+    explanation: Two different queues share the nickname "backlog". A SYN flood targets the half-open one, because each spoofed SYN costs the attacker one packet and the server one entry until a timeout.
+    covers: [S02-C94, S02-C95, S02-C96, S02-C97, S02-C98]
+    tags: []
+    taughtIn: seg-tcp-opens-in-three-and-closes-in-four
+
+  - id: s02-digest-q11
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: A server closes a connection before the client does. Which side waits in TIME_WAIT?
+    options:
+      - text: The client, because TIME_WAIT always sits on the client.
+        correct: false
+        misconception: S02-M16
+        feedback: It sits on whichever side closes first, and that side can be the server.
+      - text: Both sides, for 2 MSL each.
+        correct: false
+        misconception: S02-M46
+        feedback: The side that closes second goes CLOSE_WAIT, then LAST_ACK, then straight to CLOSED.
+      - text: The server, because it closed first.
+        correct: true
+        feedback: That is why a server restart can fail with "address already in use", and why SO_REUSEADDR exists.
+    explanation: 'Close takes four segments because each direction stops on its own. Only the first closer waits 2 MSL. A pile of sockets in CLOSE_WAIT means the opposite fault: your application forgot to call close().'
+    covers: [S02-C99, S02-C101, S02-C102, S02-C104, S02-C105]
+    tags: []
+    taughtIn: each-direction-closes-on-its-own
+
+  - id: s02-digest-q12
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: You move a service to a link that is ten times faster. The distance stays the same. What happens to the TLS 1.3 handshake time?
+    options:
+      - text: Almost nothing changes, because the round trips stay the same length.
+        correct: true
+        feedback: You can buy bandwidth. You cannot buy round trips, and this is why QUIC and TLS 1.3 exist.
+      - text: It gets about ten times faster, like everything else on the link.
+        correct: false
+        misconception: S02-M22
+        feedback: Bandwidth sets how fast bytes leave. Distance sets how long each answer takes to come back.
+      - text: It gets faster, because a faster link needs fewer round trips.
+        correct: false
+        misconception: S02-M22
+        feedback: The number of round trips comes from the protocol design, not from the link speed.
+    explanation: Every round trip before your first data byte is a tax. TCP with TLS 1.2 costs 3, TCP with TLS 1.3 costs 2, and QUIC costs 1. Mumbai to Virginia is about 190 ms whatever you pay.
+    covers: [S02-C106, S02-C107, S02-C108, S02-C109]
+    tags: []
+    taughtIn: seg-tcp-opens-in-three-and-closes-in-four
+
+  - id: s02-digest-q13
+    use: [check, exit, practice]
+    segment: 5
+    type: mcq
+    prompt: You type a mail message by hand after the server answers 354. What ends the message?
+    options:
+      - text: A blank line after the headers.
+        correct: false
+        misconception: S02-M53
+        feedback: The blank line ends the headers. The body comes after it, and the message goes on.
+      - text: A line that holds only a dot.
+        correct: true
+        feedback: So a body line that starts with a dot needs one extra dot, or the server stops early.
+      - text: Any line that starts with a dot.
+        correct: false
+        misconception: S02-M28
+        feedback: Only a lone dot ends the message. Stuffing protects every other line that starts with one.
+    explanation: SMTP frames by delimiter. The lone dot is the end marker, and dot-stuffing is its escape. Miss the escape and the rest of your body reads as SMTP commands.
+    covers: [S02-C135, S02-C137, S02-C138]
+    tags: []
+    taughtIn: length-or-delimiter-nothing-else
+
+  - id: s02-digest-q14
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: 'Two ways mark the end of a message: a length in front, or a marker after. Which one needs escaping, and why?'
+    options:
+      - text: A length prefix, because the payload can hold a number that looks like a length.
+        correct: false
+        misconception: S02-M33
+        feedback: The reader takes the count first and then skips exactly that many bytes. It never scans them.
+      - text: Both kinds, always, because any payload can hold any byte value.
+        correct: false
+        misconception: S02-M33
+        feedback: A payload can hold any byte. Only the reader that scans for a marker can be tricked by one.
+      - text: A delimiter, because the reader scans every byte and stops at the first match.
+        correct: true
+        feedback: SMTP stuffs a dot, and MIME picks a boundary that cannot appear in the body. Same problem, two answers.
+    explanation: A delimiter streams without a size but needs an escape. A length needs no escape but needs the size first, which is what chunked encoding avoids. Use both and two parsers can disagree, which is where request smuggling lives.
+    covers: [S02-C149, S02-C150, S02-C151, S02-C152]
+    tags: []
+    taughtIn: length-or-delimiter-nothing-else
+
+  - id: s02-digest-q15
+    use: [check, practice]
+    segment: 5
+    type: numeric
+    prompt: An FTP server replies "227 Entering passive mode (127,0,0,1,117,48)". Which port does the client connect to?
+    answer: { value: 30000, tolerance: 0, unit: null }
+    distractors:
+      - value: 12405
+        misconception: S02-M34
+        feedback: That reads the two numbers the other way round. The high byte comes first on the wire.
+      - value: 21
+        misconception: S02-M36
+        feedback: Port 21 is the control connection. The file bytes never travel on it.
+    explanation: 117 × 256 + 48 = 30000. The reply is text, so a 16-bit port ships as two 8-bit halves in network byte order. That is htons done by hand.
+    covers: [S02-C155, S02-C161, S02-C162]
+    tags: []
+    taughtIn: seg-text-protocols-and-where-content-ends
