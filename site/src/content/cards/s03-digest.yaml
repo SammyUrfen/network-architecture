@@ -1,0 +1,150 @@
+items:
+  - id: s03-digest-c01
+    front: "Class 3 opens with one question. What is it, and what are the three answers?"
+    back: "How does one box hold ten thousand clients at the same time? A process for each client, a thread for each client, or one loop that watches every socket and wakes for the ready ones."
+    covers: [S03-C02, S03-C04, S03-C07, S03-C08]
+
+  - id: s03-digest-c02
+    front: "What does a fork-per-client server pay for each connection, and who waits for it?"
+    back: "A process image, page tables, a descriptor table and a scheduler entry. The user waits, because the work happens on the request path. It is the most expensive of the three designs."
+    covers: [S03-C05, S03-C09, S03-C11, S03-C14]
+
+  - id: s03-digest-c03
+    front: "Why does a fork server reap its children in a loop, and where does nginx put its fork?"
+    back: "One SIGCHLD can stand for many dead children, because signals of one type merge. So reap in a `waitpid(-1, NULL, WNOHANG)` loop. nginx still forks, but at startup, away from the request path."
+    covers: [S03-C15, S03-C19]
+
+  - id: s03-digest-c04
+    front: "Default glibc thread stack, the limit that sets it, and the total for 10,000 threads?"
+    back: "8 MiB, from the `ulimit -s` soft limit. 10,000 threads reserve about 78 GiB, which the deck calls 80 GB. That is address space, not resident memory, and a thread costs less than a process."
+    covers: [S03-C06, S03-C20, S03-C21, S03-C22]
+
+  - id: s03-digest-c05
+    front: "How does Go make the thread style work again, and what stays true anyway?"
+    back: "A goroutine starts with a 2 KB stack that grows on demand, about 4,000 times smaller than 8 MiB. The runtime runs many goroutines on a few OS threads and parks a blocking read on an epoll netpoller. More concurrent requests still need more memory. Only the price for each one changes."
+    covers: [S03-C28, S03-C30, S03-C31, S03-C162]
+
+  - id: s03-digest-c06
+    front: "What does a select loop ask the kernel, and how many threads does it need?"
+    back: "It asks which of these descriptors is readable now, and it serves only those. One thread serves every client. Each turn it clears the set, adds the listener and every client, and tracks the highest descriptor."
+    covers: [S03-C12, S03-C32, S03-C33]
+
+  - id: s03-digest-c07
+    front: "First argument to select, last argument, why the set is rebuilt, and what `clients[i] = clients[--nclients]; i--;` does?"
+    back: "The highest descriptor plus one. The last argument is the timeout. Select overwrites the set with the ready bits, so an idle client drops out and the loop must add it again. The swap line is an O(1) delete: the last live entry moves into the hole, and `i--` makes the walk test that moved entry on this same pass."
+    covers: [S03-C33, S03-C34, S03-C35]
+
+  - id: s03-digest-c08
+    front: "FD_SETSIZE on glibc, what it limits, and what `FD_SET` does above it?"
+    back: "1024. It limits which descriptor numbers have a bit, not how many sockets you watch. `FD_SET` on descriptor 1024 or higher writes past the struct, with no error and no warning. The deck also calls 1024 the K in C10K, and that part is wrong: C10K means ten thousand clients."
+    covers: [S03-C37, S03-C38, S03-C39, S03-C43, S03-C166]
+
+  - id: s03-digest-c09
+    front: "Why does `ulimit -n 65536` not help select, and how much work does one call cost?"
+    back: "A header fixes the bitmap width at build time. Select does O(n) work three times: you build the set, the kernel scans up to the highest descriptor, you walk the clients. With 10,000 connections and 10 active, that is about 30,000 units for 10 events. epoll registers once and returns only what fired, so an idle wait costs nothing."
+    covers: [S03-C40, S03-C41, S03-C44, S03-C45]
+
+  - id: s03-digest-c10
+    front: "The stacked design that real servers ship: what gives isolation, and what gives concurrency?"
+    back: "At startup the master forks a pool of workers, often one for each CPU core. SO_REUSEPORT lets the kernel spread new connections over them. The processes give crash isolation, and the loop inside each worker gives concurrency."
+    covers: [S03-C51, S03-C52, S03-C53, S03-C54]
+
+  - id: s03-digest-c11
+    front: "The three select sets, what a NULL timeout does, and the two client-side rules?"
+    back: "readfds, writefds and exceptfds. A NULL timeout blocks forever, so one wedged client can stop the loop. On the client side, set a deadline and retry with backoff. The deck calls exceptfds the set for sockets being connected and closed. On Linux a close shows as readable and a finished connect as writable."
+    covers: [S03-C56, S03-C57, S03-C58, S03-C59, S03-C165]
+
+  - id: s03-digest-c12
+    front: "What does CGI do for every request, and where do its four inputs and outputs go?"
+    back: "It forks and execs a new copy of your program, so it builds the whole image, runs it one time, and discards it, on every hit. The server makes three pipes, forks, and the child moves the pipe ends onto descriptors 0, 1 and 2 before it execs. The request details arrive in the environment, the body on stdin. Stdout goes to the client, and stderr goes to the server error log."
+    covers: [S03-C60, S03-C62, S03-C63, S03-C64, S03-C75]
+
+  - id: s03-digest-c13
+    front: "How does a header become an environment variable in CGI?"
+    back: "Upper-case the name, turn each dash into an underscore, and add HTTP_ in front. `User-Agent: curl` becomes HTTP_USER_AGENT=curl. The method becomes REQUEST_METHOD, and the text after the ? becomes QUERY_STRING."
+    covers: [S03-C66, S03-C67]
+
+  - id: s03-digest-c14
+    front: "What library does a CGI program need, and what shape is its output?"
+    back: "None. It reads the environment and prints. For POST it reads stdin, and for GET it parses QUERY_STRING. Its output is a header block, a blank line, then the body. The server reads up to the blank line and streams the rest."
+    covers: [S03-C70, S03-C71, S03-C72, S03-C73]
+
+  - id: s03-digest-c15
+    front: "Two fixes for the CGI cost, and the one move that both share?"
+    back: "First, compile the language into the server (mod_php, mod_perl), which shares one address space, so one segfault takes both down. Second, keep a long-lived process and call it over a socket. That is FastCGI, and it won. Both move the setup cost away from the request path, as pre-forking does."
+    covers: [S03-C77, S03-C78, S03-C79]
+
+  - id: s03-digest-c16
+    front: "What does php-fpm never do, and what does it share with a CGI script?"
+    back: "It never forks, never execs and never parses HTTP. It is a FastCGI responder with a pool of long-lived workers. It uses the same three streams as CGI. Only who pays for the setup, and how often, changes."
+    covers: [S03-C81, S03-C82]
+
+  - id: s03-digest-c17
+    front: "In a FastCGI deployment, who handles the slow client, and what is FastCGI in one line?"
+    back: "The user-facing server, nginx or httpd, absorbs slow connections, TLS and buffering. php-fpm is a fixed pool of workers behind it. The deck calls FastCGI HTTP with less vocabulary: the same information, but binary, typed and multiplexed, so nobody parses a text protocol two times."
+    covers: [S03-C83, S03-C84, S03-C85]
+
+  - id: s03-digest-c18
+    front: "Name the records of a FastCGI request, in order."
+    back: "FCGI_BEGIN_REQUEST, then params records with the CGI names, then an empty params record, then stdin records with the body, then an empty stdin record. In the slide example the body `name=alice&age=20` is 17 bytes, the declared CONTENT_LENGTH."
+    covers: [S03-C87, S03-C88, S03-C89]
+
+  - id: s03-digest-c19
+    front: "Name the records of a FastCGI reply, and why stderr has its own type."
+    back: "FCGI_STDOUT with the headers, the blank line and the body, then an empty stdout record, then FCGI_STDERR, then FCGI_END_REQUEST. Stdout holds byte for byte what a CGI program printed. Stderr is a separate record type, so debug output cannot corrupt the page."
+    covers: [S03-C90, S03-C91, S03-C92]
+
+  - id: s03-digest-c20
+    front: "How does FastCGI use both framing ideas at the same time?"
+    back: "The length in each record header lets content hold any byte, newlines and nulls too. A record with content length 0 ends its stream, and that marker is structural, not a byte pattern. SMS chose a length, SMTP chose a dot, IMAP uses both, and so does FastCGI. Framing is still a length or a delimiter."
+    covers: [S03-C93, S03-C94, S03-C96, S03-C163]
+
+  - id: s03-digest-c21
+    front: "Give the fields of a FastCGI record header, the usual first 8 bytes, and the rule for a name-value length."
+    back: "version (1), type (1), requestId (2, big-endian), contentLength (2, big-endian), paddingLength (1), reserved (1). The usual first eight bytes are `01 01 00 01 00 08 00 00`: a begin-request record for request 1 with 8 content bytes. A name or value under 128 takes a one-byte length. 128 or more takes four bytes, big-endian, with the top bit set. requestId lets one connection carry many requests, and nginx hardcodes 1 and opens a connection for each request. Forget the empty params record and the responder waits forever."
+    covers: [S03-C97, S03-C99, S03-C100, S03-C102, S03-C104]
+
+  - id: s03-digest-c22
+    front: "How does a servlet container run a request, and what isolates one servlet from another?"
+    back: "Jetty or Tomcat is the web server, so nothing forks in front. A thread pool starts with the server, an idle thread runs the servlet, then returns to the pool. One object serves every request of that declaration. A class loader and a thread isolate it, not a process, so one runaway servlet can hurt its neighbours. It is one more way to pay the setup one time."
+    covers: [S03-C105, S03-C106, S03-C107, S03-C108, S03-C161]
+
+  - id: s03-digest-c23
+    front: "Why does statelessness make horizontal scaling legal, and which servers are not web servers?"
+    back: "Each HTTP request carries what it needs, so any box can answer it and a load balancer can send it anywhere. Add a server to the pool and it takes traffic. Redis speaks RESP, MySQL its own binary protocol, native Kafka too. Web scaling advice assumes HTTP, so a different protocol changes the advice."
+    covers: [S03-C109, S03-C112, S03-C113, S03-C114]
+
+  - id: s03-digest-c24
+    front: "Why does a database client hold its connection open, and how does that change the capacity question?"
+    back: "A new connection costs a TCP connect, a handshake, auth and session setup, and the session state lives on the connection. So for that tier the question changes from requests per second to persistent connections for each box."
+    covers: [S03-C115, S03-C116]
+
+  - id: s03-digest-c25
+    front: "Name the four walls of a server, and the default that still bites."
+    back: "File descriptors, memory, kernel crossings and the queue. A connection is a descriptor, and `ulimit -n` still prints 1024 on most distributions. Memory means a buffer for each connection, plus a stack when a thread owns it, paid before any work. Every read, write and syscall crosses into the kernel."
+    covers: [S03-C117, S03-C118, S03-C119, S03-C120, S03-C125]
+
+  - id: s03-digest-c26
+    front: "What does a syscall cost, when does that matter, and what are the two escapes?"
+    back: "Hundreds of nanoseconds (instructor estimate). At a million operations a second, the tax is the workload. Escape one: make fewer calls, with `sendfile` or an io_uring batch. Escape two: leave the kernel network stack, and lose your tools. Being slow costs you memory, so latency and throughput are not independent."
+    covers: [S03-C121, S03-C126, S03-C128, S03-C130]
+
+  - id: s03-digest-c27
+    front: "State Little's law for a server, and say what a bigger pool cannot do."
+    back: "Connections in flight equal the arrival rate times the mean time for one request. At 100 ms you hold 1,000 connections, and at 1 s you hold 10,000, for identical traffic. A pool cannot push that below the arrival rate times the service time. Only faster work, or slow work moved off the request path, lowers it."
+    covers: [S03-C132, S03-C133, S03-C134, S03-C135]
+
+  - id: s03-digest-c28
+    front: "Apache prefork, worker and event: what does each one pin to a connection?"
+    back: "Prefork pins a whole process, which is safe with modules that are not thread-safe and the most expensive for each connection. Worker pins a thread, and an idle keep-alive connection still holds it. Event parks the idle socket on epoll with a listener thread, and gives a worker a socket only when it has work."
+    covers: [S03-C138, S03-C139, S03-C140]
+
+  - id: s03-digest-c29
+    front: "What does HAProxy hold a pool of, and what does Varnish do with an idle descriptor?"
+    back: "HAProxy holds a pool of open upstream connections, which cuts connects and disconnects. That is the persistent-connection argument, done for you by a proxy. Varnish hands an idle descriptor to a waiter: epoll on Linux, kqueue on BSD. Threads for the work, a loop for the waiting."
+    covers: [S03-C146, S03-C149]
+
+  - id: s03-digest-c30
+    front: "What does `sendfile` save, how is nginx laid out, and what shape did all four servers reach?"
+    back: "Read plus write copies the file from disk to the kernel, to your buffer, back to the kernel, then to the socket. `sendfile` goes from the kernel to the socket. nginx runs one master and one worker for each CPU core, and each worker is one thread with one epoll loop. Four independent teams all ended with an event loop and a small pool of workers."
+    covers: [S03-C151, S03-C152, S03-C158]

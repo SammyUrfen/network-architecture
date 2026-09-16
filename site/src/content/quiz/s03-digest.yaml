@@ -1,0 +1,291 @@
+items:
+  - id: s03-digest-q01
+    use: [check, practice]
+    segment: 1
+    type: numeric
+    prompt: A server starts 10,000 threads with the default glibc stack of 8 MiB. How much address space do the stacks reserve, in GiB?
+    answer: { value: 78.125, tolerance: 0.5, unit: GiB }
+    distractors:
+      - value: 80
+        misconception: S03-M01
+        feedback: 80,000 MiB is the total in MiB. Divide by 1,024 to get GiB. The deck rounds the decimal form to "80 GB".
+    explanation: 10,000 × 8 MiB = 80,000 MiB. 80,000 / 1,024 = 78.125 GiB. That is address space, not RAM.
+    covers: [S03-C20, S03-C21, S03-C22]
+    tags: []
+    taughtIn: nothing-is-free-per-connection
+
+  - id: s03-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: A server calls `fork` for each client. What does Linux copy at the moment that `fork` returns?
+    options:
+      - text: Every page of the parent memory.
+        correct: false
+        misconception: S03-M02
+        feedback: Linux copies the page tables and shares the pages. The first write gives the writer a private copy.
+      - text: Nothing. The parent and the child share one address space, as two threads do.
+        correct: false
+        misconception: S03-M28
+        feedback: The child gets its own page tables. Threads share an address space, and forked processes do not.
+      - text: The page tables, the descriptor table and the task entry. The pages stay shared.
+        correct: true
+        feedback: That is the copy-on-write design, and it is why a child shows a small private memory figure.
+    explanation: fork copies the maps, not the pages. A child of the instructor fork server showed 28 to 32 kB of private dirty memory in a scratch run on Fedora 44.
+    covers: [S03-C05, S03-C09, S03-C11]
+    tags: []
+    taughtIn: nothing-is-free-per-connection
+
+  - id: s03-digest-q03
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A select server watches 12 sockets. The highest of them is descriptor 1100. What happens in `FD_SET`?
+    options:
+      - text: Undefined behavior. The macro writes past the end of the set.
+        correct: true
+        feedback: The bit index is the descriptor number, and the set holds 1,024 bits. A fortified build aborts instead.
+      - text: Nothing bad. The loop watches only 12 sockets, well under the limit.
+        correct: false
+        misconception: S03-M04
+        feedback: FD_SETSIZE limits which descriptor numbers have a bit, not how many sockets you watch.
+      - text: FD_SET gives back an error, and the loop skips that socket.
+        correct: false
+        misconception: S03-M29
+        feedback: FD_SET is a macro with no return value. It checks nothing.
+    explanation: FD_SET(fd) sets bit fd % 64 of word fd / 64. Word 17 does not exist in a 1,024-bit set, so the write lands in the memory next to it.
+    covers: [S03-C37, S03-C38, S03-C43]
+    tags: []
+    taughtIn: the-wall-is-a-number-not-a-count
+
+  - id: s03-digest-q04
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: One client stops reading while the server writes a large reply. What keeps the select loop serving the other clients?
+    options:
+      - text: A 5-second timeout on the select call.
+        correct: false
+        misconception: S03-M07
+        feedback: The timeout bounds the wait inside select. The stall happens later, inside a blocking write.
+      - text: A larger listen backlog.
+        correct: false
+        misconception: S03-M32
+        feedback: The backlog holds connections that wait for accept. This client is already served.
+      - text: Non-blocking sockets, plus the write set of select.
+        correct: true
+        feedback: A non-blocking write gives back EAGAIN, and the loop parks the rest of the bytes in the write set.
+    explanation: A blocking write to a client that does not read freezes the whole loop. Only non-blocking sockets and the write set stop it.
+    covers: [S03-C56, S03-C57, S03-C58]
+    tags: []
+    taughtIn: seg-one-loop-and-the-1024-wall
+
+  - id: s03-digest-q05
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: A normal CGI script answers with an HTML page. What does it print first?
+    options:
+      - text: "A header field, such as `Content-Type: text/html`."
+        correct: true
+        feedback: Header fields, then a blank line, then the body. The server writes the status line.
+      - text: "`HTTP/1.1 200 OK`."
+        correct: false
+        misconception: S03-M09
+        feedback: Only an NPH script writes a full HTTP response. A normal script starts at the header fields.
+      - text: The body. The server adds `Content-Type` for you.
+        correct: false
+        misconception: S03-M34
+        feedback: A document response must carry its own Content-Type header. The server does not invent one.
+    explanation: CGI output is a header block, a blank line, then the body. Apache reads up to the blank line, writes the status line, and streams the rest.
+    covers: [S03-C70, S03-C72, S03-C73]
+    tags: []
+    taughtIn: cgi-creates-the-world-per-request
+
+  - id: s03-digest-q06
+    use: [check, practice]
+    segment: 3
+    type: recall
+    prompt: "A request carries the header `X-Forwarded-For: 10.0.0.9`. Give the environment variable name that a CGI script reads, and state the rule."
+    model: HTTP_X_FORWARDED_FOR. The rule has three steps. Upper-case the header name, turn each dash into an underscore, and add HTTP_ in front.
+    explanation: "The same rule turns `User-Agent: curl` into `HTTP_USER_AGENT=curl`. Every framework that you use today still carries this shape."
+    covers: [S03-C62, S03-C66, S03-C67]
+    tags: []
+    taughtIn: cgi-creates-the-world-per-request
+
+  - id: s03-digest-q07
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: A web server has sent the whole request body in FastCGI stdin records. What marks the end of that stream?
+    options:
+      - text: A CR LF CR LF sequence inside the content.
+        correct: false
+        misconception: S03-M12
+        feedback: FastCGI needs no byte pattern. A zero-length record is a structural marker, so content can hold any byte.
+      - text: An `FCGI_END_REQUEST` record.
+        correct: false
+        misconception: S03-M37
+        feedback: The application sends END_REQUEST after its reply. The body ends earlier, with an empty stdin record.
+      - text: An `FCGI_STDIN` record with `contentLength` 0.
+        correct: true
+        feedback: A record of length zero ends its own stream. The params stream ends the same way.
+    explanation: Each stream ends with an empty record of its own type. That is how a receiver reads a body of unknown length.
+    covers: [S03-C87, S03-C90, S03-C94]
+    tags: []
+    taughtIn: pay-the-setup-once
+
+  - id: s03-digest-q08
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: nginx handles 50 PHP requests at the same time through php-fpm. How many FastCGI connections does it open?
+    options:
+      - text: 50, one for each request.
+        correct: true
+        feedback: nginx hardcodes requestId 1, so one connection carries one request at a time.
+      - text: 1, with requestIds 1 to 50 on it.
+        correct: false
+        misconception: S03-M14
+        feedback: The protocol allows that, and nginx declines it. It refuses any requestId other than 1.
+      - text: Fewer than 50, because `FCGI_KEEP_CONN` puts several requests on each connection at once.
+        correct: false
+        misconception: S03-M38
+        feedback: The flag only keeps a connection open for the next request. It carries no second request at the same time.
+    explanation: requestId exists so that one connection can carry many requests. nginx does not use it, because a slow reply would block the others behind it.
+    covers: [S03-C102, S03-C104]
+    tags: []
+    taughtIn: pay-the-setup-once
+
+  - id: s03-digest-q09
+    use: [check, practice]
+    segment: 5
+    type: numeric
+    prompt: A service takes 10,000 requests per second. Each request takes 100 ms on average. How many requests are in flight?
+    answer: { value: 1000, tolerance: 0, unit: requests }
+    distractors:
+      - value: 10000
+        misconception: S03-M40
+        feedback: 10,000 is the arrival rate for one second. Multiply it by the mean time for one request, 0.1 s.
+    explanation: L = lambda times W. 10,000 per second × 0.1 s = 1,000 in flight. At 1 s each, the same traffic holds 10,000.
+    covers: [S03-C132, S03-C133]
+    tags: []
+    taughtIn: you-hold-what-you-are-slow
+
+  - id: s03-digest-q10
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: A team doubles the thread pool of a service. Do fewer requests sit in flight?
+    options:
+      - text: Yes. A higher limit on threads and descriptors lowers the requests in flight.
+        correct: false
+        misconception: S03-M40
+        feedback: A higher limit lets the server hold more. It does not change the arrival rate or the service time.
+      - text: Only when requests waited for a free thread. L cannot go below the arrival rate times the service time.
+        correct: true
+        feedback: A bigger pool removes queue wait, which is part of W. The service time stays.
+      - text: Yes, always. A bigger pool pushes L under the arrival rate times the service time.
+        correct: false
+        misconception: S03-M19
+        feedback: L = lambda times W sets a floor. Only faster work, or work moved off the request path, gets under it.
+    explanation: Concurrency is not a setting. The pool decides how many run at once, and the law decides how many you hold.
+    covers: [S03-C134, S03-C135, S03-C121]
+    tags: []
+    taughtIn: you-hold-what-you-are-slow
+
+  - id: s03-digest-q11
+    use: [check, practice]
+    segment: 6
+    type: mcq
+    prompt: Apache runs the worker MPM. A browser holds a keep-alive connection open and sends nothing. What does that idle client hold?
+    options:
+      - text: Nothing. The thread goes back to the pool between requests.
+        correct: false
+        misconception: S03-M43
+        feedback: That is the event MPM. Under worker, the thread stays pinned to the connection while it is idle.
+      - text: A whole process.
+        correct: false
+        misconception: S03-M21
+        feedback: That is prefork. Worker runs many threads inside each process.
+      - text: A whole thread, for the idle time too.
+        correct: true
+        feedback: This is the keep-alive problem that pushed Apache to the event MPM in 2012.
+    explanation: Prefork pins a process, worker pins a thread, and event parks the idle socket on epoll and frees the thread.
+    covers: [S03-C138, S03-C139, S03-C140]
+    tags: []
+    taughtIn: the-loop-waits-a-worker-works
+
+  - id: s03-digest-q12
+    use: [check, practice]
+    segment: 6
+    type: mcq
+    prompt: Varnish holds 10,000 client connections, and most of them are idle. What holds an idle one?
+    options:
+      - text: A waiter, which is epoll on Linux and kqueue on BSD.
+        correct: true
+        feedback: Threads do the work, and a loop does the waiting. That is the shape all four servers reached.
+      - text: The acceptor thread of the listen point.
+        correct: false
+        misconception: S03-M45
+        feedback: The acceptor takes new connections. Idle descriptors move to the waiter.
+      - text: Its own worker thread, from the pool.
+        correct: false
+        misconception: S03-M23
+        feedback: A worker thread serves an active connection. An idle one goes back to the waiter.
+    explanation: Varnish pools default to 100 threads minimum and 5000 maximum for each pool, so idle connections must not hold one.
+    covers: [S03-C146, S03-C149]
+    tags: []
+    taughtIn: the-loop-waits-a-worker-works
+
+  - id: s03-digest-q13
+    use: [exit, practice]
+    type: mcq
+    prompt: A select server must watch descriptor 2000. Which change makes that work?
+    options:
+      - text: Run `ulimit -n 4096` before the server starts.
+        correct: false
+        misconception: S03-M03
+        feedback: The descriptor limit and the bitmap width are two different things. Only the first one moves.
+      - text: Close descriptors 0, 1 and 2 first, to free low numbers.
+        correct: false
+        misconception: S03-M30
+        feedback: The set still holds 1,024 bits. Descriptor 2000 has no bit, whatever else is open.
+      - text: None of these. Use `poll` or `epoll` instead.
+        correct: true
+        feedback: FD_SETSIZE is a compile-time constant. poll takes an array, and epoll keeps the list in the kernel.
+    explanation: The select wall is the width of a bitmap in a header, so no run-time setting moves it.
+    covers: [S03-C39, S03-C44, S03-C166]
+    tags: []
+    taughtIn: the-wall-is-a-number-not-a-count
+
+  - id: s03-digest-q14
+    use: [exit, practice]
+    type: mcq
+    prompt: A load balancer sends request 1 to web server A and request 2 to web server B. Why is that legal for HTTP?
+    options:
+      - text: Because the web servers in a pool share their memory.
+        correct: false
+        misconception: S03-M39
+        feedback: Each box has its own memory. Shared state lives in a store behind the tier.
+      - text: Because each request carries what it needs, so any box can answer it.
+        correct: true
+        feedback: That is what makes horizontal scaling legal. Add a server to the pool and it takes traffic.
+      - text: It is not legal. HTTP keeps the session on the TCP connection, so request 2 must reach A.
+        correct: false
+        misconception: S03-M26
+        feedback: Sticky routing is a choice, not a rule of HTTP. The context travels in the request, for example in a cookie.
+    explanation: HTTP is stateless, so the state moves to a store. A database is the opposite, and it wants one long connection for each client.
+    covers: [S03-C112, S03-C113, S03-C114, S03-C115]
+    tags: []
+    taughtIn: you-hold-what-you-are-slow
+
+  - id: s03-digest-q15
+    use: [exit, practice]
+    type: recall
+    prompt: Apache, HAProxy, Varnish and nginx started in four different years, from four different problems. Name the design that all four reached, and say which job each half does.
+    model: An event loop plus a small pool of workers. The loop does the waiting, because a waiting connection needs only a descriptor in a poller. A worker does the work, because blocking work such as a disk read or a slow backend needs a thread of its own.
+    explanation: Four independent teams converged on one shape. The class closes with that proof, and the next class starts at the load balancer.
+    covers: [S03-C151, S03-C152, S03-C158]
+    tags: [story]
+    taughtIn: the-loop-waits-a-worker-works

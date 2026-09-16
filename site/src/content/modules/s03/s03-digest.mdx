@@ -1,0 +1,533 @@
+---
+id: s03-digest
+session: 3
+order: 10
+kind: digest
+title: Class 3 in one fast read
+minutes: 26
+bigIdea: "One box holds ten thousand clients only when each client is cheap. This class prices a client three ways, keeps your program alive between requests, and ends at the law that ties how many you hold to how slow you are."
+covers: [S03-C02, S03-C04, S03-C05, S03-C06, S03-C07, S03-C08, S03-C09, S03-C11, S03-C12, S03-C14, S03-C15, S03-C19, S03-C20, S03-C21, S03-C22, S03-C28, S03-C30, S03-C31, S03-C32, S03-C33, S03-C34, S03-C35, S03-C37, S03-C38, S03-C39, S03-C40, S03-C41, S03-C43, S03-C44, S03-C45, S03-C51, S03-C52, S03-C53, S03-C54, S03-C56, S03-C57, S03-C58, S03-C59, S03-C60, S03-C62, S03-C63, S03-C64, S03-C66, S03-C67, S03-C70, S03-C71, S03-C72, S03-C73, S03-C75, S03-C77, S03-C78, S03-C79, S03-C81, S03-C82, S03-C83, S03-C84, S03-C85, S03-C87, S03-C88, S03-C89, S03-C90, S03-C91, S03-C92, S03-C93, S03-C94, S03-C96, S03-C97, S03-C99, S03-C100, S03-C102, S03-C104, S03-C105, S03-C106, S03-C107, S03-C108, S03-C109, S03-C112, S03-C113, S03-C114, S03-C115, S03-C116, S03-C117, S03-C118, S03-C119, S03-C120, S03-C121, S03-C125, S03-C126, S03-C128, S03-C130, S03-C132, S03-C133, S03-C134, S03-C135, S03-C138, S03-C139, S03-C140, S03-C146, S03-C149, S03-C151, S03-C152, S03-C158, S03-C161, S03-C162, S03-C163, S03-C165, S03-C166]
+prereqs: []
+threads: [T-setup-off-path, T-watch-list, T-framing, T-skip-unknown, T-littles-law, T-where-state-goes, T-law-or-habit, T-network-not-function]
+confidence: high
+status: ready
+terms:
+  - term: process
+    meaning: a program while it runs, with its own memory map. The kernel gives each one a number, its process ID.
+  - term: thread
+    meaning: one line of work inside a process. Threads of one process share its memory, and each one gets its own stack.
+  - term: descriptor
+    meaning: the small number that a program uses to name an open file or an open socket. One connection costs one descriptor.
+  - term: event loop
+    meaning: one thread that asks the kernel which sockets are ready, and then serves only those
+  - term: address space
+    meaning: the map of addresses that a process can use. A reserved address needs no RAM until the program touches it.
+  - term: record
+    meaning: one framed unit of a binary protocol. A FastCGI record has an 8-byte header, then its content.
+---
+
+import ByteView from '../../../components/diagram/ByteView.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import Myth from '../../../components/lesson/Myth.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import WordCard from '../../../components/lesson/WordCard.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+One box. Ten thousand clients at the same time. That is the question of this class, and every answer to it is a cost that you pay before any real work starts.
+
+Class 1 gave you one server and one client. This class asks what changes when ten thousand clients arrive together. The answer is not one trick. It is a set of costs, and a set of designs that move those costs somewhere else.
+
+The class runs in five blocks. First, three ways to serve many clients: a process for each one, a thread for each one, or one loop that watches every socket. Second, how a web server runs your code, from CGI to FastCGI. Third, which servers speak HTTP at all, because that decides which tricks apply. Fourth, the four walls that stop every server. Fifth, four famous servers and the one shape they all reached.
+
+**The path through this digest.** Part 1 prices one client in three designs. Part 2 gives you the loop, and the wall that the old loop hits at descriptor 1024. Part 3 shows CGI, a new program for every hit. Part 4 keeps that program alive with FastCGI and servlets. Part 5 names the four walls and the law that links them. Part 6 shows Apache, HAProxy, Varnish and nginx, and the shape they share.
+
+<WordCard terms={frontmatter.terms} />
+
+<Segment title="What one client costs">
+
+A server that talks to one client is easy. The hard part starts when ten thousand of them arrive at the same time, so the class starts by pricing a single client.
+
+<Stepper
+  slot="visual"
+  title="One client, three designs"
+  steps={[
+    {
+      caption: 'Step 1. A client connects. accept gives the server a new socket in all three designs.',
+      lanes: [
+        { label: 'fork', chunks: ['listening socket', 'client fd'] },
+        { label: 'thread', chunks: ['listening socket', 'client fd'] },
+        { label: 'loop', chunks: ['listening socket', 'client fd'] },
+      ],
+    },
+    {
+      caption: 'Step 2. Each design makes the unit that serves this one client.',
+      lanes: [
+        { label: 'fork', chunks: ['listening socket', 'client fd', 'new process', 'page tables', 'task entry'] },
+        { label: 'thread', chunks: ['listening socket', 'client fd', '8 MiB stack', 'task entry'] },
+        { label: 'loop', chunks: ['listening socket', 'client fd', '4 KiB buffer'] },
+      ],
+    },
+    {
+      caption: 'Step 3. Multiply by ten thousand. This is where two designs stop.',
+      ask: 'Which of the three costs is address space, and which is RAM?',
+      lanes: [
+        { label: 'fork', chunks: ['10,000 processes', '10,000 page tables', '10,000 task entries'] },
+        { label: 'thread', chunks: ['about 78 GiB of stacks', '10,000 task entries'] },
+        { label: 'loop', chunks: ['1 thread', 'about 39 MiB of buffers'] },
+      ],
+    },
+    {
+      caption: 'Step 4. What ships stacks the designs: workers for isolation, a loop for scale.',
+      lanes: [
+        { label: 'fork', chunks: ['4 workers, forked at startup'] },
+        { label: 'thread', chunks: ['threads only for blocking work'] },
+        { label: 'loop', chunks: ['one epoll loop in each worker'] },
+      ],
+    },
+  ]}
+/>
+
+<KeyIdea id="nothing-is-free-per-connection" title="Nothing is free for each connection">
+Each client costs a descriptor, some memory, and a place in the kernel bookkeeping, before it does any work. A design changes the size of that cost. No design makes it zero.
+</KeyIdea>
+
+The class gives three answers. `fork` makes a new process for each client. It is simple, and each client gets its own address space, so a crash takes down one client only. It is also the most expensive answer, because the kernel copies the page tables, the descriptor table and a task entry, and the user waits for that work.
+
+A thread costs less than a process, so the wait drops. But each thread reserves a stack before it serves one byte. On glibc Linux that stack is 8 MiB, the value of `ulimit -s`. Ten thousand threads reserve about 78 GiB of address space, which <SlideLink session={3} page={24}>the deck</SlideLink> rounds to "80 GB".
+
+That number is address space, not RAM. The stack pages stay untouched until a thread uses them. A scratch run of 1,000 idle threads grew the virtual size by 7.8 GiB and the resident size by only 8.2 MiB (Fedora 44, default 8 MiB stacks).
+
+The third answer keeps one thread and one loop. The loop asks the kernel which sockets are ready now, and serves only those. No new process, no new stack. Go brought the thread style back by making the unit small: a goroutine starts with a 2 KB stack that grows on demand, about 4,000 times smaller than 8 MiB, and the runtime parks a blocking read on an epoll netpoller. The floor stays. More requests at the same time always need more memory, and only the price for each request changes.
+
+<Myth claim="The 80 GB is the reason that nobody ships a thread for each connection.">
+The companion code says that, and it goes too far. The Apache worker MPM ships a thread for each connection, and so does Varnish. On 64-bit Linux, address space is not the first wall. Resident memory, kernel stacks, scheduler work and `RLIMIT_NPROC` arrive first.
+</Myth>
+
+<Remember>
+
+- `fork` copies the page tables, the descriptor table and the task entry. The pages stay shared until one side writes.
+- A dead child stays a zombie until the parent reaps it. Reap in a `waitpid(-1, NULL, WNOHANG)` loop, because one SIGCHLD can stand for many dead children.
+- nginx also forks, but at startup. The same call moves away from the request path.
+- Fork and thread servers hold one unit for each request in flight, not for each request per second.
+
+</Remember>
+
+The full lesson is <ModuleLink id="s03-m01-threads-and-fork" />.
+
+<Check id="s03-digest-q01" />
+
+<Check id="s03-digest-q02" />
+
+</Segment>
+
+<Segment title="One loop, and the 1024 wall">
+
+The select echo server of the class serves every client from one thread. One turn of its loop explains both the design and its wall.
+
+<Stepper
+  slot="visual"
+  title="One turn of a select loop"
+  steps={[
+    {
+      caption: 'Step 1. Clear the set. Add the listener and every client. Remember the highest descriptor.',
+      lanes: [
+        { label: 'watch set', chunks: ['fd 3', 'fd 4', 'fd 5', 'fd 7'] },
+        { label: 'clients', chunks: ['4', '5', '7'] },
+        { label: 'call', chunks: ['maxfd 7, so pass 8'] },
+      ],
+    },
+    {
+      caption: 'Step 2. select sleeps. It returns with only the ready bits still on.',
+      lanes: [
+        { label: 'watch set', chunks: ['fd 3 ready', 'fd 5 ready'] },
+        { label: 'clients', chunks: ['4', '5', '7'] },
+        { label: 'call', chunks: ['select returned 2'] },
+      ],
+    },
+    {
+      caption: 'Step 3. The listener is ready, so accept one client and append it.',
+      ask: 'Does the new client get served in this same turn?',
+      lanes: [
+        { label: 'watch set', chunks: ['fd 3 ready', 'fd 5 ready'] },
+        { label: 'clients', chunks: ['4', '5', '7', '6'] },
+        { label: 'call', chunks: ['fd 6 has no bit this turn'] },
+      ],
+    },
+    {
+      caption: 'Step 4. Client 5 read 0, so close it. The last entry moves into the hole.',
+      lanes: [
+        { label: 'watch set', chunks: ['fd 3 ready'] },
+        { label: 'clients', chunks: ['4', '6', '7'] },
+        { label: 'call', chunks: ['swap-remove, then i--'] },
+      ],
+    },
+    {
+      caption: 'Step 5. A client on descriptor 1030 arrives. The set has no bit that high.',
+      lanes: [
+        { label: 'watch set', chunks: ['1,024 bits: 0 to 1023'] },
+        { label: 'clients', chunks: ['4', '6', '7', '1030'] },
+        { label: 'call', chunks: ['FD_SET writes past the set'] },
+      ],
+    },
+  ]}
+/>
+
+<KeyIdea id="the-wall-is-a-number-not-a-count" title="The select wall is a descriptor number, not a count">
+An `fd_set` on glibc is a bitmap of 1,024 bits, and the bit index is the descriptor number. A server with ten clients still fails when one of them gets descriptor 1030.
+</KeyIdea>
+
+Each turn the loop clears the watch set, adds the listening socket and every client, and remembers the highest descriptor. It calls `select`, which sleeps until at least one socket is ready. Then it walks the clients and serves only the ones with a bit. Two details earn exam marks. The first argument is the highest descriptor plus one, not the number of clients. The last argument is the timeout, and a NULL there blocks forever.
+
+Select has three costs. It rebuilds the set on every call, because select overwrites the set with the ready bits. The kernel then walks every descriptor up to the highest one, and your code walks the clients again. With 10,000 connections and 10 active, that is about 30,000 units of work for 10 events, and an idle connection costs as much as a busy one. epoll registers the interest one time with `epoll_ctl` and returns only what fired, so an idle wait costs nothing.
+
+The third cost is the wall. `FD_SET(fd)` sets bit `fd % 64` of word `fd / 64`, and descriptor 1024 has no word. The macro gives back nothing and checks nothing, so it writes into the memory next to the set. No error, no warning. `ulimit -n 65536` does not help, because a header fixes the width at build time. A flood of 1,100 connections against the guarded server printed `fd 1024 >= FD_SETSIZE (1024)` (instructor capture, loopback, after `ulimit -n 65536`).
+
+So what ships stacks the models. At startup the master forks one worker for each CPU core, and `SO_REUSEPORT` lets the kernel spread new connections over them. Each worker runs its own loop. The processes give crash isolation, and the loop gives concurrency. Each wait then needs a deadline, because a server must never wait forever. A select loop waits on three sets, readfds, writefds and exceptfds, and the client side sets its own deadline and retries with backoff.
+
+One warning closes the part. A timeout does not save a loop from a slow reader. The stall happens inside a blocking `write`, outside select. Non-blocking sockets and the write set fix it. A larger timeout does not, and neither does a larger listen backlog.
+
+<Myth claim="exceptfds reports sockets that connect and close.">
+That is the wording on <SlideLink session={3} page={9} />, and a quiz on the deck can use it. On Linux the man page disagrees. A close shows as readable, and `read` then returns 0. A finished non-blocking connect shows as writable. exceptfds reports exceptional conditions such as TCP urgent data.
+</Myth>
+
+<Myth claim="1024 is the K in C10K.">
+<SlideLink session={3} page={7}>The slide</SlideLink> calls 1024 one wall with three names: `FD_SETSIZE`, the default soft descriptor limit, and the K in C10K. The first two are real and linked, because systemd keeps the soft limit at 1024 while select breaks above descriptor 1023. The third is not. Dan Kegel wrote about ten thousand clients, and 1024 is a power of two with no link to that K.
+</Myth>
+
+<Remember>
+
+- Build the set again on each turn. Select overwrites it with the ready bits.
+- The first argument to select is the highest descriptor plus one.
+- `clients[i] = clients[--nclients]; i--;` is an O(1) delete, and `i--` tests the entry that moved.
+- Select is O(watched) on every call. epoll is O(ready).
+- Isolation comes from the worker processes. Concurrency comes from the loop inside each worker.
+
+</Remember>
+
+The full lessons are <ModuleLink id="s03-m02-select" /> and <ModuleLink id="s03-m03-stacking-and-timeouts" />.
+
+<Check id="s03-digest-q03" />
+
+<Check id="s03-digest-q04" />
+
+</Segment>
+
+<Segment title="CGI: a new program for every request">
+
+Now the question changes. The server runs, but how does it run your code? The first answer of the web starts a whole program for every hit.
+
+<SequenceDiagram
+  slot="visual"
+  title="One CGI request, end to end"
+  actors={['client', 'Apache', 'script']}
+  messages={[
+    { from: 'client', to: 'Apache', label: 'GET /cgi-bin/form.py?x=10' },
+    { from: 'Apache', to: 'Apache', label: 'three pipes, then fork' },
+    { from: 'Apache', to: 'script', label: 'environment + stdin pipe' },
+    { from: 'script', to: 'script', label: 'reads the environment, prints' },
+    { from: 'script', to: 'Apache', label: 'stdout: headers, blank, body' },
+    { from: 'script', to: 'Apache', label: 'stderr: to the error log' },
+    { from: 'Apache', to: 'client', label: 'status line, headers, body' },
+    { from: 'Apache', to: 'Apache', label: 'waitpid: the process is gone' },
+  ]}
+/>
+
+<KeyIdea id="cgi-creates-the-world-per-request" title="CGI builds a whole program for every request">
+A CGI server turns each HTTP request into a new process. The request details arrive in the environment, the body arrives on stdin, and the reply comes back on stdout.
+</KeyIdea>
+
+Apache was the most used HTTP server on earth, and CGI was how it ran your code. The idea is small. For each request the server forks and execs your program.
+
+The wiring uses three pipes. The server makes them and forks. The child moves the pipe ends onto descriptors 0, 1 and 2, then execs the script. Client text goes to stdin. What the script prints on stdout goes to the client. Stderr goes to the Apache error log, so debug output never lands on the page.
+
+The request becomes environment variables. The method becomes `REQUEST_METHOD`, and the text after the `?` becomes `QUERY_STRING`. Each header gets a mechanical name: upper-case it, turn each dash into an underscore, and add `HTTP_` in front. So `User-Agent: curl` becomes `HTTP_USER_AGENT=curl`. Every framework that you use today still carries that shape.
+
+A CGI program needs no server library. It reads the environment and prints. For POST it reads the body from stdin, and for GET it parses `QUERY_STRING`. Its output is a header block, a blank line, and then the body. That blank line is the delimiter, the same framing choice as class 1. Apache reads the headers up to the blank line, writes the status line itself, and streams the rest to the client.
+
+The cost is the whole point. CGI builds the program image, runs it one time, and discards it, on every hit. A shell does the same for each command, but not a thousand times a second. The instructor puts the setup at about 5 to 20 ms before your code runs (instructor estimate, no conditions given).
+
+Two fixes followed. The first compiled the language into the server, as mod_php and mod_perl do. That removes the process for each request, and it also puts your language inside the server address space, so one segfault takes both down. The fix that won keeps a long-lived process and lets the web server call it over a Unix or TCP socket. That is FastCGI, and it repeats the pre-fork move: pay the setup one time, at startup, away from the request path.
+
+<Remember>
+
+- A normal CGI script prints header fields and a blank line. The server writes the status line. Only an NPH script writes a full HTTP response itself.
+- `QUERY_STRING` always exists, POST included. Stdin holds the body only.
+- The call order is `pipe`, `fork`, `dup2` onto 0, 1 and 2, then `execve`.
+- A document response must carry a `Content-Type` header. The server does not add one for you.
+
+</Remember>
+
+The full lesson is <ModuleLink id="s03-m04-cgi" />.
+
+<Check id="s03-digest-q05" />
+
+<Check id="s03-digest-q06" />
+
+</Segment>
+
+<Segment title="FastCGI and servlets: pay the setup once">
+
+CGI pays for a process on every hit. The next two designs pay one time, at startup, and then send the same data to a worker that is already alive.
+
+<ByteView
+  slot="visual"
+  caption="The start of a FastCGI request. Every record opens with the same 8 bytes."
+  messages={[
+    {
+      name: 'FCGI_BEGIN_REQUEST header',
+      fields: [
+        { hex: '01', label: 'version 1' },
+        { hex: '01', label: 'type 1, begin request' },
+        { hex: '00 01', label: 'requestId 1' },
+        { hex: '00 08', label: 'contentLength 8', kind: 'length' },
+        { hex: '00', label: 'paddingLength 0' },
+        { hex: '00', label: 'reserved' },
+      ],
+    },
+    {
+      name: 'its 8 content bytes',
+      fields: [
+        { hex: '00 01', label: 'role 1, responder' },
+        { hex: '00', label: 'flags 0, close after the reply' },
+        { hex: '00 00 00 00 00', label: 'reserved' },
+      ],
+    },
+    {
+      name: 'the empty FCGI_PARAMS record ends the params stream',
+      fields: [
+        { hex: '01', label: 'version 1' },
+        { hex: '04', label: 'type 4, params' },
+        { hex: '00 01', label: 'requestId 1' },
+        { hex: '00 00', label: 'contentLength 0, the end marker', kind: 'delimiter' },
+        { hex: '00', label: 'paddingLength 0' },
+        { hex: '00', label: 'reserved' },
+      ],
+    },
+  ]}
+/>
+
+<KeyIdea id="pay-the-setup-once" title="Pay the setup once, then send records">
+CGI, FastCGI, servlets and frameworks answer one question: run user code for each request without building the world each time. The worker stays alive, and the request arrives as data on a socket.
+</KeyIdea>
+
+php-fpm is a FastCGI responder. It never forks, never execs, and never parses HTTP. nginx or httpd sits in front of it. The front server absorbs slow connections, TLS and buffering, and then hands the work to a fixed pool of long-lived workers. The data is the same as CGI, and the params records carry the same CGI names. Only the transport changed. The instructor calls FastCGI HTTP with less vocabulary: the same information, but binary, typed and multiplexed, so nobody parses a text protocol two times.
+
+A request is a stream of typed records. First `FCGI_BEGIN_REQUEST`. Then params records with the CGI names, then an empty params record. Then stdin records with the body, then an empty stdin record. In the slide example the body `name=alice&age=20` is 17 bytes, the same number as the declared `CONTENT_LENGTH`. The reply comes back the same way: stdout records with the headers, the blank line and the body, then an empty stdout record, then stderr, then `FCGI_END_REQUEST`. Stdout holds byte for byte what a CGI program printed, and the web server parses the headers off the front. Stderr is its own record type, so debug output cannot corrupt the page.
+
+Two framing ideas live in one protocol. The length in each record header lets the content hold any byte, newlines and null bytes too. A record of length zero ends its stream, and that marker is structural, so no byte pattern needs an escape. Class 1 gave you the choice between a length and a delimiter. SMS chose length, SMTP chose a dot, IMAP uses both, and FastCGI uses both too.
+
+Two more details earn quiz points. A name or a value under 128 bytes carries a one-byte length. A longer one takes four bytes, big-endian, with the top bit set. And `requestId` exists so that one connection can carry many requests, but nginx hardcodes 1 and opens a connection for each request. Forget the empty params record and the responder waits forever.
+
+Servlets are the same idea inside a JVM. Jetty and Tomcat are the web server, so no httpd forks in front of them. A thread pool starts with the server, an idle thread runs your servlet, and then it returns to the pool. The container keeps one object for each servlet declaration, and many threads can run that one object at the same time. A class loader and a thread separate the servlets, not a process, so one runaway servlet can hurt its neighbours.
+
+<Remember>
+
+- A record with content length 0 ends its stream. `FCGI_END_REQUEST` comes after the reply, not at the end of the body.
+- `contentLength` counts content bytes only, not the 8-byte header and not the padding.
+- Params is type 4, stdin 5, stdout 6, stderr 7.
+- nginx uses `requestId` 1 and one request for each connection.
+- One servlet object serves many threads, so keep request data in local variables.
+
+</Remember>
+
+The full lessons are <ModuleLink id="s03-m05-fastcgi-servlets" /> and <ModuleLink id="s03-m09-servlets" />.
+
+<Check id="s03-digest-q07" />
+
+<Check id="s03-digest-q08" />
+
+</Segment>
+
+<Segment title="The four walls, and the law that links them">
+
+The designs are done. Now count the budgets that every connection spends, and meet the one law that the class returns to in every later session.
+
+<Stepper
+  slot="visual"
+  title="Requests in flight: L = lambda times W"
+  steps={[
+    {
+      caption: 'Step 1. 10,000 requests per second arrive. Each one takes 100 ms on average.',
+      lanes: [
+        { label: 'arrivals, lambda', chunks: ['10,000 per second'] },
+        { label: 'time each, W', chunks: ['100 ms'] },
+        { label: 'in flight, L', chunks: ['1,000 connections'] },
+        { label: 'cost of that L', chunks: ['1,000 descriptors', '1,000 buffers'] },
+      ],
+    },
+    {
+      caption: 'Step 2. The database gets slower. Same traffic, ten times the time for each request.',
+      ask: 'Before the next step: what does L become?',
+      lanes: [
+        { label: 'arrivals, lambda', chunks: ['10,000 per second'] },
+        { label: 'time each, W', chunks: ['1 s'] },
+        { label: 'in flight, L', chunks: ['?'] },
+        { label: 'cost of that L', chunks: ['?'] },
+      ],
+    },
+    {
+      caption: 'Step 3. L grows ten times, for identical traffic. Slowness is a memory bug.',
+      lanes: [
+        { label: 'arrivals, lambda', chunks: ['10,000 per second'] },
+        { label: 'time each, W', chunks: ['1 s'] },
+        { label: 'in flight, L', chunks: ['10,000 connections'] },
+        { label: 'cost of that L', chunks: ['10,000 descriptors', 'past the 1024 default'] },
+      ],
+    },
+    {
+      caption: 'Step 4. A bigger pool and a higher limit let you hold more. Only faster work holds less.',
+      lanes: [
+        { label: 'arrivals, lambda', chunks: ['10,000 per second'] },
+        { label: 'time each, W', chunks: ['100 ms again, work moved off the path'] },
+        { label: 'in flight, L', chunks: ['1,000 connections'] },
+        { label: 'cost of that L', chunks: ['the queue drains'] },
+      ],
+    },
+  ]}
+/>
+
+<KeyIdea id="you-hold-what-you-are-slow" title="Concurrency is not a setting">
+Connections in flight equal the arrival rate times the mean time for one request. A bigger pool or a higher descriptor limit lets you hold more. Only faster work makes you hold less.
+</KeyIdea>
+
+Almost everything runs a web server, and not everything is one. A router admin page, most Node apps, CouchDB and Firestore speak HTTP. Redis speaks RESP, MySQL speaks its own binary protocol, and native Kafka does too. That matters, because web scaling advice assumes the properties of HTTP. Change the protocol and the advice changes.
+
+HTTP is stateless. Each request carries what it needs, so any box in the pool can answer it, and a load balancer can send it anywhere. That is what makes horizontal scaling legal: add a server to the pool and it takes traffic at once. A database is the opposite. It wants a persistent connection, because a new one costs a TCP connect, a handshake, auth and session setup. So for that tier the question changes from requests per second to persistent connections for each box.
+
+Then come the four walls. Every connection takes a descriptor, and the default soft limit is still 1024, which `ulimit -n` prints. Every connection takes memory: a buffer, and a stack too when a thread owns it, paid before any work happens. Every read, every write and every syscall crosses into the kernel and back, at hundreds of nanoseconds each (instructor estimate). At a million operations a second, that tax is the workload. Two escapes exist: make fewer calls, with `sendfile` or an io_uring batch, or leave the kernel network stack and lose your tools with it.
+
+The fourth wall is the queue, and it carries the law of the class. Connections in flight equal requests per second times seconds for each request. At 100 ms you hold 1,000 connections. At 1 s you hold 10,000, for identical traffic. Homework 4 names the formula: Little's law, L = lambda times W. W is the mean, not p50 and not p99. A bigger thread pool can remove the wait for a free thread, and that does lower W. It cannot push L below the arrival rate times the service time. The way down is faster work, or slow work moved away from the request path so that the queue drains.
+
+<Remember>
+
+- Latency and throughput are not independent. Being slow costs you memory.
+- 1024 is a soft default, not a kernel maximum. The systemd hard limit is 524288.
+- A syscall is a mode switch in the same thread, not a switch to another process.
+- `sendfile` does not bypass the kernel. It keeps the copy inside the kernel and skips the user-space trip.
+
+</Remember>
+
+The full lessons are <ModuleLink id="s03-m06-stateless-servers" /> and <ModuleLink id="s03-m07-limits" />.
+
+<Check id="s03-digest-q09" />
+
+<Check id="s03-digest-q10" />
+
+</Segment>
+
+<Segment title="In the wild: four servers, one shape">
+
+The class ends with proof. Four teams started from four different problems, in four different years, and all four arrived at the same design.
+
+<Stepper
+  slot="visual"
+  title="Four servers, and where each one waits"
+  steps={[
+    {
+      caption: 'Apache: prefork, then worker, then event. Twenty years to reach a loop.',
+      lanes: [
+        { label: 'who waits', chunks: ['prefork: a whole process', 'worker: a pinned thread', 'event: a listener on epoll'] },
+        { label: 'who works', chunks: ['the same process or thread'] },
+      ],
+    },
+    {
+      caption: 'HAProxy, 2001: one event-driven process. select first, because epoll came later.',
+      lanes: [
+        { label: 'who waits', chunks: ['one loop, select, then epoll from 2005'] },
+        { label: 'who works', chunks: ['the same loop, plus threads from 1.8 in 2017'] },
+      ],
+    },
+    {
+      caption: 'Varnish, 2006: a worker thread for each active connection, a waiter for the idle ones.',
+      lanes: [
+        { label: 'who waits', chunks: ['a waiter loop: epoll on Linux, kqueue on BSD'] },
+        { label: 'who works', chunks: ['a thread pool, 100 min and 5000 max'] },
+      ],
+    },
+    {
+      caption: 'nginx, 2004: one worker for each core, and one epoll loop in each worker.',
+      lanes: [
+        { label: 'who waits', chunks: ['one epoll loop in each worker'] },
+        { label: 'who works', chunks: ['the same thread, plus sendfile for files'] },
+      ],
+    },
+    {
+      caption: 'One shape. A loop for the waiting, a small pool of workers for the work.',
+      ask: 'Name the two jobs that every one of the four now splits.',
+      lanes: [
+        { label: 'who waits', chunks: ['an event loop'] },
+        { label: 'who works', chunks: ['a small pool of workers'] },
+      ],
+    },
+  ]}
+/>
+
+<KeyIdea id="the-loop-waits-a-worker-works" title="The loop waits, a worker works">
+Apache, HAProxy, Varnish and nginx started from four different places. All four ended with an event loop for the waiting and a small pool of workers for the work.
+</KeyIdea>
+
+Apache went prefork, then worker, then event. Prefork keeps a pool of processes with one connection each. It stays safe with modules that are not thread-safe, and it is the most expensive design for each connection. Worker uses processes with many threads, which is cheaper, but an idle keep-alive connection still pins a whole thread. Event puts a listener thread in each process, parks the idle keep-alive sockets on epoll, and gives a worker thread only a socket that has work.
+
+HAProxy arrived in 2001, about a year before epoll landed in Linux 2.5.44. So it was largely select, and it moved to epoll later. It became multi-threaded only in version 1.8, in 2017. For many teams it was the first box in front of the app servers that chose between them. It also holds a pool of open upstream connections, which cuts connects and disconnects. That is the persistent-connection argument of the block above, done for you by a proxy.
+
+Varnish was the first popular caching reverse proxy. Squid cached on the way out, and Varnish cached in front of the origin. It runs a worker thread for each active connection, with pools that default to 100 threads minimum and 5000 maximum for each pool. Idle descriptors go to a waiter, which is epoll on Linux and kqueue on BSD. Threads for the work, a loop for the waiting.
+
+nginx runs one master and one worker process for each CPU core, and each worker is one thread with one epoll loop. It also made `sendfile` famous. A plain read and write copies the file from the disk to the kernel, to your buffer, back to the kernel, and then to the socket. `sendfile` goes from the kernel straight to the socket.
+
+Four independent teams, four starting points, one shape. The class closes there, and the next class starts at the load balancer and goes looking for the state.
+
+<Remember>
+
+- Apache prefork pins a process, worker pins a thread, event parks idle sockets on epoll.
+- HAProxy chose select because epoll did not exist yet, not because select is better.
+- In Varnish, an idle connection holds no worker thread. The waiter holds it.
+- The three ideas of the class: pay the setup one time, nothing is free for each connection, framing is still a length or a delimiter.
+
+</Remember>
+
+The full lesson is <ModuleLink id="s03-m08-in-the-wild" />.
+
+<Check id="s03-digest-q11" />
+
+<Check id="s03-digest-q12" />
+
+</Segment>
+
+## The numbers of this class
+
+Each number keeps the conditions that produced it. A bare number is a trap in an exam answer.
+
+<NumbersTable
+  caption="Class 3 numbers, with their conditions"
+  rows={[
+    { value: '8 MiB', what: 'the default glibc thread stack', conditions: 'the RLIMIT_STACK soft limit, which `ulimit -s` prints. 8192 KiB on Fedora 44.' },
+    { value: 'about 78 GiB', what: 'address space for 10,000 default thread stacks', conditions: 'address space, not RAM. The deck rounds it to "80 GB", and the companion code prints 83.9 GB in decimal.' },
+    { value: '7.8 GiB and 8.2 MiB', what: 'virtual growth and resident growth for 1,000 idle threads', conditions: 'a scratch run on Fedora 44, Linux 7.1.8, default 8 MiB stacks. Not instructor data.' },
+    { value: '2 KB', what: 'the start stack of a goroutine', conditions: 'Go 1.4 and later. It grows on demand, and since Go 1.19 the start size follows past use.' },
+    { value: '1024', what: 'FD_SETSIZE on glibc, and the default soft descriptor limit', conditions: 'a compile-time bitmap width, and the systemd default. The systemd hard limit is 524288.' },
+    { value: 'fd 1024', what: 'where the guarded select server refuses a client', conditions: 'instructor capture, loopback, after `ulimit -n 65536` on both ends, with a flood of 1,100 connections.' },
+    { value: 'about 30,000 units', what: 'the work of one select call at 10,000 connections', conditions: '10 of them active. Select does O(n) work three times: you build, the kernel scans, you walk.' },
+    { value: '5 to 20 ms', what: 'CGI setup before your code runs', conditions: 'instructor estimate in the companion code. No machine and no conditions are given. FastCGI is about 0 ms.' },
+    { value: '8 bytes', what: 'the FastCGI record header', conditions: 'version, type, requestId (2), contentLength (2), paddingLength, reserved. Content is 0 to 65,535 bytes.' },
+    { value: '17 bytes', what: 'the body `name=alice&age=20` in a stdin record', conditions: 'the slide 16 example, with 7 padding bytes to reach an 8-byte boundary.' },
+    { value: 'hundreds of ns', what: 'the cost of one syscall', conditions: 'instructor estimate, no machine given. A scratch run on an i7-13650HX timed `getppid` at 59 ns.' },
+    { value: '1,000 and 10,000', what: 'connections in flight at 100 ms and at 1 s', conditions: 'identical traffic of 10,000 requests per second, by L = lambda times W.' },
+    { value: '100 min, 5000 max', what: 'Varnish worker threads for each pool', conditions: 'the Varnish defaults, with 2 pools. An idle connection holds no thread.' },
+  ]}
+/>
+
+## Check yourself
+
+Three questions across the whole class. Each answer links back to the part that taught it.
+
+<ExitQuiz module="s03-digest" />
+
+<CardsAdded id="s03-digest" />
