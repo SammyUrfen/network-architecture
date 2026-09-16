@@ -1,0 +1,126 @@
+# The review cards of the class 4 digest, from docs/curriculum/session-04.md.
+# 30 cards, in page order: c01 to c07 the history, c08 to c15 the loop and the
+# parser, c16 to c22 the kernel, c23 to c26 the proxy and the cache, c27 to c30
+# the routing and the upstream picker. Each card asks for one detail with one
+# right answer. No card asks which slide says what (lesson contract rule 11).
+items:
+  - id: s04-digest-c01
+    front: From 1993 to 2002, which single question did every new web server design answer?
+    back: How do we make the per-connection worker cheaper? nginx asked a different one, and removed the worker.
+    covers: [S04-C02, S04-C15]
+  - id: s04-digest-c02
+    front: What does CGI pay on every single request?
+    back: fork, exec, the load of an interpreter, a parse, the run, and the exit.
+    covers: [S04-C16]
+  - id: s04-digest-c03
+    front: When does Apache 1.3 prefork call fork(), and what still waits on one connection?
+    back: At startup, to fill a pool. One whole process still parks on one connection for its life.
+    covers: [S04-C12]
+  - id: s04-digest-c04
+    front: What does the Apache 2.4 event MPM do with an idle keep-alive connection?
+    back: It parks the connection on epoll and gives it a thread only when there is work.
+    covers: [S04-C14]
+  - id: s04-digest-c05
+    front: What does an idle connection need in nginx, and why is nginx a reverse proxy?
+    back: A few hundred bytes of state and a place in a list. Dynamic work goes to another program so that the loop stays free.
+    covers: [S04-C27, S04-C28]
+  - id: s04-digest-c06
+    front: Name five mechanisms that are the same move, "pay the setup one time".
+    back: Prefork, FastCGI, servlets, connection pools and upstream keep-alive. The goal was to stop the creation of a process.
+    covers: [S04-C17, S04-C19, S04-C149, S04-C157]
+  - id: s04-digest-c07
+    front: Which two ideas from the nginx history transfer to any design that everybody copies?
+    back: Ask the other question instead of tuning the same part, and check whether the constraint still exists. A goroutine starts at 2 KiB, so Go brought thread-per-connection back.
+    covers: [S04-C03, S04-C147, S04-C148, S04-C152]
+  - id: s04-digest-c08
+    front: What does the nginx master process never touch, and what are its four jobs?
+    back: It never touches a client connection. It reads the config, binds the ports as root, forks one worker per core, and handles signals.
+    covers: [S04-C29, S04-C30, S04-C34]
+  - id: s04-digest-c09
+    front: The teaching program forkd and nginx both call fork(). What is the difference?
+    back: Only the rate. forkd forks per connection. nginx forks N times at startup and on reload, so its process count does not change under load.
+    covers: [S04-C32]
+  - id: s04-digest-c10
+    front: Give the six lines of the nginx event loop in order.
+    back: Find the nearest timer, sleep in epoll_wait with it as the limit, run the posted accept events, release the accept mutex, expire the due timers, run the other posted events.
+    covers: [S04-C35]
+  - id: s04-digest-c11
+    front: What is the epoll_wait timeout in nginx, and why is that value cheap to find?
+    back: The time to the nearest deadline. It is the leftmost node of a red-black tree of timers, so nginx never polls for a timeout.
+    covers: [S04-C36, S04-C37]
+  - id: s04-digest-c12
+    front: Write the accept_disabled formula, and say when the value turns positive.
+    back: connection_n / 8 - free_connection_n. It turns positive past 7/8 of the slots in use, with no coordinator and no shared counter.
+    covers: [S04-C40, S04-C41]
+  - id: s04-digest-c13
+    front: Since which nginx version is accept_mutex off by default, and what replaced it?
+    back: 1.11.3. EPOLLEXCLUSIVE on Linux 4.5 and SO_REUSEPORT let the kernel spread new connections.
+    covers: [S04-C42, S04-C43]
+  - id: s04-digest-c14
+    front: Why must every parser inside nginx be able to stop and continue later?
+    back: A read can stop at any byte, and a handler that waits stalls the whole worker. The request line alone takes 27 states, and r->state survives between calls.
+    covers: [S04-C127, S04-C128, S04-C129, S04-C130]
+  - id: s04-digest-c15
+    front: How many HTTP phases does nginx have, and which phase runs limit_req, auth_basic and try_files?
+    back: Eleven, from POST_READ to LOG. limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT. A return from the phase loop can mean suspended, not done.
+    covers: [S04-C133, S04-C134, S04-C135]
+  - id: s04-digest-c16
+    front: Where does the select watch list live, and where does the epoll watch list live?
+    back: select keeps it in your process and rebuilds it on every call. epoll keeps it in the kernel, and epoll_ctl edits it. Every other difference follows from that.
+    covers: [S04-C46, S04-C47, S04-C52]
+  - id: s04-digest-c17
+    front: 10,000 idle sockets and 10 active ones. Work units for one select call against one epoll_wait?
+    back: About 30,000 against 10. select pays O(n) to build, O(n) in the kernel and O(n) to scan.
+    covers: [S04-C48, S04-C49]
+  - id: s04-digest-c18
+    front: What does `ulimit -n 65536` change for select, and for epoll?
+    back: Nothing for select, because FD_SETSIZE is a bitmap width of 1024 fixed at compile time. For epoll it moves the only ceiling there is.
+    covers: [S04-C22, S04-C50]
+  - id: s04-digest-c19
+    front: What makes an epoll event stale, and what does nginx compare to catch one?
+    back: An earlier handler in the same batch closed its connection, and an accept reused the descriptor. nginx checks fd == -1 and the instance bit in the low bit of the connection pointer.
+    covers: [S04-C53, S04-C54, S04-C55]
+  - id: s04-digest-c20
+    front: Why is the low bit of a connection pointer free for a flag?
+    back: Structs are aligned, so the address is a multiple of 8 and that bit is always zero. The flag costs no memory and one branch.
+    covers: [S04-C56]
+  - id: s04-digest-c21
+    front: Which copy does sendfile remove, and how many copies and mode switches does the slide count for each mode?
+    back: The copy through your address space. read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.
+    covers: [S04-C60, S04-C61, S04-C62]
+  - id: s04-digest-c22
+    front: Why do gzip and sendfile fight, and what does sendfile need before both copies are DMA copies?
+    back: gzip and TLS must change the bytes, so the bytes must enter user space. Both copies are DMA only on a network card with scatter-gather DMA and checksum offload.
+    covers: [S04-C63, S04-C64, S04-C167]
+  - id: s04-digest-c23
+    front: sendfile shows no wall-time win over loopback. What is the real win, and why does loopback hide it?
+    back: 2,048 syscalls become 1 and 64 MB never enters the process, which is CPU headroom under concurrency. Loopback has no network card and no DMA, and curl shares the CPU.
+    covers: [S04-C69, S04-C70, S04-C71, S04-C72]
+  - id: s04-digest-c24
+    front: Where does a forward proxy sit, where does a reverse proxy sit, and which feature do the lists leave out?
+    back: A forward proxy next to the clients, a reverse proxy next to the servers. The missing feature is that it absorbs slow clients, so the app never serves a 2G phone itself.
+    covers: [S04-C73, S04-C74, S04-C75, S04-C76]
+  - id: s04-digest-c25
+    front: The nginx cache is two structures. Name both, and say which directive sizes each one.
+    back: An index in shared memory, sized by keys_zone at about 8,000 keys per MB, and the bodies in files on disk, capped by max_size.
+    covers: [S04-C81, S04-C82, S04-C85]
+  - id: s04-digest-c26
+    front: What does inactive measure, what does proxy_cache_valid measure, and when does the manager refuse to delete the LRU tail?
+    back: inactive is the time since the last read, and proxy_cache_valid is freshness. The manager skips an entry whose reader count is not zero, so a download blocks the delete.
+    covers: [S04-C86, S04-C87, S04-C88]
+  - id: s04-digest-c27
+    front: Which directive is the anti-stampede switch, is it on by default, and what does `updating` add?
+    back: proxy_cache_lock, and it is off by default. With proxy_cache_use_stale updating, one request refreshes an expired entry and everybody else gets the stale copy at once.
+    covers: [S04-C90, S04-C91, S04-C92, S04-C93]
+  - id: s04-digest-c28
+    front: Order the four location forms by what wins, and name the one rule for each group.
+    back: An = exact match wins at once. Then the longest prefix with ^~. Then the first regex in file order. A plain prefix answers only when no regex matched.
+    covers: [S04-C94, S04-C95, S04-C96, S04-C97, S04-C98, S04-C99]
+  - id: s04-digest-c29
+    front: Why are 500 prefix locations cheap and 500 regex locations not?
+    back: Prefixes form a tree that nginx builds when it parses the config. Regexes form a plain array that it walks in order on every request.
+    covers: [S04-C102, S04-C103, S04-C104]
+  - id: s04-digest-c30
+    front: Give the three steps of smooth weighted round robin, and say what a failure does to a server.
+    back: Add each weight to its current weight, pick the largest current weight, subtract the total from the winner. A failure lowers the effective weight, and each selection raises it back by one.
+    covers: [S04-C105, S04-C106, S04-C109, S04-C110]

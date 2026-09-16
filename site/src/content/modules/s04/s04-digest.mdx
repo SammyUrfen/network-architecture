@@ -1,0 +1,557 @@
+---
+id: s04-digest
+session: 4
+order: 14
+kind: digest
+title: Class 4 in one fast read
+minutes: 26
+bigIdea: nginx did not make the per-connection worker cheaper. It removed the worker, gave the kernel the watch list and the file bytes, and turned every cost that stayed into a directive that you can read.
+covers: [S04-C02, S04-C03, S04-C04, S04-C05, S04-C06, S04-C12, S04-C14, S04-C15, S04-C16, S04-C17, S04-C19, S04-C20, S04-C21, S04-C22, S04-C23, S04-C24, S04-C25, S04-C26, S04-C27, S04-C28, S04-C29, S04-C30, S04-C31, S04-C32, S04-C34, S04-C35, S04-C36, S04-C37, S04-C40, S04-C41, S04-C42, S04-C43, S04-C46, S04-C47, S04-C48, S04-C49, S04-C50, S04-C52, S04-C53, S04-C54, S04-C55, S04-C56, S04-C60, S04-C61, S04-C62, S04-C63, S04-C64, S04-C68, S04-C69, S04-C70, S04-C71, S04-C72, S04-C73, S04-C74, S04-C75, S04-C76, S04-C80, S04-C81, S04-C82, S04-C85, S04-C86, S04-C87, S04-C88, S04-C90, S04-C91, S04-C92, S04-C93, S04-C94, S04-C95, S04-C96, S04-C97, S04-C98, S04-C99, S04-C100, S04-C102, S04-C103, S04-C104, S04-C105, S04-C106, S04-C107, S04-C109, S04-C110, S04-C111, S04-C112, S04-C113, S04-C114, S04-C115, S04-C116, S04-C121, S04-C122, S04-C123, S04-C124, S04-C127, S04-C128, S04-C129, S04-C130, S04-C133, S04-C134, S04-C135, S04-C144, S04-C145, S04-C146, S04-C147, S04-C148, S04-C149, S04-C152, S04-C157, S04-C167, S04-C169]
+prereqs: []
+threads: [T-law-or-habit, T-watch-list, T-setup-off-path, T-honest-benchmarks, T-littles-law]
+confidence: high
+status: ready
+---
+
+import Myth from '../../../components/lesson/Myth.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Beyond from '../../../components/lesson/Beyond.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import Picture from '../../../components/lesson/Picture.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import NumbersTable from '../../../components/diagram/NumbersTable.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+A web server in 1999 obeyed one rule that nobody questioned. One connection gets one worker. A worker was a process, then a thread, and for ten years good engineers made that worker cheaper. In 2002 an engineer at a large Russian news portal asked a different question. His servers failed under the number of connections that did nothing at all, not under the number of requests. Why does a sleeping connection need a worker?
+
+This class is the answer to that question, followed into the real nginx source. It matters because almost every web request today passes through a proxy of this shape. Each line of an nginx config is one small, readable piece of that machine. When you can read the machine, you can say what a config does before you deploy it.
+
+**The path through this read.** Part 1 walks the ten years of cheaper workers and the question that ended them. Part 2 puts one loop on each CPU core and shows what that loop forbids. Part 3 gives the kernel two jobs: to watch the sockets, and to move the file bytes. Part 4 puts nginx in front of your servers, with a cache behind it. Part 5 reads the surface that you configure: which block answers a URL, and which server gets the next request.
+
+<Segment title="Ten years of making the worker cheaper">
+
+**In this part.** The history is one argument, not a list of dates. Each design answered a real limit of its year, and every one kept the same rule until nginx broke it.
+
+<Stepper
+  slot="visual"
+  title="Four answers to one question, and then a different question"
+  steps={[
+    {
+      caption: 'CGI, 1993: a new program for every request',
+      lanes: [
+        { label: 'Design', chunks: ['CGI'] },
+        { label: 'One connection needs', chunks: ['a new process'] },
+        { label: 'Paid per request', chunks: ['fork', 'exec', 'load', 'parse', 'run', 'exit'] },
+        { label: 'An idle connection costs', chunks: ['a whole process'] },
+      ],
+    },
+    {
+      caption: 'Apache 1.3 prefork, 1998: the pool waits instead',
+      lanes: [
+        { label: 'Design', chunks: ['prefork'] },
+        { label: 'One connection needs', chunks: ['a process from the pool'] },
+        { label: 'Paid per request', chunks: ['nothing'] },
+        { label: 'An idle connection costs', chunks: ['a whole process'] },
+      ],
+    },
+    {
+      caption: 'Apache 2.0 worker, 2002: threads share one process',
+      lanes: [
+        { label: 'Design', chunks: ['worker MPM'] },
+        { label: 'One connection needs', chunks: ['a thread'] },
+        { label: 'Paid per request', chunks: ['nothing'] },
+        { label: 'An idle connection costs', chunks: ['an 8 MB stack'] },
+      ],
+    },
+    {
+      caption: 'Apache 2.4 event, 2012: an idle connection waits on epoll',
+      lanes: [
+        { label: 'Design', chunks: ['event MPM'] },
+        { label: 'One connection needs', chunks: ['a thread, only with work'] },
+        { label: 'Paid per request', chunks: ['nothing'] },
+        { label: 'An idle connection costs', chunks: ['a place in a kernel list'] },
+      ],
+    },
+    {
+      caption: 'nginx, 2004: no worker owns a connection',
+      lanes: [
+        { label: 'Design', chunks: ['nginx'] },
+        { label: 'One connection needs', chunks: ['a small state record'] },
+        { label: 'Paid per request', chunks: ['nothing'] },
+        { label: 'An idle connection costs', chunks: ['a few hundred bytes'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a waiter costs a salary, and a process costs memory, a scheduler slot and a context switch. The lobby is a list inside the kernel, and a restaurant has nothing like it.">
+
+A restaurant gets busy. First it hires one waiter for each guest who comes in. Then it hires a team of waiters before it opens. Then the waiters share one locker room and one uniform, but each waiter still stands at one table. Last, a host seats the resting guests in the lobby and calls a waiter only when a guest wants to order. Every step makes a waiter cheaper. Nobody asks whether a resting guest needs a waiter at all.
+
+Each waiter is a worker: a process, and later a thread. Each guest is a connection. A guest who reads the menu for ten minutes is an idle connection, and there are thousands of them. The lobby with the host is the kernel, which holds the quiet connections and names the ones that are ready.
+
+</Picture>
+
+<KeyIdea id="nginx-deleted-the-worker" title="nginx deleted the worker, it did not make it cheaper">
+
+From 1993 to 2002 every new server design answered one question: how do we make the per-connection worker cheaper? nginx answered a different question. An idle connection needs a few hundred bytes of state and a place in a list. It does not need a process or a thread.
+
+</KeyIdea>
+
+CGI, from 1993, paid for a whole program start on every request: fork, exec, the load of an interpreter, a parse, the run, and the exit. Prefork moved that fork to startup, but one process still sat on one connection for its whole life. Threads made the worker lighter in the Apache 2.0 worker MPM, and the Apache 2.4 event MPM parked idle keep-alive connections on epoll and woke a thread only for real work. All three designs answered the same question. The same move appeared on the application side with another name: a servlet from 1997 loads one time, each request is a method call on a pooled thread, and a connection pool does this for the database handshake. The one goal was to stop the creation of a process.
+
+Dan Kegel named the C10K problem in 1999: ten thousand concurrent connections on one box. By 2002 the hardware was ready and the software was not. A Linux thread got an 8 MB stack by default, every connection got a scheduler entry, and the 1983 `select` API stopped at 1024 descriptors. So the goal of nginx was ten thousand mostly idle connections in one process, with another program to make the dynamic pages. That single choice is the reason nginx is a reverse proxy.
+
+Two ideas transfer to your own work. When everybody improves the same part, look one level higher: Apache tuned the worker, and nginx asked why the worker existed. And check whether a constraint still exists: a goroutine starts at 2 KiB, so Go brought thread-per-connection back. The order of the designs shows which rules are laws and which are habits.
+
+<Myth myth="Berners-Lee wrote Mosaic, and Mosaic became Apache.">
+
+Three different programs hide in that sentence. The first web server was CERN httpd, written by Berners-Lee on a NeXT machine in 1990. Mosaic was a browser from NCSA in 1993, by Andreessen, and it brought inline images and made the web popular. Apache descends from NCSA HTTPd, a second NCSA program. That one was a server, and it invented CGI.
+
+</Myth>
+
+<Remember
+  items={[
+    'CGI pays fork, exec, interpreter load, parse, run and exit on every request.',
+    'Apache 1.3 prefork forks its pool at startup, not per request. One process still parks on one connection.',
+    'The Apache 2.4 event MPM parks idle keep-alives on epoll. It is the Unix default since 2.4.',
+    'A servlet object loads one time. Each request is a method call on a pooled thread.',
+    'Prefork, FastCGI, servlets, connection pools and upstream keep-alive are one move: pay the setup one time.',
+    'In 2002 the hardware was fast enough. A stack and a scheduler entry per connection were the limit.',
+    'nginx wanted 10,000 idle connections in one process, with another program for the dynamic pages. So it is a proxy by design.',
+    'An idle connection needs a few hundred bytes and a list entry.',
+    'The first public nginx release is 4 October 2004.',
+    'Two ideas that transfer: ask the other question, and check whether the constraint still exists.',
+  ]}
+/>
+
+<Check id="s04-digest-q01" />
+
+<Check id="s04-digest-q02" />
+
+<Check id="s04-digest-q03" />
+
+</Segment>
+
+<Segment title="One loop for each core, and the price it charges">
+
+**In this part.** Part 1 removed the worker. Now you see what stands in its place. The rule that nothing may wait explains both the shape of the loop and the shape of every parser in the source.
+
+<Stepper
+  slot="visual"
+  title="The six lines where a worker lives"
+  steps={[
+    {
+      caption: 'Line 1: ask the timer tree for the nearest deadline',
+      lanes: [
+        { label: 'Worker', chunks: ['reads the timer tree'] },
+        { label: 'Sleep limit', chunks: ['900 ms'] },
+        { label: 'Ready events', chunks: ['none yet'] },
+        { label: 'Timers due', chunks: ['none'] },
+      ],
+    },
+    {
+      caption: 'Line 2: sleep in epoll_wait with that limit',
+      lanes: [
+        { label: 'Worker', chunks: ['asleep in epoll_wait'] },
+        { label: 'Sleep limit', chunks: ['900 ms'] },
+        { label: 'Ready events', chunks: ['1 accept', '2 reads'] },
+        { label: 'Timers due', chunks: ['none'] },
+      ],
+    },
+    {
+      caption: 'Line 3: run the queued accept events first',
+      lanes: [
+        { label: 'Worker', chunks: ['runs the accept handler'] },
+        { label: 'Sleep limit', chunks: ['900 ms'] },
+        { label: 'Ready events', chunks: ['2 reads'] },
+        { label: 'Timers due', chunks: ['none'] },
+      ],
+    },
+    {
+      caption: 'Line 4: release the accept mutex, if this worker holds it',
+      lanes: [
+        { label: 'Worker', chunks: ['releases the mutex'] },
+        { label: 'Sleep limit', chunks: ['900 ms'] },
+        { label: 'Ready events', chunks: ['2 reads'] },
+        { label: 'Timers due', chunks: ['none'] },
+      ],
+    },
+    {
+      caption: 'Line 5: fire every timer whose deadline passed',
+      lanes: [
+        { label: 'Worker', chunks: ['expires 1 timer'] },
+        { label: 'Sleep limit', chunks: ['900 ms'] },
+        { label: 'Ready events', chunks: ['2 reads'] },
+        { label: 'Timers due', chunks: ['1 fired'] },
+      ],
+    },
+    {
+      caption: 'Line 6: run the other queued events, then start again at line 1',
+      lanes: [
+        { label: 'Worker', chunks: ['runs 2 read handlers'] },
+        { label: 'Sleep limit', chunks: ['back to line 1'] },
+        { label: 'Ready events', chunks: ['none left'] },
+        { label: 'Timers due', chunks: ['none'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a nurse can leave a task when the alarm rings. Nothing interrupts a handler here, so a handler must never wait inside its task. It saves its place, it returns, and the loop calls it again on the next event.">
+
+A night nurse has a board of call buttons and an alarm clock. Before she rests, she sets the alarm for the next medicine time. She wakes when a button lights or when the alarm rings. She answers every lit button, she gives the medicine that is due, she sets the alarm again, and she rests.
+
+The nurse is one worker process. The board of call buttons is the kernel list of ready sockets, and each lit button is a connection with data. The alarm clock is the timer tree, and the next medicine time is the nearest deadline. The floor is one CPU core, and each floor of the hospital has its own nurse.
+
+</Picture>
+
+<KeyIdea id="one-loop-one-thing-at-a-time" title="One loop, one thing at a time">
+
+A worker is one process with one event loop. It sleeps in a single call until the kernel reports a ready socket or the nearest deadline arrives. Nothing may wait inside that loop, so every parser in nginx must stop at any byte and continue later.
+
+</KeyIdea>
+
+The master process reads the config, binds port 80 as root, forks one worker per core, and drops the workers to an unprivileged user. After that the master only handles signals. It never touches a client connection, and a worker never forks again. So the process count of nginx does not change under load. The teaching program `forkd` and nginx both call `fork()`. Only the rate differs, and the whole story from 1994 to 2004 sits in that difference.
+
+The loop itself is six lines. Ask the timer tree for the nearest deadline. Sleep in `epoll_wait` with that deadline as the limit. Run the queued accept events. Release the accept mutex. Fire every timer that is due. Run the other queued events, and start again. A timeout therefore costs nothing while nothing times out, because nginx never polls for one. The nearest deadline is the leftmost node of a red-black tree. The slide says that a worker spends 99.9% of its life asleep in line 2. That figure is a teaching number, not a measurement.
+
+Each worker also decides alone when to stop taking new connections. It computes `accept_disabled = connection_n / 8 - free_connection_n`. Past 7/8 of its slots the value turns positive, and the worker gives its siblings the next connections. There is no leader, no heartbeat and no shared counter. Each worker reads a number that it already holds. The `accept_mutex` that made this work is off by default since version 1.11.3. In 2004 one new connection woke every worker, which was a real problem, and a userspace mutex fixed it. `EPOLLEXCLUSIVE` on Linux 4.5 and `SO_REUSEPORT` moved the fix into the kernel, so the mutex lost its reason and became dead weight.
+
+Now the price. A handler cannot wait for the rest of a request, so the HTTP parser is a state machine that resumes. It holds 27 states for the request line alone, it reads one byte at a time, and it uses no regular expression, no substring and no allocation. It saves `r->state` between calls, because a request line can arrive in three TCP segments. That is the source-level cost of non-blocking input and output, and a thread-per-connection server can simply wait until the blank line. The request resumes in the same way. Eleven phases run in a four-line loop: POST_READ, SERVER_REWRITE, FIND_CONFIG, REWRITE, POST_REWRITE, PREACCESS, ACCESS, POST_ACCESS, PRECONTENT, CONTENT and LOG. Slide 31 reads a return from that loop as "suspended", not "done", and calls the engine a coroutine, hand-rolled in C. `limit_req` runs in PREACCESS, `auth_basic` in ACCESS, `try_files` in PRECONTENT, and `proxy_pass`, `fastcgi_pass` and the static handler in CONTENT.
+
+<Remember
+  items={[
+    'One process per core, one loop in each. No connection owns a thread or a process.',
+    'The master binds the ports, reads the config, forks the workers and handles signals. It never touches a connection.',
+    'The worker count does not change under load. fork happens at startup and on reload.',
+    'The six lines: nearest timer, epoll_wait, accept events, release the mutex, expire timers, other events.',
+    'The epoll_wait timeout is the time to the nearest deadline, the leftmost node of a red-black tree.',
+    '"99.9% asleep" is a teaching number, not a measurement.',
+    'accept_disabled = connection_n / 8 - free_connection_n. It turns positive past 7/8 full.',
+    'The balance needs no coordinator. Each worker reads a number that it already has.',
+    'accept_mutex is off by default since 1.11.3, because EPOLLEXCLUSIVE and SO_REUSEPORT do the job.',
+    'The request-line parser holds 27 states, reads one byte at a time and allocates nothing.',
+    '`r->state` survives between reads, because a request line can arrive in three segments.',
+    'That state machine is the source-level cost of non-blocking I/O.',
+    'Eleven phases, POST_READ to LOG. A return from the phase loop can mean "suspended", not "done".',
+    'limit_req in PREACCESS, auth_basic in ACCESS, try_files in PRECONTENT, proxy_pass and static in CONTENT.',
+  ]}
+/>
+
+<Check id="s04-digest-q04" />
+
+<Check id="s04-digest-q05" />
+
+<Check id="s04-digest-q06" />
+
+</Segment>
+
+<Segment title="Give the kernel the list, and the bytes">
+
+**In this part.** Part 2 left the worker asleep in one call. Two changes make that call cheap, and they are the same idea twice: give a job to the kernel and stop doing it yourself.
+
+<Stepper
+  slot="visual"
+  title="Where the work happens"
+  steps={[
+    {
+      caption: 'select: your process builds the list of 10,000 on every call',
+      lanes: [
+        { label: 'Your process', chunks: ['builds 10,000 bits', 'scans 10,000 bits'] },
+        { label: 'Kernel', chunks: ['checks 10,000 sockets'] },
+        { label: 'Work units', chunks: ['about 30,000'] },
+      ],
+    },
+    {
+      caption: 'epoll: the kernel keeps the list and returns only the ready ones',
+      lanes: [
+        { label: 'Your process', chunks: ['reads 10 events'] },
+        { label: 'Kernel', chunks: ['holds the list', 'holds a ready queue'] },
+        { label: 'Work units', chunks: ['about 10'] },
+      ],
+    },
+    {
+      caption: 'read plus write: 64 KiB crosses into your process and back',
+      lanes: [
+        { label: 'Your process', chunks: ['64 KiB buffer'] },
+        { label: 'Kernel', chunks: ['page cache', 'socket buffer'] },
+        { label: 'Per chunk', chunks: ['4 copies', '2 mode switches'] },
+      ],
+    },
+    {
+      caption: 'sendfile: the bytes never enter your process',
+      lanes: [
+        { label: 'Your process', chunks: ['nothing'] },
+        { label: 'Kernel', chunks: ['page cache', 'socket buffer'] },
+        { label: 'Per chunk', chunks: ['2 copies, both DMA', '0 mode switches'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a card can outlive its student. If one student leaves and a new student takes the same seat number, the teacher reads the old card and answers the wrong person. nginx puts a coloured sticker on every seat and changes the colour for each new sitter, so a card with the wrong colour goes in the bin.">
+
+A teacher has 10,000 students. With the old method she reads the whole register every minute, and every student answers "nothing" or "question". That is 10,000 answers to find 10 questions. With the new method a student with a question drops a card in a box, and she reads only the cards. The second trick is the same move. The office used to send worksheets to her desk, and she carried each sheet to the student. Now the office puts them straight on the desk of the student, and no sheet passes through her hands.
+
+The register is the `select` bitmap, which your process rebuilds on every call. The box of cards is the epoll ready list inside the kernel. The worksheets are file bytes, her desk is your buffer in user space, and the direct delivery is `sendfile`. Each seat number is a file descriptor, and the kernel gives a free number to the next connection.
+
+</Picture>
+
+<KeyIdea id="move-the-work-into-the-kernel" title="Both big wins move work into the kernel">
+
+epoll gives the kernel the watch list, so one call costs the ready sockets and not the watched ones. sendfile gives the kernel the file bytes, so they never enter your process. In both cases the win is the work that you no longer do.
+
+</KeyIdea>
+
+`select` keeps its watch list inside your process and rebuilds it on every call, so it costs O(watched): O(n) to build the bitmap, O(n) in the kernel, and O(n) to scan the answer. epoll keeps the list in the kernel, `epoll_ctl` edits it one time per socket, and `epoll_wait` copies out only the ready events, so it costs O(active). With 10,000 idle sockets and 10 active ones, `select` does about 30,000 units of work to find 10 events, and epoll does 10. Every other difference follows from that one decision about who owns the list. `ulimit -n` does nothing for `select`, because `FD_SETSIZE` is a bitmap width of 1024 fixed in a header, and it does everything for epoll.
+
+epoll brings one trap. `epoll_wait` returns a batch of events. When you handle event 1, you can close the connection that event 7 points at. A new client can then land on the same recycled descriptor, and event 7 reaches the wrong connection. Every author of an event loop writes this bug one time. nginx stores an instance flag in the low bit of the connection pointer, flips the flag when it reuses the connection, and skips an event whose flag does not match. Structs are aligned, so that low bit is always zero. The flag costs no memory and one branch.
+
+The second move is about bytes, not sockets. A `read()` and a `write()` make four copies and two mode switches for each chunk: disk to page cache, page cache to your buffer, your buffer to the socket buffer, socket buffer to the network card. One `sendfile()` call names the file and the socket, and the data never enters your process. With a network card that has scatter-gather DMA and checksum offload, both copies that stay are DMA copies. Bytes that you must change have to come into user space, so gzip and TLS force the file bytes into memory. That is why gzip and sendfile fight, and why kTLS exists. `sendfile on` is a permission, not an order.
+
+<Myth myth="sendfile makes every transfer faster.">
+
+On the instructor laptop over loopback, a 64 MB file took 37.4 ms with read plus write and 33.2 ms with sendfile. That difference is not the win. Over loopback there is no network card and no DMA, the kernel copies into the receiver buffer in every mode, and `curl` competes for the same CPU. What really changed is the syscall count: 2,048 calls became 1, and 64 MB never entered the process. A benchmark that does not model the bottleneck measures the wrong thing.
+
+</Myth>
+
+<Remember
+  items={[
+    'select costs O(watched). epoll costs O(active).',
+    'The select list lives in your process and is rebuilt on each call. The epoll list lives in the kernel.',
+    'select: O(n) build, O(n) in the kernel, O(n) scan. epoll: O(ready events).',
+    '10,000 idle and 10 active: about 30,000 units against 10.',
+    'ulimit -n does nothing for select and everything for epoll.',
+    'Every row of the comparison follows from one decision: who owns the watch list.',
+    'A batch of events can name a connection that an earlier handler in the same batch closed.',
+    'nginx keeps an instance bit in the low bit of the connection pointer and skips a mismatch.',
+    'Alignment keeps that bit zero, so the flag costs no memory and one branch.',
+    'read plus write: 4 copies and 2 mode switches per chunk. sendfile: 2 copies, both DMA, and 0 mode switches.',
+    'True zero copy needs a network card with scatter-gather DMA and checksum offload.',
+    'gzip and TLS must see the bytes, so they stop sendfile. kTLS exists for that reason.',
+    'On any machine, 2,048 syscalls become 1, and the 64 MB never enters the process.',
+    'The win is CPU headroom under concurrency, not a faster single transfer.',
+  ]}
+/>
+
+<Check id="s04-digest-q07" />
+
+<Check id="s04-digest-q08" />
+
+<Check id="s04-digest-q09" />
+
+</Segment>
+
+<Segment title="The desk in front of your servers">
+
+**In this part.** Parts 1 to 3 built a program that holds many connections cheaply. The use of that skill is the shape of nearly every production stack: put nginx in front of the application, and give it a cache.
+
+<SequenceDiagram
+  slot="visual"
+  title="A slow phone, and an app that stays free"
+  actors={['phone', 'nginx', 'app']}
+  messages={[
+    { from: 'phone', to: 'nginx', label: 'slow upload, 10 s on 2G' },
+    { from: 'nginx', to: 'nginx', label: 'buffers the whole request' },
+    { from: 'nginx', to: 'app', label: 'one fast request on the LAN' },
+    { from: 'app', to: 'nginx', label: 'answer in 20 ms' },
+    { from: 'nginx', to: 'nginx', label: 'the app worker is free now' },
+    { from: 'nginx', to: 'phone', label: 'slow download, 10 s on 2G' },
+  ]}
+/>
+
+<Picture breaks="the department sees only the desk. It learns who the visitor was from the note, and a visitor can write a false line in that note.">
+
+A campus librarian who fetches books for students and keeps copies is a forward proxy. The front desk of a company is a reverse proxy. Visitors talk only to the desk. The desk listens to a slow visitor for as long as it takes, writes one clean note, and gives it to the right department in one second. The department never waits for a slow visitor. Behind the desk stand a card catalogue and the book stacks. A stamp says whether a book is current, a dust rule removes a book that nobody borrowed for a minute, and a shelf limit forces the oldest book out even when it is current.
+
+The slow visitor is a phone on a 2G link, and the department is your application server. The note is the buffered request, and the line that a visitor can forge is the `X-Forwarded-For` header. The card catalogue is the cache index in shared memory, and the stacks are the cache files on disk. The stamp is `proxy_cache_valid`, the dust rule is `inactive`, and the shelf limit is `max_size`.
+
+</Picture>
+
+<KeyIdea id="the-proxy-absorbs-the-slow-client" title="A reverse proxy absorbs the slow client">
+
+A reverse proxy is the same caching machine as a forward proxy, moved to the other side. Its quiet superpower is that it holds the slow phone, so your application does not. Behind it, the cache keeps a small index in shared memory and the bodies in files on disk.
+
+</KeyIdea>
+
+Squid, from 1996, is a forward proxy next to the clients. It caches for a campus and protects the uplink. A reverse proxy is the same machinery on the opposite side: it caches, routes, balances, moves to another server on a failure, terminates TLS, and holds slow clients. The client does not configure it and usually cannot see it, so a reverse proxy can do things that a client would never agree to. The feature lists leave out the one that matters most. A phone that needs 10 seconds to read a response would hold an application worker for 10 seconds, and at 100 requests per second that is 1,000 busy workers. With nginx in front, the app answers in 20 ms, so 100 times 0.02 gives 2. The 1,000 idle connections move to nginx, where a connection is cheap.
+
+The cache is two structures. An index lives in shared memory, and the bodies live in files on disk. `keys_zone=demo:10m` reserves 10 MB for the red-black tree and the LRU queue, at about 8,000 keys per MB, so about 80,000 keys. It sizes the index, not the data. `max_size=100m` is the disk ceiling, and the cache manager deletes from the LRU tail to stay under it. Three clocks run at the same time. `proxy_cache_valid` says how long a stored answer stays fresh. `inactive=60s` deletes an entry that nobody read for 60 seconds, whatever its freshness. And a full cache deletes the least recently used entry even when it is fresh. Slide 20 reduces eviction to one check on the tail: a young tail ends the pass, and an old tail that no client reads is deleted. The test `count == 0` stops a delete while a client downloads that file. Add `X-Cache-Status` from `$upstream_cache_status` to every cache config, and two calls to `curl` show MISS and then HIT.
+
+Two switches handle the stampede. `proxy_cache_lock` is the anti-stampede switch, and it is off by default. Without it, a popular object that expires sends every request of the next 200 ms to the origin. With it, one request goes and the rest wait. `proxy_cache_use_stale` with `error`, `timeout`, `updating` and the 5xx codes serves the old copy in place of an error. With `updating`, one request refreshes the entry and everybody else gets the stale copy at once.
+
+<Beyond source="nginx 1.31.5 source and the proxy module docs" url="https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock">
+
+In the 1.31.5 code the lock covers a new cache element, which is a MISS. The instructor's own config comment agrees and says "on a miss". For an entry that expired, the first request refreshes it and `updating` gives the stale copy to the others. So both lines belong in a real config.
+
+</Beyond>
+
+<Remember
+  items={[
+    'Squid is a forward proxy, next to the clients. A reverse proxy sits next to the servers. Same machinery, opposite side.',
+    'The client does not configure a reverse proxy and usually cannot see it.',
+    'The feature that nobody lists: a reverse proxy absorbs slow clients.',
+    'Connections held = request rate times time held. That is why buffering moves the wait off the app.',
+    'The cache is an index in shared memory plus bodies in files on disk.',
+    'keys_zone sizes the index, at about 8,000 keys per MB. max_size is the disk ceiling.',
+    'inactive measures the time since the last read. proxy_cache_valid measures freshness.',
+    'The whole eviction policy on the slide: a young tail ends the pass, an old tail with no reader is deleted.',
+    'count == 0 stops the manager from deleting a file that a client downloads now.',
+    'The cache manager evicts from the LRU tail. The cache loader warms the index at startup.',
+    'proxy_cache_lock is the anti-stampede switch, and it is off by default.',
+    'proxy_cache_use_stale serves a stale copy on error, timeout, updating and the 5xx codes.',
+    'With updating, one request refreshes and everybody else gets the stale copy at once.',
+  ]}
+/>
+
+<Check id="s04-digest-q10" />
+
+<Check id="s04-digest-q11" />
+
+<Check id="s04-digest-q12" />
+
+</Segment>
+
+<Segment title="Which block wins">
+
+**In this part.** Part 4 put nginx in front of your servers. Now you configure it, and a config answers two questions: which block handles this URL, and which server gets this request. Both answers come from a data structure, not from the order in your file.
+
+<Stepper
+  slot="visual"
+  title="Which block answers /images/a.php"
+  steps={[
+    {
+      caption: 'Start. Four blocks, in the order of the file.',
+      lanes: [
+        { label: 'URI', chunks: ['/images/a.php'] },
+        { label: 'Exact', chunks: ['= /exact'] },
+        { label: 'Prefix tree', chunks: ['^~ /images/', '/'] },
+        { label: 'Regex array', chunks: ['~ \\.php$'] },
+        { label: 'Winner', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'No = location matches the whole URI, so the search continues.',
+      lanes: [
+        { label: 'URI', chunks: ['/images/a.php'] },
+        { label: 'Exact', chunks: ['no match'] },
+        { label: 'Prefix tree', chunks: ['^~ /images/', '/'] },
+        { label: 'Regex array', chunks: ['~ \\.php$'] },
+        { label: 'Winner', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'Walk the prefix tree. The longest match is ^~ /images/.',
+      lanes: [
+        { label: 'URI', chunks: ['/images/a.php'] },
+        { label: 'Exact', chunks: ['no match'] },
+        { label: 'Prefix tree', chunks: ['longest: ^~ /images/'] },
+        { label: 'Regex array', chunks: ['~ \\.php$'] },
+        { label: 'Winner', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'The longest prefix carries ^~, so the regex array is skipped.',
+      lanes: [
+        { label: 'URI', chunks: ['/images/a.php'] },
+        { label: 'Exact', chunks: ['no match'] },
+        { label: 'Prefix tree', chunks: ['longest: ^~ /images/'] },
+        { label: 'Regex array', chunks: ['never tested'] },
+        { label: 'Winner', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'Block 2 answers. The regex never ran, and the file order changed nothing.',
+      lanes: [
+        { label: 'URI', chunks: ['/images/a.php'] },
+        { label: 'Exact', chunks: ['no match'] },
+        { label: 'Prefix tree', chunks: ['longest: ^~ /images/'] },
+        { label: 'Regex array', chunks: ['never tested'] },
+        { label: 'Winner', chunks: ['^~ /images/'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="in nginx the exact addresses sit inside the same prefix tree, so there is only one walk and not two.">
+
+A post office sorts a letter by its address. First a clerk checks a short list of exact addresses, and a hit ends the sort at once. Then the clerk walks a tree of street prefixes and remembers the longest street that fits. A "no detours" flag on that street ends the sort. If not, the clerk reads a list of pattern rules from the top, and the first pattern that fits wins. With no pattern at all, the remembered street wins.
+
+The address is the URI of the request. The short list of exact addresses is the `=` locations. The tree of streets is the prefix locations, which nginx builds one time when it reads the config. The "no detours" flag is `^~`. The list of pattern rules is the regex locations, in the order of your file.
+
+</Picture>
+
+<KeyIdea id="the-data-structure-is-the-rule" title="The data structure is the documentation">
+
+nginx keeps prefix locations in a tree and regex locations in a plain array. A tree can report the longest match cheaply. An array can report only the first match in order. Those two facts are the whole precedence rule.
+
+</KeyIdea>
+
+Location precedence does not follow the order in which you wrote the blocks. An `=` location is an exact match, and it wins at once. A `^~` location is a longest prefix that suppresses the regex search. A `~` location is a regular expression, and the first match in file order wins, not the longest one. `~*` ignores case. A plain prefix such as `location /` answers only when no regex matched. On the class config at port 8081, `/exact` gives 1, `/images/a.php` gives 2, `/other/a.php` gives 3, and `/anything` gives 4. About half the room gets `/images/a.php` wrong and expects the regex to win. The reason is the structure: prefixes form a ternary search tree that nginx builds at config parse time, and regexes form a plain array that it walks in order on every request. So 500 prefix locations are cheap and 500 regex locations are not.
+
+The same reading works on the choice of an upstream server. Smooth weighted round robin adds the weight of each server to its current weight, picks the largest current weight, then subtracts the total of all weights from the winner. For weights 3 and 1, slide 24 writes the result as `a b a a`: the same ratio as the naive `a a a b`, with the turns of the heavy server spread apart. A failure lowers the effective weight of a server, and each selection raises it back by one. That is passive health checking, with no probe traffic. Open-source nginx has no active health checks, and NGINX Plus sells them.
+
+The last piece is the directive behind almost every web framework. `try_files $uri $uri/ /index.html?$args` asks three questions in order: is there a real file, is there a real directory, and if not, hand the request to the app. The last entry is never tested. It is the fallback, not a candidate. `try_files $uri @app` tries the disk first and then the upstream, and a named location such as `@app` is reachable only from `try_files` or `error_page`, never from a URL. WordPress, Rails, Django and every single-page-application router are this one directive plus an app that reads `REQUEST_URI`.
+
+<Remember
+  items={[
+    'Location precedence ignores the order of the blocks in your file.',
+    'An = exact match wins at once and stops the search.',
+    'A ^~ longest prefix suppresses the regex search.',
+    'Among regexes, the first in file order wins, not the longest. ~* ignores case.',
+    'A plain prefix answers only when no regex matched.',
+    'On port 8081: /exact gives 1, /images/a.php gives 2, /other/a.php gives 3, /anything gives 4.',
+    'Prefixes are a tree built at parse time. Regexes are an array walked on every request.',
+    'The data structure is the rule: a tree gives the longest match, an array gives the first match.',
+    'Smooth weighted round robin: add the weights, pick the largest, subtract the total from the winner.',
+    'For 3:1 the slide gives a b a a. Same ratio, turns spread apart.',
+    'A failure lowers the effective weight, and each selection raises it back by one. No probe traffic.',
+    'Open-source nginx has no active health checks. NGINX Plus sells them.',
+    'try_files asks: a real file, a real directory, else the fallback.',
+    'The last try_files entry is never tested.',
+    'A named location such as @app is reachable only from try_files or error_page.',
+    'WordPress, Rails, Django and every SPA router are try_files plus an app that reads REQUEST_URI.',
+  ]}
+/>
+
+<Check id="s04-digest-q13" />
+
+<Check id="s04-digest-q14" />
+
+<Check id="s04-digest-q15" />
+
+</Segment>
+
+## Reading the machine
+
+One skill survives every release of nginx. Line numbers drift and function names do not, so find a function by its name at the start of a line. nginx puts the return type on its own line, which makes that search exact. Three protocol trees, `src/http`, `src/stream` and `src/mail`, sit on one shared core, and the repetition is the argument for the design. nginx never frees the memory of a request piece by piece. It allocates from a pool that belongs to the request and destroys the whole pool at the end, so the hot path has no `free()`, no refcounting and almost no cleanup branches. Each of the 100 or more modules has the same four parts: a directive table, config callbacks, the module struct, and handlers in a phase. The class ladder runs `01-fork`, `02-thread`, `03-select`, `04-epoll`, `05-sendfile`, `06-fastcgi` and `07-nginx`. That repo is about 1,200 lines and nginx is about 200,000, and the difference is every error path.
+
+<NumbersTable
+  caption="The numbers of class 4, with the conditions that each one needs"
+  rows={[
+    { value: '8 MB', what: 'the default Linux thread stack, so 10,000 threads reserve about 80 GB of address space', conditions: 'the default ulimit -s of 8192 KiB' },
+    { value: '1024', what: 'FD_SETSIZE, the width of the select bitmap', conditions: 'fixed in a header at compile time. ulimit does not change it.' },
+    { value: '30,000 against 10', what: 'work units for one select call against one epoll_wait', conditions: '10,000 idle sockets and 10 active. Slide 14 counts three passes over n.' },
+    { value: '7/8', what: 'how full a worker gets before accept_disabled turns positive', conditions: 'accept_disabled = connection_n / 8 - free_connection_n' },
+    { value: '37.4 / 23.3 / 33.2 ms', what: 'wall time for read, mmap and sendfile', conditions: 'a 64 MB file over loopback, on the instructor laptop' },
+    { value: '2048 / 4 / 1', what: 'syscalls for the same three modes', conditions: 'the same run: a 64 MB file in 64 KiB chunks over loopback' },
+    { value: 'rt=2.001, urt=2.000', what: 'request time against upstream time, so nginx cost about 1 ms', conditions: 'loopback, with forkd on :8001 that sleeps 2 s per request, the instructor run' },
+    { value: '18 to 6', what: 'the split of 24 requests over weights 3 and 1', conditions: 'port 8082, loopback, the instructor run' },
+    { value: '5,000', what: 'connections that 04-epoll holds with no change, where 03-select dies at descriptor 1024', conditions: 'ulimit -n 65536 on both ends, flood.sh over loopback, the instructor run' },
+    { value: 'about 8,000', what: 'cache keys per MB of keys_zone, so 10m holds about 80,000 keys', conditions: 'the figure in the nginx proxy module docs' },
+    { value: '27', what: 'states in the nginx request-line parser', conditions: 'nginx 1.31.5, the request line alone' },
+    { value: '11', what: 'HTTP phases, from POST_READ to LOG', conditions: 'nginx 1.31.5' },
+    { value: '511', what: 'the default listen backlog', conditions: 'on Linux' },
+    { value: '1,200 against 200,000', what: 'lines of C in the teaching repo against nginx', conditions: 'measured on 1.31.5: 1,442 and 255,904' },
+  ]}
+/>
+
+<ExitQuiz module="s04-digest" />
+
+<CardsAdded id="s04-digest" />
