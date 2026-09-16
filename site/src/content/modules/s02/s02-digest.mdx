@@ -56,7 +56,7 @@ The answer has one shape everywhere. A message goes inside an envelope, that env
 
 Two questions run through the whole class. Where does a message end: at a length, or at a marker? And where does reliability live: at each hop, at the two ends, or inside the application? Every protocol here answers both, and the answers differ. That is the point.
 
-**The five parts.** Part 1 builds the onion. Part 2 opens the phone network. Part 3 follows one text message. Part 4 takes TCP apart. Part 5 types mail and file protocols by hand.
+**The five parts.** The onion. The phone network. One text message. TCP. Then mail and file protocols by hand.
 
 <WordCard terms={frontmatter.terms} />
 
@@ -87,7 +87,7 @@ This part gives the one idea of the whole class: a header wraps a body, and the 
       ],
     },
     {
-      caption: 'IP puts its own 20-byte header in front: the two addresses, the TTL, the total length and protocol 6, which means TCP.',
+      caption: 'IP puts its own 20-byte header in front: the two addresses, the total length, protocol 6 for TCP, and the TTL, a hop counter that stops a lost packet from looping forever.',
       lanes: [
         { label: 'Ethernet, 14 B + 4 B', chunks: [] },
         { label: 'IP, 20 B', chunks: ['src, dst, TTL, protocol 6'] },
@@ -124,9 +124,9 @@ The letter is your data. Your envelope is the TCP header. The sack is the IP pac
 
 </Picture>
 
-OSI names these layers. It is a committee model from 1984 that outlived almost everything built on it. Layer 7 holds HTTP, FTP, DNS and SMTP, layer 6 holds encryption and compression, and layer 5 holds sessions. Layer 4 is transport, with TCP and UDP. Layer 3 is the network, with IP, ICMP and routing. Layer 2 is the link, with Ethernet, MAC addresses, ARP and switches. Layer 1 is cables and signals.
+OSI names these layers. It is a committee model from 1984 that outlived almost everything built on it. Layer 7 holds HTTP, FTP, DNS and SMTP, layer 6 holds encryption and compression, and layer 5 holds sessions. Layer 4 is transport, layer 3 is the network, layer 2 is the link, and layer 1 is cables and signals.
 
-TCP and UDP share layer 4 and make opposite promises. TCP sets up a connection and delivers every byte in order, with flow control, congestion control and error recovery, and it pays in latency. UDP sends one datagram with no connection, no promise and no order, and it is cheap. HTTP, FTP, SMTP and SSH take the first deal, and DNS, voice, video and games take the second.
+TCP and UDP share layer 4 and make opposite promises. TCP sets up a connection and delivers every byte in order, with flow control, congestion control and error recovery, and it pays in latency. UDP sends one datagram with no connection and no order, and it is cheap. HTTP, FTP, SMTP and SSH take the first deal. DNS, voice, video and games take the second.
 
 The byte budget falls out of the picture. A link carries 1500 bytes. Take 20 for IP and 20 for TCP, and 1460 bytes of your data are left: that is the MSS. Add 14 bytes of Ethernet header and a 4-byte check value, and one frame is 1518 bytes on the wire. To TCP, the request inside is a stream of bytes that it neither knows nor cares about.
 
@@ -147,6 +147,7 @@ Each layer adds its own header and treats everything inside as bytes it must not
 <Remember>
 
 - OSI from the top: 7 application, 6 presentation, 5 session, 4 transport, 3 network, 2 link, 1 physical.
+- What sits where: TCP and UDP at layer 4. IP, ICMP and routing at 3. Ethernet, MAC, ARP and switches at 2.
 - MSS 1460 bytes: MTU 1500 minus 20 for IP and 20 for TCP. One full frame is 1518 bytes.
 - Ethernet II: 6 bytes for each MAC address, 2 for the EtherType, 46 to 1500 of payload, then a 4-byte CRC-32.
 - EtherType 0x0800 means IPv4. IP protocol 6 means TCP.
@@ -187,11 +188,11 @@ This part opens the second network, the one you use every day and never see. It 
   ]}
 />
 
-<Picture breaks="the headset line trusts anyone who plugs in. SS7 joins hundreds of operators, and it trusts any point code on the line.">
+<Picture breaks="the headset line trusts anyone who plugs in. SS7 joins hundreds of operators, and it trusts any point code, the address of one SS7 switch, that reaches it on a link.">
 
-A theatre show has two channels. The actors speak on stage, and the crew gets cues. In the old theatre the crew heard its cues from the stage, so anybody in the audience who shouted "lights out" turned the lights out. The new theatre gives the crew a private headset line.
+A theatre show has two channels. The actors speak on stage, and the crew gets cues. In the old theatre the crew heard its cues from the stage. So anybody in the audience who shouted "lights out" turned the lights out, and a shout of "let this one in free" got a free seat. The new theatre gives the crew a private headset line.
 
-The stage is the voice circuit, the cues are the signalling, and the shout is the blue box that seized a trunk for free. The headset line is SS7.
+The stage is the voice circuit and the cues are the signalling. The shout is the blue box, a small device that played the tones for a free call. The headset line is SS7.
 
 </Picture>
 
@@ -223,6 +224,7 @@ Now the reliability question. SS7 makes every hop reliable: MTP2 numbers each un
 - SS7 trusts by point code. There is no sender check at all.
 - SS7 resends per hop, in MTP2. TCP resends end to end, from the sender.
 - The SS7 FSN is 7 bits and counts signal units. The TCP sequence number is 32 bits and counts bytes.
+- The eleven shared jobs: scope of reliability, sequence numbers, acks, resends, flow control, error checks, addressing, connection setup, congestion control, largest payload, and security.
 - In 5G the same call is SIP text over IP, with RTP media on a separate path.
 
 </Remember>
@@ -255,21 +257,21 @@ This part follows one text message from your thumb to the other phone. A 1980s s
     {
       name: 'TP-UD, the user data',
       fields: [
-        { hex: 'C8 32 9B FD 06 5D DF 72 36 39 04', label: '"Hello World!": 12 septets, 84 bits, 11 octets, 4 padding bits' },
+        { hex: 'C8 32 9B FD 06 5D DF 72 36 39 04', label: '"Hello World!": 12 characters of 7 bits (septets), so 84 bits in 11 octets, with 4 padding bits' },
       ],
     },
   ]}
 />
 
-<Picture breaks="a real shirt folds to any size. A GSM character is exactly 7 bits, and a few characters such as the curly brace or the euro sign need an escape and cost 14 bits.">
+<Picture breaks="a real suitcase holds whatever you push into it. A GSM character is exactly 7 bits, and a few characters, such as the curly brace or the euro sign, need an escape and cost 14 bits.">
 
 A locker holds 272 units. The house rules say a bag may hold 200. Your suitcase is 140, so the suitcase and its labels fit inside one locker with room left.
 
-The locker is one SS7 signal unit, the bag is the MAP field for user data, and the suitcase is the text. Packing is a trick with shirts: each shirt takes 7 slots instead of 8, so 160 shirts fit where 140 fit before.
+The locker is one SS7 signal unit, the bag is the MAP field for user data, and the suitcase is the text message itself.
 
 </Picture>
 
-An SMS nests like a web request, fifty years apart. MTP2 holds MTP3, which holds SCCP, which holds TCAP, which holds MAP, which holds the message. The MAP invoke carries opCode 46, mo-ForwardSM, which means a phone sends a text. Inside it sits the SMS-SUBMIT unit, with the message type, a reference number, the destination number, the alphabet setting, a validity time and the user data length.
+An SMS nests like a web request, fifty years apart. MTP2 holds MTP3, which holds SCCP, which holds TCAP, which holds MAP, which holds the message. The MAP invoke carries opCode 46, mo-ForwardSM, which means a phone sends a text. Inside it sits the SMS-SUBMIT unit: the message type, a reference number, the destination number, the alphabet setting, a validity time and the user data length.
 
 Three limits stack, and the smallest wins. One signal unit carries at most 272 octets, the MAP user data field holds about 200, and the text field, TP-UD, holds 140. The 140 therefore traces back to a 1980s signalling packet that stops at 272 octets. That buys something real: the whole operation fits in one signal unit, so nothing splits, nothing reassembles and nobody keeps state. SMS ran on 1980s hardware for that reason, and it still works when the data network is down.
 
@@ -293,7 +295,7 @@ It holds 140 octets. How many characters that is depends on the alphabet: 160 wi
 
 </Myth>
 
-Delivery is a database lookup wrapped in a queue, and the order of the steps is a favourite exam trap. Phone A sends SMS-SUBMIT to its switch, which sends MAP mo-ForwardSM to the SMSC. The SMSC stores the message and answers TCAP END: accepted and queued. Only then does it ask the HLR, with sendRoutingInfoForSM, where the other phone is now, and the HLR returns the IMSI and the address of the switch that serves phone B. The SMSC sends mt-ForwardSM with an SMS-DELIVER there, and that switch delivers over the air. A status report reaches phone A only if the sender asked for one, so accepted and delivered are two different events.
+Delivery is a database lookup wrapped in a queue, and the order of the steps is a favourite exam trap. Phone A sends SMS-SUBMIT to its switch, which sends MAP mo-ForwardSM to the SMSC. The SMSC stores the message and answers TCAP END: accepted and queued. Only then does it ask the HLR, with sendRoutingInfoForSM, where the other phone is now. The HLR returns the IMSI, the identity number of that phone, and the address of the switch that serves it. The SMSC sends mt-ForwardSM with an SMS-DELIVER there, and that switch delivers over the air. A status report reaches phone A only if the sender asked for one, so accepted and delivered are two different events.
 
 <Remember>
 
@@ -319,7 +321,7 @@ The full lessons are <ModuleLink id="s02-m03-sms-bytes" /> and <ModuleLink id="s
 
 <Segment title="TCP opens in three and closes in four">
 
-This part takes the transport layer apart: the handshake, the attacks inside it, the close, and the round-trip cost that every modern protocol tries to remove.
+Part 3 showed how the phone network answered the reliability question. TCP answers the same question end to end. This part takes it apart: the handshake, the attacks inside it, the close, how it reads congestion, and the round-trip cost that every modern protocol tries to remove.
 
 <Stepper
   slot="visual"
@@ -382,7 +384,7 @@ This part takes the transport layer apart: the handshake, the attacks inside it,
       ],
     },
     {
-      caption: 'The client acks it and waits 2 MSL in TIME_WAIT. The server closes at once. Only the side that closed first waits.',
+      caption: 'The client acks it and waits in TIME_WAIT for 2 MSL. One MSL is the longest time a segment can live on the network. The server closes at once, because only the side that closed first waits.',
       lanes: [
         { label: 'Client state', chunks: ['TIME_WAIT, 2 MSL'] },
         { label: 'On the wire', chunks: ['ACK ack=6001'] },
@@ -402,7 +404,7 @@ Each start number is a sequence number, and each "got it" is an ack. Four senten
 
 TCP opens with three messages because each direction needs its own start number confirmed. The client SYN announces its number, the server SYN-ACK acks it and announces its own, and the client ACK confirms that. SYN and FIN each consume one sequence number although they carry no data, which is why an ack of 1001 answers a SYN with seq 1000.
 
-Start numbers used to be predictable. Guess the next one and you can inject forged segments blind, which is the Mitnick attack, so RFC 6528 made the number a keyed hash of the four-tuple plus a timer.
+Start numbers used to be predictable. Guess the next one and you can inject forged segments blind, which is the Mitnick attack, so RFC 6528 made the number a keyed hash of a timer and the four-tuple, which is both IP addresses and both ports.
 
 The gap between message 1 and message 3 is the target of a SYN flood. Spoofed SYNs cost the attacker one packet each and the server one half-open entry until a timeout, so real clients get refused. SYN cookies, from 1996, remove that table: the server stores nothing and hides the details inside its own start number, a keyed hash of the four-tuple, a coarse clock and the MSS. The client hands it back plus one, and the server rebuilds the connection from that packet. The cost is space, so window scaling, SACK and timestamps are mostly lost, and cookies switch on under pressure only.
 
@@ -426,11 +428,11 @@ Open needs three messages, because two start numbers need acks and one message c
 
 </KeyIdea>
 
-BBR changed the congestion question in 2016. Reno and CUBIC grow the window until something drops, then cut back, so they need loss to make progress. That is wrong on a fat, long or lossy path, where a radio or a satellite link drops packets for reasons that have nothing to do with a full queue. BBR measures the bottleneck bandwidth and the round-trip propagation time, then paces at that rate and keeps the queue near empty.
+BBR changed the congestion question in 2016. Reno and CUBIC grow the window until something drops, so they need loss to make progress. That is wrong on a lossy path, where a radio or a satellite link drops packets for reasons that have nothing to do with a full queue. BBR measures the bottleneck bandwidth and the round-trip propagation time, then paces at that rate and keeps the queue near empty.
 
 <Beyond source="Google Cloud blog, 2017-07-21, and RFC 9438 §4.6">
 
-The deck says "up to 2,000×". Google reports 2,700× with its conditions: CUBIC 3.3 Mbps against BBR 9,100 Mbps on 10 GbE, with 100 ms RTT and 1% loss. The deck also says that Reno and CUBIC both halve on loss. Reno halves, and CUBIC cuts to 0.7.
+The deck says "up to 2,000×". Google reports 2,700×, with conditions: CUBIC 3.3 Mbps against BBR 9,100 Mbps on 10 GbE, 100 ms RTT, 1% loss. The deck also says that Reno and CUBIC both halve on loss. Reno halves, and CUBIC cuts to 0.7.
 
 </Beyond>
 
@@ -438,7 +440,7 @@ Every round trip before your first data byte is a tax. As the deck draws it, pla
 
 UDP is TCP with every promise removed: 8 bytes of header, two ports plus a length plus a checksum, and up to 65,507 bytes of payload over IPv4. Zoom, WebRTC, games, DNS and real-time streams take that deal, because a resent audio frame misses its play time and a gap is the right answer.
 
-QUIC rebuilds TCP inside UDP, in userspace, because UDP is 8 bytes that the kernel and the middleboxes leave alone. HTTP/2 needs its own TLS handshake on one ordered TCP stream, while HTTP/3 runs on QUIC, where streams and TLS 1.3 share one handshake. One lost packet stalls every HTTP/2 stream over TCP, but only its own stream under QUIC. TCP also lives in the kernel, so a change needs an operating system update for the planet, while QUIC ships in the browser. Reliability has an address, and QUIC put it in userspace.
+QUIC rebuilds TCP inside UDP, in userspace, because UDP is 8 bytes that the kernel and the middleboxes leave alone. HTTP/2 needs its own TLS handshake on one ordered TCP stream, while HTTP/3 runs on QUIC, where streams and TLS 1.3 share one handshake. One lost packet stalls every HTTP/2 stream over TCP, but only its own stream under QUIC. TCP also lives in the kernel, so a change needs an operating system update for the planet, while QUIC ships in the browser. Reliability has an address, and QUIC put it in the application.
 
 <Remember>
 
@@ -497,7 +499,7 @@ S: 221 Bye`,
 
 <Picture breaks="a paper letter keeps one envelope. Each mail relay writes a new envelope and adds a line to the letter itself. SMTP also cannot change its end marker, so the sender must protect every body line that starts with a dot.">
 
-The post office reads only the envelope. Inside it you can sign the letter with any name you like, and nobody checks. A radio operator ends a turn with a set phrase, so a message that holds that phrase must be marked, or the listener stops early.
+The post office reads only the envelope. Inside it you can sign the letter with any name you like, and nobody checks. Mail also needs one more rule, the one a radio operator uses: a set phrase marks the end of a turn. So a message that holds that phrase must be marked, or the listener stops early.
 
 The envelope is the pair MAIL FROM and RCPT TO. The letter is the headers and the body. The set phrase is the line that holds only a dot.
 
@@ -507,11 +509,11 @@ SMTP, POP and FTP are text, so you can be the client with a terminal. The S in S
 
 That openness is also the hole. MAIL FROM is whatever you type, and the base protocol authenticates nothing. SPF, DKIM and DMARC are later patches that ask what SMTP never asked: is this sender allowed to say that? Keep the envelope and the letter apart: MAIL FROM and RCPT TO decide delivery, while the From: and To: headers inside DATA are text that nothing checks.
 
-The session shape is fixed: a 220 greeting, EHLO with a 250 and the extension list, a 250 for MAIL FROM and for RCPT TO, a 354 for DATA, then the headers, a blank line, the body, a line that holds only a dot, and 221 after QUIT. Two traps live there. The blank line ends the headers, not the message. And a body line that starts with a dot needs one extra dot, or the server ends your message early.
+The session above has a fixed shape: 220, then 250 for EHLO, MAIL FROM and RCPT TO, then 354 for DATA, then the headers, a blank line, the body, a lone dot, and 221 after QUIT. Two traps live there. The blank line ends the headers, not the message. And a body line that starts with a dot needs one extra dot, or the server ends your message early.
 
-A text protocol cannot carry arbitrary bytes, so images travel as base64: 3 bytes, 24 bits, regrouped as four 6-bit values, so the bytes of "Man" become TWFu. The cost is 4 characters for every 3 bytes, about 33%, and MIME caps a line at 76 characters. The alphabet is A to Z, a to z, 0 to 9, plus and slash, with the equals sign as padding, and every mail system passes it unchanged. An attachment uses multipart/mixed, which names a boundary. Each part starts with two hyphens and that boundary and carries its own Content-Type, and two hyphens on both sides end the message. Pick a boundary that cannot appear in the body: the delimiter idea again.
+A text protocol cannot carry arbitrary bytes, so images travel as base64: 3 bytes, 24 bits, regrouped as four 6-bit values, so the bytes of "Man" become TWFu. The cost is 4 characters for every 3 bytes, about 33%, and MIME caps a line at 76 characters. The 64 characters are A to Z, a to z, 0 to 9, plus and slash, with equals as padding, and every mail system passes them unchanged. An attachment uses multipart/mixed, which names a boundary. Each part starts with two hyphens and that boundary and carries its own Content-Type, and two hyphens on both sides end the message. Pick a boundary that cannot appear in the body: the delimiter idea again.
 
-Reading mail makes state placement the design question. POP is four verbs, STAT, LIST, RETR and DELE, and DELE only marks a message until QUIT. USER and PASS cross the wire in clear text, which is why POP3S on port 995 exists. POP keeps mail on your device and treats the server as a spool, so a second device sees nothing. IMAP keeps mail on the server, so every device sees the same mailbox and the same read state, held as a flag such as \Seen. POP has one inbox and local search, while IMAP has folders, server-side SEARCH and IDLE that pushes new mail. IMAP FETCH BODY[1] returns one MIME part, where POP RETR returns the whole message. Everything follows from that one choice.
+Reading mail makes state placement the design question. POP is four verbs, STAT, LIST, RETR and DELE, and DELE only marks a message until QUIT. USER and PASS cross the wire in clear text, which is why POP3S on port 995 exists. POP keeps mail on your device and treats the server as a spool, so a second device sees nothing. IMAP keeps mail on the server, so every device sees the same mailbox and the same read state, held as a flag such as \Seen. POP has one inbox and local search. IMAP has folders, server-side SEARCH, IDLE that pushes new mail, and FETCH BODY[1] for one MIME part, where POP RETR returns the whole message.
 
 <KeyIdea id="length-or-delimiter-nothing-else" title="Length or delimiter. There is no third option.">
 
@@ -529,7 +531,7 @@ Two columns on the framing slide need a correction. MTP2 sits under "length", bu
 
 FTP answers with a connection instead of a rule: one connection holds the conversation, and a new connection carries each file. The 1971 active mode puts control on port 21 and has the server dial back from port 20, which every NAT box now blocks. Passive mode fixes it: the client sends PASV, the server replies 227 with six numbers, and the client connects there, so the client opens both connections. Each transfer needs a new PASV.
 
-Decode that reply and you meet byte order again. In (127,0,0,1,117,48) the first four numbers give the address and the last two give the port, high byte first: 117 times 256 plus 48 is 30000. The reply is text, so a 16-bit port ships as two 8-bit halves in network byte order, which is htons by hand. In the class demo you need two terminals: the control connection on port 2121, and the data connection on the port that the 227 reply names. The listing and the file body appear on the data side, and each transfer needs a new PASV. The demo also pins the passive ports to a small range, which keeps the firewall rule finite, and sets the address in the 227 reply, because a server in a container does not know the address a client can reach.
+Decode that reply and you meet byte order again. In (127,0,0,1,117,48) the first four numbers give the address and the last two give the port, high byte first: 117 times 256 plus 48 is 30000. The reply is text, so a 16-bit port ships as two 8-bit halves in network byte order, which is htons by hand. In the class demo you watch two connections at once. The listing and the file body arrive on the data connection, never on the control one. The demo also pins the passive ports to a small range, which keeps the firewall rule finite, and sets the address in the 227 reply, because a server in a container does not know the address a client can reach.
 
 <Remember>
 
