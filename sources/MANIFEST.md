@@ -12,8 +12,10 @@ what should be here, where it came from, and whether it is complete.
 | `session-03/slides.pdf` | Session 3 deck "One Process, Many Clients: Scaling Servers", 34 pages | complete, replaced 2026-09-13 |
 | `session-04/slides.pdf` | Session 4 deck "nginx and the code that explains it", 36 pages | complete, replaced 2026-09-13 |
 | `session-05/slides.pdf` | Session 5 deck "HTTP, 1996 to now", 51 pages | complete, replaced 2026-09-13 |
+| `session-06/slides.pdf` | Session 6 deck, 38 pages, saved 2026-09-22 | complete, text extracted to `session-06/slides.txt` |
+| `assignment/calculator.pdf` | The graded assignment "Build a calculator that stays on the line", 2 pages. Page 2 holds the course project "HTTP, in binary". | complete. `pdftotext` gives no text, because the pages hold outlines. Read it as an image. One line of the marking box is behind another box and stays unreadable. |
 | `session-0N/slides.txt` | `pdftotext -layout` output. A form feed separates pages. | complete |
-| `cn-at-scaler/` | clone of the instructor repo `github.com/jitendraag/cn-at-scaler` | at commit `4398388`, 2026-09-11 |
+| `cn-at-scaler/` | clone of the instructor repo `github.com/jitendraag/cn-at-scaler` | at commit `073f869`, pulled 2026-09-22, adds `lesson6/` |
 
 ## Published decks
 
