@@ -1,5 +1,5 @@
-# Build site/ and publish it to https://sammyurfen.github.io/network-architecture/.
-# The build also reads docs/curriculum/, so the job checks out the whole repo.
+# Build na-site/site/ and publish it to https://sammyurfen.github.io/network-architecture/.
+# The build also reads na-site/docs/curriculum/, so the job checks out the whole repo.
 name: Deploy to GitHub Pages
 
 on:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: withastro/action@v6
         with:
-          path: site
+          path: na-site/site
           # Match the local Node (24.6.0, npm 11.5.1). A newer npm on the runner rejects the lock file:
           # it resolves nested @emnapi optional deps of the wasm32 fallback differently.
           node-version: '24.6.0'

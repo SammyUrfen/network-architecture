@@ -1,9 +1,13 @@
-# Instructor material stays local. The repo may go public later, and the
-# slides, notes and code belong to the instructor and the school.
-sources/*
-!sources/MANIFEST.md
+# Instructor material stays local. The repo is public, and the slides, notes
+# and code belong to the instructor and the school.
+na-site/sources/*
+!na-site/sources/MANIFEST.md
 
-# Site build output (the site lives in site/ from Phase 1)
+# Bibek's course work. It lives in its own private repo, so nothing graded
+# reaches this public one.
+projects/
+
+# Site build output (the site lives in na-site/site/ from Phase 1)
 node_modules/
 dist/
 .astro/

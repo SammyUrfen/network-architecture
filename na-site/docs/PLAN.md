@@ -75,7 +75,14 @@ at the start of Phase 1. See section 9 for the facts checked on 2026-09-13.
 
 ### Folders
 
+Every path in this file is relative to `na-site/`. The repo root holds
+`.github/workflows/`, `README.md`, `CLAUDE.md`, `.gitignore` and the
+git-ignored `projects/`. The tree below sits under `na-site/`:
+
 ```
+docs/                          this plan, the pedagogy, the curriculum maps
+sources/                       instructor material, git-ignored
+tools/                         pdf_salvage.py, quote_scan.py
 site/
   astro.config.mjs
   package.json                 scripts: dev, build, preview, check, test, verify, lint:prose
@@ -482,8 +489,11 @@ Before any public push:
    `CLAUDE.md` still holds, so no page gives a solution to graded work.
 2. Bibek owns the permission question with the instructor, for the lessons
    and for the deck PDFs.
-3. Scan every tracked file for long quotes from `sources/`. The deck PDFs in
-   `site/public/slides/` are the one allowed copy.
+3. Scan every tracked file for long quotes from `sources/`, with
+   `python3 na-site/tools/quote_scan.py` from the repo root. The deck PDFs
+   in `site/public/slides/` are the one allowed copy.
+4. Make sure the root `projects/` holds no tracked file. Git ignores it,
+   and the graded code lives in its own private repo.
 
 ### The module packet
 

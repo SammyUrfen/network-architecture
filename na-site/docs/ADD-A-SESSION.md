@@ -1,5 +1,8 @@
 # Runbook: add a new session
 
+Every path here is relative to `na-site/`. Run each command from `na-site/`,
+except where a step names another folder.
+
 Use this runbook after each new class (Sessions 6, 7 and 8). Use it also when
 a complete deck replaces a truncated one. Finish steps 1 to 6 within 48 hours
 of the class, and before the post-class quiz opens.
@@ -33,7 +36,8 @@ print dialog gave a complete file for Session 1.
 2. If the command prints "Couldn't find trailer dictionary", the PDF is
    truncated. Ask Bibek for a new copy.
 3. If no new copy is possible, run
-   `python3 tools/pdf_salvage.py sources/session-0N/slides.pdf > sources/session-0N/slides.txt`.
+   `python3 tools/pdf_salvage.py sources/session-0N/slides.pdf > sources/session-0N/slides.txt`
+   from `na-site/`.
    The output separates pages with form feeds, but it orders pages by the
    streams in the file. That order can differ from the PDF page order.
 4. Record the slide count and the status in `sources/MANIFEST.md`. For a

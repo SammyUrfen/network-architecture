@@ -16,8 +16,8 @@ can differ from the PDF page order. Glyphs outside Latin-1 come out as junk
 or vanish. A slide cut off in the middle of a stream is lost. Always get a
 complete PDF when you can.
 
-    python3 tools/pdf_salvage.py sources/session-05/slides.pdf > sources/session-05/slides.txt
-    python3 tools/pdf_salvage.py --selftest
+    python3 na-site/tools/pdf_salvage.py na-site/sources/session-05/slides.pdf > na-site/sources/session-05/slides.txt
+    python3 na-site/tools/pdf_salvage.py --selftest
 """
 import re
 import sys

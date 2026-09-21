@@ -1,4 +1,4 @@
-# The gate of docs/PLAN.md section 5, checks 1 to 4.
+# The gate of na-site/docs/PLAN.md section 5, checks 1 to 4.
 # CI skips check 7, `npm run lint:prose`: it calls the STE linter in
 # ~/.claude/skills, which is not in this repo. Run it locally.
 name: CI
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: site
+        working-directory: na-site/site
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -24,7 +24,7 @@ jobs:
           # it resolves nested @emnapi optional deps of the wasm32 fallback differently.
           node-version: '24.6.0'
           cache: npm
-          cache-dependency-path: site/package-lock.json
+          cache-dependency-path: na-site/site/package-lock.json
       - run: npm ci
       - run: npm run check
       - run: npm run test

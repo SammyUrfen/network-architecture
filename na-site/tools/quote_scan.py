@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Find long quotes from sources/ in the files that git tracks.
+"""Find long quotes from na-site/sources/ in the files that git tracks.
 
-This is step 3 of the Phase D checklist in docs/PLAN.md. The repo goes
-public, and sources/ holds the instructor slides, notes and code. A run of
-RUN or more words that is in a tracked file and also in a source is a long
-quote. The script prints each run as "file:line: words" and exits 1.
+This is step 3 of the Phase D checklist in na-site/docs/PLAN.md. The repo is
+public, and na-site/sources/ holds the instructor slides, notes and code. A
+run of RUN or more words that is in a tracked file and also in a source is a
+long quote. The script prints each run as "file:line: words" and exits 1.
 
-The source text is sources/session-*/slides.txt, sources/session-*/notes.md
-and the tracked text files of the instructor clone sources/cn-at-scaler.
-Words compare after NFKC, lower case, and a split on every character that is
-not a letter or a digit. So case, punctuation and whitespace do not matter.
+The scan covers every tracked file of the whole repo, not only na-site/, so
+the root README.md and the workflows are in it too.
 
-    python3 tools/quote_scan.py
-    python3 tools/quote_scan.py --selftest
+The source text is na-site/sources/session-*/slides.txt, the matching
+notes.md, and the tracked text files of the instructor clone
+na-site/sources/cn-at-scaler. Words compare after NFKC, lower case, and a
+split on every character that is not a letter or a digit. So case,
+punctuation and whitespace do not matter.
+
+    python3 na-site/tools/quote_scan.py
+    python3 na-site/tools/quote_scan.py --selftest
 
 Exit codes: 0 no quotes, 1 quotes found, 2 no source text to compare with.
 """
@@ -25,7 +29,10 @@ from pathlib import Path
 # CLAUDE.md allows short quoted phrases. Twelve words is longer than a phrase
 # and shorter than a slide sentence, so a hit is a copy, not a shared term.
 RUN = 12
-ROOT = Path(__file__).resolve().parent.parent
+# SITE is na-site/, which holds sources/. REPO is the git root one level up:
+# the scan reads the tracked files of the whole repo, not only the site.
+SITE = Path(__file__).resolve().parent.parent
+REPO = SITE.parent
 WORD = re.compile(r"[^\W_]+")
 
 
@@ -68,7 +75,7 @@ def tracked(repo):
 
 
 def source_files():
-    src = ROOT / "sources"
+    src = SITE / "sources"
     files = sorted(src.glob("session-*/slides.txt")) + sorted(src.glob("session-*/notes.md"))
     clone = src / "cn-at-scaler"
     # Without its own .git, "git -C" lists the files of this repo instead.
@@ -84,13 +91,13 @@ def scan():
         if text:
             known |= shingles(text)
     if not known:
-        print(f"quote_scan: no source text under {ROOT / 'sources'}", file=sys.stderr)
+        print(f"quote_scan: no source text under {SITE / 'sources'}", file=sys.stderr)
         return 2
     hits = 0
-    for f in tracked(ROOT):
+    for f in tracked(REPO):
         text = read_text(f) if f.is_file() else None
         for line, run in runs(text or "", known):
-            print(f"{f.relative_to(ROOT)}:{line}: {run}")
+            print(f"{f.relative_to(REPO)}:{line}: {run}")
             hits += 1
     print(f"quote_scan: {hits} runs of {RUN} or more words", file=sys.stderr)
     return 1 if hits else 0

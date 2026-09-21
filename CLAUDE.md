@@ -1,140 +1,40 @@
-# Network Architecture: a teaching site for one course
+# Network Architecture: the repo index
 
-This repo builds a static website that re-teaches Bibek's trimester course
-"Network Architecture" (CN @ Scaler), lesson by lesson. Bibek could not follow
-the live lectures. The site gives a first contact that a 10-year-old can
-follow, then goes deep enough for exam and design questions. More sessions
-arrive each week, so the site grows one session at a time.
+This repo holds two separate parts of one course, "Network Architecture"
+(CN @ Scaler). The parts do not share code, and only one of them is public
+content.
 
-## Read in this order
-
-1. `docs/PLAN.md`: the phases, the status, the architecture, the gate.
-2. `docs/PEDAGOGY.md`: the lesson contract in section 2, and the digest
-   contract in section 3. Every page obeys one of the two.
-3. `docs/curriculum/README.md`: the IDs, the template, the threads.
-4. `docs/curriculum/session-0N.md`: the teaching design for the session you
-   work on.
-5. `docs/ADD-A-SESSION.md`: the runbook when a new class happens.
-
-## Status
-
-| Part | State |
-|---|---|
-| Curriculum maps | Sessions 1–5 written and reviewed on 2026-09-14: 57 modules, 894 claims. Sessions 6–8 not taught yet. |
-| Site | Live at https://sammyurfen.github.io/network-architecture/. Phases 1 and 2 done. 5 lessons and 4 class digests ready on 2026-09-16. The digests cover every core claim of classes 1 to 4, for the quiz on 2026-09-18. |
-| Class digests | The harness is done on 2026-09-16: `kind: digest` in the schema, verify rules 5 and 11, `Remember`, `NumbersTable` and `Myth`, the route `/s0N/digest/`, the two review prompts, and a `draft` stub for classes 1 to 4. The four digests wait for their packets, before the quiz on Friday 2026-09-18. |
-| Sources | All five decks complete. No transcripts. See `sources/MANIFEST.md`. |
-
-Update this table when a phase ends.
-
-## The course
-
-| Week | Topic | Date |
-|---|---|---|
-| 1 | Network programming 101 | taught, about 2026-08-12 |
-| 2 | Computer Networking Eagle Eye View | taught, about 2026-08-14 |
-| 3 | Server Side Considerations for scale | taught, about 2026-08-27 |
-| 4 | nginx deep dive | taught, about 2026-09-04 |
-| 5 | Evolution of HTTP | taught, about 2026-09-11 |
-| 6 | (Ab)using CDNs | Fri 2026-09-18 |
-| 7 | Economics of cloud tech | Fri 2026-09-25 |
-| 8 | Building for failures | Fri 2026-10-02 |
-
-Future dates can change. The Session 5 deck lists a different week 7 and 8
-("Building for failures", "Streaming video at large scale"). The Session 4 and
-5 decks preview Session 6 as "Where did the state go?". The table above is
-the official one.
-
-**Grading:** post-class quizzes 30% (three quizzes), project 30%, assignment
-20%, end-term exam 20%. The Session 5 deck announces the calculator
-assignment (due before Session 7) and the binary HTTP project. Neither is
-formally given yet.
-
-**Instructor code:** `github.com/jitendraag/cn-at-scaler`, cloned at
-`sources/cn-at-scaler/`. Every demo in the lessons comes from there.
-
-## Where things are
+## The two parts
 
 | Path | What | In git |
 |---|---|---|
-| `docs/` | plan, pedagogy, curriculum maps, runbook, review prompts | yes |
-| `sources/` | slides, AI notes, instructor clone | no, only `MANIFEST.md` |
-| `tools/pdf_salvage.py` | gets text out of a truncated PDF deck | yes |
-| `.claude/workflows/session-curriculum.js` | the saved workflow that writes and reviews a curriculum file | yes |
-| `site/` | the Astro site, from Phase 1 | yes |
+| `na-site/` | The teaching site. It re-teaches the course lesson by lesson. Live at https://sammyurfen.github.io/network-architecture/. | yes |
+| `projects/` | Bibek's own course work: the assignment and the project. | no, git ignores it |
 
-## Rules
+## Where the rules are
 
-### Content
+`na-site/CLAUDE.md` holds every rule for the site: the read order, the
+status table, the content rules, the source rules, the work rules and the
+commands. Read it before you touch anything under `na-site/`.
 
-1. **Teach what the instructor taught.** Each module lists the claim IDs it
-   covers. A fact that is not in the sources gets a "beyond the slides" badge
-   and a reference (RFC section, man page, official docs).
-2. **Correct before complete.** Check every byte layout, number and answer
-   key. Simulator logic is a pure function with tests against RFC or source
-   vectors.
-3. **Numbers keep their conditions.** The instructor measured on his laptop,
-   often over loopback. Write "150 ms RTT, loopback", never a bare number.
-4. **No solutions to graded work.** Graded work is the calculator
-   assignment, the binary HTTP project, and the real questions of the
-   post-class quizzes. A prep page for graded work follows the lesson
-   contract. It can add a requirement checklist, a test plan and a hint
-   ladder. It never gives solution code, a solving skeleton, a written spec,
-   or the answer to a real quiz question. This is the one text of the rule.
-   Other files point here.
-5. **No copy of the slide text.** Quote short phrases only. Explain in
-   original words. The five deck PDFs go in `site/public/slides/`, for the
-   slide viewer and the downloads (Bibek, 2026-09-14). Never put another
-   source file, a slide image or a large code file in `site/`.
-6. **Plain words first, told as a story.** A lesson opens with its question
-   and why it matters, and each part says what it teaches. A picture is a
-   real-life scene that a 10-year-old knows, mapped to the real thing, with
-   the place where it breaks. A code identifier is evidence after the
-   explanation.
-7. **IDs are permanent.** Never rename or reuse a claim, module, item or card
-   ID once a lesson page uses it. Add new IDs at the end.
+Work under `na-site/` starts from `na-site/docs/PLAN.md`.
 
-### Sources
+## The graded work stays out of this repo
 
-- `sources/` is read-only input. Do not edit the instructor clone. Update it
-  only with `git pull`.
-- Record every new or replaced source in `sources/MANIFEST.md`.
+The assignment code and the project code live in their own private repo.
+`projects/` is only the local place where Bibek builds them. Git ignores it,
+so nothing graded reaches this public repo.
 
-### Work
+Rule 4 of `na-site/CLAUDE.md` still holds for the site: no page gives a
+solution to graded work.
 
-- Module work follows the packet in `docs/PLAN.md` section 4. A packet
-  touches only its own files. A change to shared components or schemas is a
-  separate contract change.
-- A task is done only when the gate in `docs/PLAN.md` section 5 passes. Show
-  the output.
-- Preview on port 4399, or on 4401 and up in a parallel worktree. Bibek
-  reads the site on port 4400. Never stop a server that Bibek started. Stop
-  only the PID you started. No broad `pkill`.
-- Docs and lesson prose follow ASD-STE100 flavored style. Lint with
-  `python3 ~/.claude/skills/asd-ste100/scripts/ste-lint.py --fail-over 2.5 FILE`.
-- Confirm current Astro, Preact and Vitest APIs with the context7 tools
-  before writing site code.
-- The repo goes public with CI/CD and GitHub Pages (Bibek, 2026-09-14). Add
-  a remote, push or deploy only when Bibek asks. Nothing from `sources/` may
-  enter a tracked file beyond short quotes, except the deck PDFs of rule 5.
-  Before any public push, run the Phase D checklist in `docs/PLAN.md`
-  section 4.
+## The build
 
-## Commands
-
-Before Phase 1, the repo has no build. From Phase 1, run these in `site/`:
+GitHub Actions stays at the repo root, in `.github/workflows/`, because
+GitHub needs it there. Both workflows build `na-site/site`.
 
 ```sh
-npm run dev          # local site
-npm run check        # types and content schemas
-npm run test         # unit tests
-npm run verify       # content rules: IDs, coverage, quiz shape
-npm run build        # static output in site/dist
-npm run preview -- --port 4399
-npm run lint:prose -- <module-id>   # no ID: lint every module
-```
-
-```sh
-python3 tools/pdf_salvage.py --selftest
-python3 tools/pdf_salvage.py sources/session-0N/slides.pdf > sources/session-0N/slides.txt
+cd na-site/site
+npm ci
+npm run dev
 ```

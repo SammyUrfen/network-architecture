@@ -29,7 +29,7 @@ open an issue here.
 You need Node 22.12 or later. CI uses Node 24.
 
 ```sh
-cd site
+cd na-site/site
 npm ci
 npm run dev
 ```
@@ -38,13 +38,15 @@ Astro prints a local address. Open it and add `/network-architecture/` at the
 end, because the site uses the same base path as GitHub Pages. If Astro runs
 the server in the background, `npx astro dev stop` stops it.
 
-The lessons are MDX files in `site/src/content/modules/`. Their quizzes and
-review cards are YAML files next to them in `site/src/content/`. The plan and
-the lesson rules are in `docs/`.
+The whole site lives in `na-site/`. The lessons are MDX files in
+`na-site/site/src/content/modules/`. Their quizzes and review cards are YAML
+files next to them in `na-site/site/src/content/`. The plan and the lesson
+rules are in `na-site/docs/`. The other folder, `projects/`, holds the
+author's own course work. Git ignores it, so nothing graded is in this repo.
 
 ## How the content is checked
 
-A change counts as done only when four commands pass in `site/`.
+A change counts as done only when four commands pass in `na-site/site/`.
 `npm run check` checks the types and the content schemas. `npm run test` runs
 the unit tests, and every simulator has tests against RFC or source values.
 `npm run verify` checks the content rules. For example, every quiz question
@@ -56,8 +58,8 @@ Some checks need a person or a tool outside this repo, so they run by hand. A
 reviewer compares each lesson with the slides and the RFCs. A browser pass
 checks light and dark mode, a phone width and the keyboard. A linter keeps the
 prose in plain, simple English. Before a public push,
-`python3 tools/quote_scan.py` looks for long runs of words copied from the
-course material. That material stays on the author's computer.
+`python3 na-site/tools/quote_scan.py` looks for long runs of words copied
+from the course material. That material stays on the author's computer.
 
 ## Two rules for the content
 
