@@ -11,7 +11,7 @@ export const meta = {
 
 // Absolute path: workflow scripts cannot read the filesystem to find the repo.
 // Update this line if the repo moves.
-const ROOT = '/home/SammyUrfen/Codes/Network Architecture'
+const ROOT = '/home/SammyUrfen/Codes/Network Architecture/na-site'
 const LINT = 'python3 /home/SammyUrfen/.claude/skills/asd-ste100/scripts/ste-lint.py --fail-over 2.5'
 
 const sessions = (Array.isArray(args) ? args : [args]).filter(s => s && s.n && s.brief)
