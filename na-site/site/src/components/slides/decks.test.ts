@@ -10,12 +10,14 @@ describe('decks', () => {
       const doc = await task.promise;
       const { width, height } = (await doc.getPage(1)).getViewport({ scale: 1 });
       const { length } = await doc.getDownloadInfo();
-      expect({ session, pages: doc.numPages, mb: Number((length / 1e6).toFixed(1)), width, height }).toEqual({
+      expect({ session, pages: doc.numPages, mb: Number((length / 1e6).toFixed(1)), height }).toEqual({
         session,
         ...deck,
-        width: 960,
         height: 540,
       });
+      // 16:9 at 540 pt is 960. Two decks export one point short, at 959.
+      expect(width, `the page width of the session ${session} deck`).toBeGreaterThanOrEqual(959);
+      expect(width).toBeLessThanOrEqual(960);
 
       // The printed number is the text in the bottom-right corner: "20" in
       // Session 1, "02/36" in Session 4. The PDF y axis starts at the bottom.
@@ -26,8 +28,12 @@ describe('decks', () => {
         const corner = items.find(
           (item) => 'str' in item && item.transform[4] > 850 && item.transform[5] < 50 && /^\d+(\/\d+)?$/.test(item.str),
         );
-        printed.push(corner && 'str' in corner ? Number(corner.str.split('/')[0]) : undefined);
-        expected.push(printedNumber(Number(session), page));
+        // A deck with a `numbered` range is checked inside that range only.
+        // Outside it, and in a deck with no range, a page may still print
+        // something in that corner, and the citation falls back to the page.
+        const inRange = !numbered || (page >= numbered.from && page <= numbered.to);
+        printed.push(inRange && corner && 'str' in corner ? Number(corner.str.split('/')[0]) : undefined);
+        expected.push(inRange ? printedNumber(Number(session), page) : undefined);
       }
       expect(expected, `the printed numbers of the session ${session} deck`).toEqual(printed);
       await task.destroy();
@@ -54,7 +60,7 @@ describe('slideHref', () => {
   });
 
   it('throws for an unknown deck or a page outside the deck', () => {
-    expect(() => slideHref(6, 1)).toThrow('no deck for session 6');
+    expect(() => slideHref(9, 1)).toThrow('no deck for session 9');
     expect(() => slideHref(1, 49)).toThrow('pages 1 to 48, not 49');
     expect(() => slideHref(1, 0)).toThrow();
     expect(() => slideHref(1, 2.5)).toThrow();

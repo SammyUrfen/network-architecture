@@ -1,0 +1,645 @@
+---
+id: s05-digest
+session: 5
+order: 1
+kind: digest
+title: Class 5 in one fast read
+bigIdea: 'HTTP kept the same words for thirty years. What changed three times is the way a program writes them down: a whole connection for each file, then one text stream with no ids, then frames with a length and a number, and last streams that live in the transport.'
+covers: [S05-C01, S05-C02, S05-C04, S05-C05, S05-C06, S05-C07, S05-C08, S05-C09, S05-C10, S05-C11, S05-C12, S05-C13, S05-C14, S05-C15, S05-C16, S05-C17, S05-C18, S05-C19, S05-C20, S05-C21, S05-C22, S05-C23, S05-C24, S05-C25, S05-C26, S05-C28, S05-C29, S05-C30, S05-C31, S05-C32, S05-C33, S05-C34, S05-C35, S05-C36, S05-C39, S05-C40, S05-C41, S05-C42, S05-C43, S05-C44, S05-C45, S05-C47, S05-C49, S05-C50, S05-C51, S05-C52, S05-C53, S05-C54, S05-C55, S05-C56, S05-C57, S05-C58, S05-C59, S05-C60, S05-C61, S05-C62, S05-C63, S05-C64, S05-C65, S05-C66, S05-C67, S05-C68, S05-C69, S05-C70, S05-C75, S05-C76, S05-C78, S05-C79, S05-C80, S05-C81, S05-C82, S05-C83, S05-C84, S05-C87, S05-C88, S05-C89, S05-C90, S05-C91, S05-C92, S05-C93, S05-C94, S05-C95, S05-C96, S05-C97, S05-C98, S05-C99, S05-C100, S05-C101, S05-C103, S05-C104, S05-C105, S05-C106, S05-C107, S05-C108, S05-C109, S05-C110, S05-C111, S05-C112, S05-C113, S05-C114, S05-C115, S05-C116, S05-C117, S05-C118, S05-C119, S05-C120, S05-C121, S05-C122, S05-C123, S05-C124, S05-C125, S05-C126, S05-C127, S05-C128, S05-C129, S05-C130, S05-C131, S05-C133, S05-C134, S05-C136, S05-C137, S05-C138, S05-C140, S05-C142, S05-C143, S05-C144, S05-C145, S05-C146, S05-C147, S05-C148, S05-C149, S05-C150, S05-C151, S05-C153, S05-C154, S05-C155, S05-C156, S05-C158, S05-C159, S05-C160, S05-C161, S05-C163, S05-C164, S05-C165, S05-C166, S05-C168, S05-C169, S05-C170, S05-C172, S05-C173, S05-C174, S05-C175, S05-C176, S05-C177, S05-C178, S05-C179, S05-C180, S05-C181, S05-C182, S05-C183, S05-C184, S05-C185, S05-C186, S05-C187, S05-C188, S05-C189, S05-C190, S05-C191, S05-C192, S05-C193, S05-C194, S05-C195, S05-C196, S05-C197, S05-C198, S05-C199, S05-C200, S05-C201, S05-C202, S05-C203, S05-C204, S05-C205, S05-C206, S05-C207, S05-C208, S05-C209, S05-C210, S05-C211, S05-C212, S05-C213, S05-C214, S05-C215, S05-C216, S05-C217, S05-C218, S05-C219, S05-C220, S05-C221, S05-C222, S05-C223, S05-C224, S05-C225, S05-C226, S05-C227, S05-C228, S05-C229, S05-C230, S05-C232, S05-C234, S05-C235, S05-C236, S05-C237, S05-C239, S05-C240]
+threads: [T-fix-causes-next, T-framing, T-name-in-message, T-round-trip-tax, T-deployed-reality, T-honest-benchmarks]
+confidence: high
+status: ready
+---
+
+import ByteView from '../../../components/diagram/ByteView.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import Myth from '../../../components/lesson/Myth.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import Picture from '../../../components/lesson/Picture.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+GET means the same thing in 1996 and in 2026. So do 404, ETag, Range and Host. Three times in thirty years, somebody kept all of those words and threw away the way that a program writes them on the wire. This page is the fast read of that story: about 18 minutes, plus 8 minutes of questions.
+
+Every step still bills you: a slow page on a fast link, a stale file from a cache, a request that crosses a CDN which never saw it, and a 40 millisecond pause that looks like a fault.
+
+**The path through this digest.** Part 1 pays a whole connection for one file, and then fixes that with two header fields. Part 2 adds the fields that still run a cache and a video player. Part 3 watches the specification bend to deployed clients, until one kind sentence becomes a security bug. Part 4 reads the bill of that first fix. Part 5 puts a length and a number on every message. Part 6 moves the streams into the transport.
+
+<Segment title="One file, one phone call">
+
+**In this part.** HTTP/1.0 dialled again for every file, and it could not name the website. Two header fields fixed both, and one of them creates the problem of Part 4.
+
+<Stepper
+  slot="visual"
+  title="Six files, before and after the connection stayed open"
+  steps={[
+    {
+      caption: 'HTTP/1.0, after file 1: dial, ask, answer, hang up',
+      lanes: [
+        { label: 'Version', chunks: ['HTTP/1.0'] },
+        { label: 'Handshakes so far', chunks: ['1'] },
+        { label: 'Round trips spent', chunks: ['2'] },
+        { label: 'The socket after the answer', chunks: ['closed by the server'] },
+      ],
+    },
+    {
+      caption: 'HTTP/1.0, after file 2: a second dial, for a second question',
+      lanes: [
+        { label: 'Version', chunks: ['HTTP/1.0'] },
+        { label: 'Handshakes so far', chunks: ['2'] },
+        { label: 'Round trips spent', chunks: ['4'] },
+        { label: 'The socket after the answer', chunks: ['closed by the server'] },
+      ],
+    },
+    {
+      caption: 'HTTP/1.0, after file 6: half of the cost was dialing',
+      lanes: [
+        { label: 'Version', chunks: ['HTTP/1.0'] },
+        { label: 'Handshakes so far', chunks: ['6'] },
+        { label: 'Round trips spent', chunks: ['12'] },
+        { label: 'The socket after the answer', chunks: ['closed by the server'] },
+      ],
+    },
+    {
+      caption: 'HTTP/1.1, after file 6: one dial, six questions',
+      lanes: [
+        { label: 'Version', chunks: ['HTTP/1.1'] },
+        { label: 'Handshakes so far', chunks: ['1'] },
+        { label: 'Round trips spent', chunks: ['7'] },
+        { label: 'The socket after the answer', chunks: ['still open'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a phone call has no rule that forces a hang-up, and HTTP/1.0 chose that rule. A new call also starts slowly on purpose, because each new connection has to learn the speed of the line again, and a phone call does not.">
+
+You phone a shop. You may ask one question. The clerk answers and then hangs up, so the next question means another dial, and the dialing takes as long as the question. The shop number reaches one building, and nobody inside asks which company you wanted.
+
+Each call is one TCP connection, and the dialing is the handshake. The building with no front desk is one IP address that serves one website, because the request names a path and never a site.
+
+</Picture>
+
+<KeyIdea id="a-connection-per-file" title="HTTP/1.0 paid two round trips for every file">
+
+An HTTP/1.0 client opens a TCP connection, asks one question, reads the answer, and the server closes the line. A page of N files therefore costs 2 times N round trips. More bandwidth buys back none of them.
+
+</KeyIdea>
+
+RFC 1945 wrote HTTP/1.0 down in May 1996, and the whole protocol fits on one slide. A request is a request line, some header lines, and an empty line that ends the block. `talk.py` sends that in 18 bytes, and the server closes the line after the answer, as <SlideLink session={5} page={6} /> shows.
+
+RFC 2068 closed both holes in one document. It flipped the default to a persistent connection, and it made Host a required field. The same move repeats at every layer above: SNI inside the TLS handshake, then `:authority` in HTTP/2, then routing keys.
+
+<Myth myth="HTTP/1.0 suffers head-of-line blocking.">
+
+Head-of-line blocking needs a queue. An HTTP/1.0 client sends one request, waits for the answer, and then dials again, so it pays a serialisation cost and never a queue stall. The real queue arrives in HTTP/1.1, as a side effect of the keep-alive fix.
+
+</Myth>
+
+<Remember>
+
+- HTTP/1.0 is RFC 1945, May 1996. Three methods, 16 status codes, 16 header fields.
+- PUT, DELETE, LINK and UNLINK are extras, in Appendix D of that RFC.
+- The client opens one connection per request. The server closes it after the answer.
+- A second request on that socket reads empty bytes. That is normal, and not an error.
+- Each new connection also restarts its congestion window.
+- HTTP/1.0 has no Host header, so one IP address served one website until January 1997.
+- Under HTTP/1.0, `Connection: keep-alive` was a non-standard extension that some servers ignored.
+- RFC 2068, January 1997, made the persistent connection the default. `Connection: close` opts out.
+- An HTTP/1.1 request with no Host gets 400 Bad Request.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s05-m01-http10" /> and <ModuleLink id="s05-m02-keepalive-host" />.
+
+<Check id="s05-digest-q01" />
+
+<Check id="s05-digest-q02" />
+
+</Segment>
+
+<Segment title="A fingerprint, a slice, and a body with no length">
+
+**In this part.** HTTP/1.1 added the fields that still run every cache and every video player. Each one answers a question that HTTP/1.0 answered with a clock, or did not answer at all.
+
+<Stepper
+  slot="visual"
+  title="Four questions, and the field that answers each one"
+  steps={[
+    {
+      caption: 'Did these bytes change? A clock guesses. A hash knows.',
+      lanes: [
+        { label: 'The question', chunks: ['Did these bytes change?'] },
+        { label: 'The HTTP/1.0 answer', chunks: ['Last-Modified, a clock'] },
+        { label: 'The HTTP/1.1 answer', chunks: ['ETag, a hash of the body'] },
+        { label: 'What it buys', chunks: ['304, headers only, 256 bytes'] },
+      ],
+    },
+    {
+      caption: 'What else does the answer depend on? Name it, or the cache guesses.',
+      lanes: [
+        { label: 'The question', chunks: ['What else does it depend on?'] },
+        { label: 'The HTTP/1.0 answer', chunks: ['nothing'] },
+        { label: 'The HTTP/1.1 answer', chunks: ['Vary names the fields'] },
+        { label: 'What it buys', chunks: ['one URL, many cache keys'] },
+      ],
+    },
+    {
+      caption: 'May I have part of the file? Both ends of the range count.',
+      lanes: [
+        { label: 'The question', chunks: ['May I have part of it?'] },
+        { label: 'The HTTP/1.0 answer', chunks: ['nothing'] },
+        { label: 'The HTTP/1.1 answer', chunks: ['Range: bytes=100-199'] },
+        { label: 'What it buys', chunks: ['206, and 100 bytes'] },
+      ],
+    },
+    {
+      caption: 'How long is a body I am still making? Say each piece first.',
+      lanes: [
+        { label: 'The question', chunks: ['How long is a body in progress?'] },
+        { label: 'The HTTP/1.0 answer', chunks: ['close the connection'] },
+        { label: 'The HTTP/1.1 answer', chunks: ['Transfer-Encoding: chunked'] },
+        { label: 'What it buys', chunks: ['a size before each piece'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="your friend can mishear a code and still copy the page. A cache compares the code byte for byte, and a code that starts with W/ promises only an equivalent page, not the same words.">
+
+You lend a notebook to a friend. Each time he wants to copy a page, he asks first whether that page changed. You used to answer with the time that you last wrote in it, and a clock cannot prove that the words are the same. So now you read out a short code that you work out from the words themselves.
+
+The page is a file on the server, and the time is Last-Modified. The short code is the ETag. A request for letters 100 to 199 of one page is a Range request.
+
+</Picture>
+
+<KeyIdea id="a-validator-names-the-bytes" title="A validator names the bytes, a clock only guesses">
+
+An ETag is a fingerprint of the body, and server11 uses the first 16 hex digits of a SHA-256. A request with `If-None-Match` and the current ETag gets 304 and no body at all, so a 202,000-byte answer shrinks to 256 bytes of headers.
+
+</KeyIdea>
+
+HTTP/1.0 already asked about freshness, with Last-Modified, If-Modified-Since and Expires. HTTP/1.1 kept that shape and replaced the clock with a fingerprint.
+
+The other three questions had no HTTP/1.0 answer at all. Vary tells a cache that one URL has several answers, and which fields pick between them. Range buys video scrubbing, a resumable download, and a ZIP or Parquet read that starts at the footer. Chunked coding nests both framing rules of Class 1 at once.
+
+Two smaller fields came with them. OPTIONS joined the method list, so every CORS preflight today is an OPTIONS request, and Cache-Control replaced one timestamp with a vocabulary.
+
+<Myth myth="no-cache means do not store the answer.">
+
+no-cache means revalidate before use. A cache may keep the copy, and it has to ask the server first. no-store is the stronger one: do not write it down at all. The two words sit next to each other in the same header and mean different things.
+
+</Myth>
+
+<Remember>
+
+- A timestamp fails three ways: no sub-second field, clock drift, and mtime is not identity.
+- `If-None-Match` with the current ETag gives 304 and no body. The 304 measured 256 bytes.
+- W/ marks a weak validator: equivalent, not identical. A Range request needs a strong one.
+- `If-Match` is the same idea for a write. That is optimistic concurrency.
+- Vary is a cache-key instruction. `Accept-Encoding` is right, `User-Agent` explodes, `*` turns caching off.
+- Content-Encoding covers the body only. gzip took big.txt from 202,000 bytes to 5,763.
+- `bytes=100-199` gives 206 and a Content-Length of 100. Both ends count.
+- `bytes=-50` asks for the last 50 bytes with no size. A range past the end gives 416.
+- Chunked: `Transfer-Encoding: chunked` and no Content-Length. A size line before each piece, hex.
+- A 0 line ends a chunked body. The style.css body opened with 37, which is 55 bytes.
+- Cache-Control gives a vocabulary: max-age, s-maxage, no-cache, no-store.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s05-m03-validators-vary" /> and <ModuleLink id="s05-m04-range-chunked-extras" />.
+
+<Check id="s05-digest-q03" />
+
+<Check id="s05-digest-q04" />
+
+</Segment>
+
+<Segment title="The spec bent, and then a parser lost">
+
+**In this part.** The HTTP specification changed four times, and almost every change wrote down what clients already did. One of those kind sentences turned into a security bug with a name.
+
+<SequenceDiagram
+  slot="visual"
+  title="Two readers, one body, and a request that nobody sent"
+  actors={['client', 'CDN', 'origin']}
+  messages={[
+    { from: 'client', to: 'CDN', label: 'one POST, two length fields' },
+    { from: 'CDN', to: 'CDN', label: 'trusts Content-Length' },
+    { from: 'CDN', to: 'origin', label: 'forwards it as one request' },
+    { from: 'origin', to: 'origin', label: 'trusts Transfer-Encoding' },
+    { from: 'origin', to: 'origin', label: 'reads a second request in the body' },
+    { from: 'origin', to: 'CDN', label: '200, and then a spare answer' },
+    { from: 'CDN', to: 'client', label: 'the spare waits for the next user' },
+  ]}
+/>
+
+<Picture breaks="a helper can go back and ask the teacher what the note meant. Two boxes in a proxy chain never compare their readings, so neither one finds out that it read a different message.">
+
+A teacher sends one note to two helpers. The note says at the top how long it is. The first helper counts out exactly that many letters. The second ignores that number, because the note also writes a length in front of each line. Both helpers believe the note, and they stop in different places. So the letters after the first stop are rubbish to one helper, and a whole new order to the other.
+
+The note is one stream of bytes. The number at the top is Content-Length, and the length on each line is chunked coding. The first helper is a CDN, and the second your own server.
+
+</Picture>
+
+<KeyIdea id="two-opinions-on-one-length" title="Two opinions on one length is a security bug">
+
+RFC 2616 section 4.4 told a parser to ignore Content-Length when a message also carries Transfer-Encoding. Recover, do not reject. That is fine for two programs, and catastrophic for a chain of five. One box reads one request, and the next box reads two.
+
+</KeyIdea>
+
+RFC 2616 arrived in June 1999, and it mostly tightened RFC 2068. Its one famous addition, 307, exists because browsers had already broken the meaning of 302.
+
+The framing sentence took longer to go wrong. One POST carries a Content-Length of 6 and a chunked encoding at once, and its body holds a 0 chunk and then a GET for /admin. The two readers disagree about where that request ends. `framing.py` against server11 gets two answers back: a 200, and then a 404 for the request that nobody sent.
+
+The specification also split twice. June 2014 cut one document into six, each for a different reader. The 2022 set then gave all three versions one semantics document and one caching document, so GET and 404 mean one thing in HTTP/1.1, HTTP/2 and HTTP/3.
+
+One rule from the syntax document earns a place in your head. A header name is a token, and that narrow alphabet is why a JWT looks the way that it does.
+
+<Myth myth="504 Gateway Timeout arrived with RFC 2616 in 1999.">
+
+RFC 2068 section 10.5.5 already has 504, together with the whole 5xx family. The slide lists it as a 1999 addition, and that part of the slide is wrong. What RFC 2616 really added is 307, 416 and 417 with Expect, plus the identity coding, TE and charset wildcards.
+
+</Myth>
+
+<Myth myth="RFC 7230 invented the rule about which characters a header name may use.">
+
+RFC 2616 section 2.2, from 1999, already excluded the separator characters, braces included. The 2014 document only wrote the list out more plainly in section 3.2.6. The rule is 15 years older than the document that most people quote for it.
+
+</Myth>
+
+<Remember>
+
+- RFC 2068 meant 302 to keep the method. Browsers made a redirected POST into a GET.
+- So 2616 renamed 302 to Found, wrote the habit down, and added 307 for the old meaning.
+- It is easier to add a number than to fix a billion deployed clients.
+- RFC 9112: a server MAY reject it or use Transfer-Encoding alone, and it MUST then close.
+- "Be liberal in what you accept" fits two programs, and breaks a chain of five.
+- A CDN that trusts Content-Length in front of an origin that trusts chunked lets it through.
+- The desync also leaves a spare answer on the connection, for whoever comes next.
+- HTTP/2 makes smuggling unrepresentable: one length, fixed place, fixed size, no second opinion.
+- RFC 7230 to 7235, June 2014: one document became six, each for a different reader.
+- RFC 9110 holds the semantics and 9111 the caching, for all three versions.
+- A header name is a token. Braces, comma, slash, colon, equals and quotes are not tokens.
+- A JWT crosses five channels, so it needs the alphabet that all five share, about 64 wide.
+- So base64url swaps + and / for - and _. Base64 in MIME exists for the same reason.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s05-m05-rfcs-and-smuggling" />.
+
+<Check id="s05-digest-q05" />
+
+<Check id="s05-digest-q06" />
+
+</Segment>
+
+<Segment title="The bill for keeping the line open">
+
+**In this part.** Keep-alive deleted the handshake bill of Part 1 and handed you four new costs. Read this part as the reason that HTTP/2 exists at all.
+
+<Stepper
+  slot="visual"
+  title="Six files on one pipelined connection, with one slow answer first"
+  steps={[
+    {
+      caption: 'The client sends all six requests back to back, and waits',
+      lanes: [
+        { label: 'On the wire', chunks: ['six requests, back to back'] },
+        { label: 'The server', chunks: ['starts on big.txt, a 2 s job'] },
+        { label: 'Answers sent', chunks: ['none'] },
+        { label: 'The client waits for', chunks: ['answer 1'] },
+      ],
+    },
+    {
+      caption: 'The five small files are ready at 3 ms. Nothing may go out.',
+      lanes: [
+        { label: 'On the wire', chunks: ['nothing'] },
+        { label: 'The server', chunks: ['the five small files are ready'] },
+        { label: 'Answers sent', chunks: ['none: the order is fixed'] },
+        { label: 'The client waits for', chunks: ['answer 1'] },
+      ],
+    },
+    {
+      caption: 'No answer carries a request number, so no answer may pass',
+      lanes: [
+        { label: 'On the wire', chunks: ['nothing'] },
+        { label: 'The server', chunks: ['still on big.txt'] },
+        { label: 'Answers sent', chunks: ['none: the order is fixed'] },
+        { label: 'The client waits for', chunks: ['answer 1'] },
+      ],
+    },
+    {
+      caption: 'At 2 s the queue drains. The five fast files cost 2,004 ms.',
+      lanes: [
+        { label: 'On the wire', chunks: ['answer 1, then 2 to 6'] },
+        { label: 'The server', chunks: ['done with big.txt at 2 s'] },
+        { label: 'Answers sent', chunks: ['all six'] },
+        { label: 'The client waits for', chunks: ['nothing'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a real clerk can call a second clerk to the counter. One connection cannot, so browsers opened six of them instead and the specification gave up on stopping that.">
+
+You stand in one queue at a counter, and five people wait behind you. You ask for a parcel from a far room, so the clerk walks away for two minutes. Nobody behind you can be served, although each of them only wants a stamp. Nothing on a parcel says whose it is, so the clerk hands them out in the order of the queue.
+
+The counter is one TCP connection, and each person is a request. The missing name on the parcel is the missing request number, and that is the whole problem.
+
+</Picture>
+
+<KeyIdea id="order-is-the-only-id" title="With no request number, the order is the number">
+
+Nothing in an HTTP/1.1 answer says which request it belongs to. So the order of the answers has to match the order of the requests, and the slowest answer sets the pace for every answer behind it.
+
+</KeyIdea>
+
+Pipelining is the row of the table that nobody shipped. `hol.py` shows why: behind one answer that takes 2 seconds, every fast file waits for it. The missing piece is identity, and every other multiplexing system in this course already has it. The specification reacted with a limit on connections, and the market ignored it.
+
+The second cost goes upward. Almost every byte of a header block repeats on the next request, and upload is the direction with the least capacity.
+
+The third cost is a 40 millisecond pause that looks like a network fault. Nagle holds a small second write until the first one is acknowledged, and the delayed ACK holds that acknowledgement back. Write the head, then write the body on a connection that stays open, and the two rules meet.
+
+So the bill for HTTP/1.1 reads: head-of-line blocking, header bloat, too many connections, and ambiguous framing. Part 5 pays it off.
+
+<Remember>
+
+- Pipelined, five fast files behind a 2 s answer: 2003.6 to 2004.4 ms. One connection each: 3.2 to 7.2 ms.
+- Multiplexing needs identity: TCP ports, TCAP transaction ids, FastCGI requestId, HTTP/2 stream ids.
+- RFC 2616 section 8.1.4: no more than 2 connections per server. Browsers shipped 6, sharding made 18.
+- RFC 7230 deleted that sentence in 2014, so the specification conceded.
+- One realistic request: 805 bytes of headers. 80 requests: 64,320 bytes.
+- The paths are 2.5% of that. The other 97.5% repeats byte for byte, and costs 0.51 s on 1 Mbit.
+- Nagle (RFC 896): no small segment while an earlier one is unacknowledged.
+- Delayed ACK (RFC 1122): wait, up to 40 ms, to piggyback the acknowledgement.
+- Two writes plus a kept connection equal about 40 ms per request. One write plus TCP_NODELAY fixes it.
+- `close()` pushes the data out, so the stall hides on a connection that closes.
+- nginx and Apache coalesce their writes and set TCP_NODELAY. The instructor hit this in his own draft.
+- Text framing is why HTTP won: anybody could write it and debug it with telnet.
+- Text was not the problem. Text with no lengths and no ids was.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s05-m06-what-it-cost" />.
+
+<Check id="s05-digest-q07" />
+
+<Check id="s05-digest-q08" />
+
+</Segment>
+
+<Segment title="A length and a number on every frame">
+
+**In this part.** HTTP/2 keeps every word of HTTP and writes it a second way. Four costs of Part 4 go away, and the fifth moves down into TCP.
+
+<ByteView
+  slot="visual"
+  caption="The 9 bytes that open every HTTP/2 frame, and the whole of GET in one byte"
+  messages={[
+    {
+      name: 'A DATA frame with 263 bytes of payload, on stream 1',
+      fields: [
+        { hex: '00 01 07', label: 'Length, 24 bits: 263 payload bytes', kind: 'length' },
+        { hex: '00', label: 'Type, 8 bits: 0x00 is DATA' },
+        { hex: '00', label: 'Flags, 8 bits: none set' },
+        { hex: '00 00 00 01', label: 'one reserved bit, then Stream Identifier, 31 bits: stream 1' },
+      ],
+    },
+    {
+      name: 'The last frame of the answer: an empty DATA that closes the stream',
+      fields: [
+        { hex: '00 00 00', label: 'Length: 0 payload bytes', kind: 'length' },
+        { hex: '00', label: 'Type: DATA' },
+        { hex: '01', label: 'Flags: END_STREAM' },
+        { hex: '00 00 00 01', label: 'stream 1, and stream 1 is now finished' },
+      ],
+    },
+    {
+      name: 'Inside a HEADERS frame: the method of the request',
+      fields: [{ hex: '82', label: 'HPACK static table index 2, which is :method GET' }],
+    },
+  ]}
+/>
+
+<Picture breaks="the cards still travel on one belt. If the belt jams, every job waits for the jam to clear, and Part 6 is the part that replaces the belt.">
+
+Two workers used to shout orders across a room, one at a time, and each answer came back in the order of the shouting. Now they write every order on a card. Each card starts with the same three facts: how long it is, what kind it is, and which job it belongs to. So one worker can lay down cards for job 3 and job 7 in any mix.
+
+A card is one frame, and its first three facts are the 9-byte frame header. The job number is the stream identifier, and a long name gets a number from the HPACK table.
+
+</Picture>
+
+<KeyIdea id="a-length-and-a-number" title="A length and a number on every frame">
+
+Every HTTP/2 frame opens with 9 bytes: a 24-bit Length, an 8-bit Type, 8 Flags bits, one reserved bit and a 31-bit Stream Identifier. The length makes framing unambiguous, and the stream identifier makes the order optional.
+
+</KeyIdea>
+
+SPDY came first, and it shipped widely before any RFC named it. Google ended it in 2015, once HTTP/2 carried more of Chrome than SPDY did.
+
+A connection opens with a preface that an HTTP/1.1 server refuses cleanly. After it, every byte on the connection is a frame, and ten frame types replace the whole text format.
+
+HPACK removes the 97.5% repeat of Part 4. The static table is the same everywhere, so `:method GET` costs one byte. The dynamic table holds what this connection sent before, so a long cookie costs its full length once and almost nothing after that.
+
+Why not just gzip the headers? CRIME, from 2012, is the answer. The same trap waits in your own code: compress one JSON answer that holds a search term and an API key together, and you rebuild the attack.
+
+Multiplexing works, with one condition. The first lab server framed every stream correctly and still finished all six at about 2 seconds, because it worked inside its read loop. A protocol can only give permission.
+
+Then the floor gave way. Under HTTP/2, one lost or reordered TCP packet stalls every active stream on that connection. Which streams get caught changes on every run, so the blast radius is whoever had bytes behind the gap.
+
+<Myth myth="An RFC deprecated server push, so it is gone from the standard.">
+
+Server push stays in RFC 9113 section 8.4 and in RFC 9114 section 4.6. No RFC deprecated it. The browsers removed it, and Chrome 106 dropped it on 27 September 2022, when 1.25% of sites used it. Only the client knows what its cache holds, so push spends the window on files that the client has. A 103 Early Hints answer replaces it: the server informs, and the client decides.
+
+</Myth>
+
+<Remember>
+
+- SPDY: Belshe and Peon, November 2009. Up to 55% faster in a lab, and Google owned both ends.
+- Chrome, Firefox, nginx, Twitter and Facebook all shipped it, from 2010 to 2014.
+- February 2015 ended SPDY: HTTP/2 over 25% of Chrome resources, SPDY under 5%.
+- RFC 7540 and 7541 in May 2015. RFC 9113 replaced 7540 in June 2022.
+- The name is HTTP/2, not HTTP/2.0, because "1.1" caused ten years of argument. No HTTP/2.1 exists.
+- The preface is exactly 24 bytes, with the method PRI. An HTTP/1.1 server answers 501 and stops.
+- ALPN picks h2 inside the ClientHello, at no extra round trip.
+- The Length of a frame counts the payload only, never the 9 header bytes.
+- Ten frame types, 0x00 to 0x09. DATA replaces Content-Length and chunked, HEADERS the request line.
+- RST_STREAM cancels one stream. GOAWAY names the last stream to process, so a connection drains.
+- SETTINGS announces limits both ways, PING measures the round trip, WINDOW_UPDATE gives flow control.
+- The static table holds 61 entries, and the dynamic one starts at 62, per connection. So no sharding.
+- A fixed Huffman code shortens the rest, and only when the result comes out shorter.
+- Not gzip, because CRIME: an attacker reads only the size and guesses a secret per character.
+- HPACK never adapts its Huffman code and matches whole fields, so a prefix guess wins nothing.
+- A protocol gives permission, not parallelism. One thread per stream, plus a connection lock.
+- The same shape: a pool on one database connection, a blocking call in a coroutine, a global mutex.
+- The later bytes had arrived. In-order delivery is what stops the kernel handing them over.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s05-m07-http2-frames" />, <ModuleLink id="s05-m08-hpack-crime" /> and <ModuleLink id="s05-m09-http2-multiplexing" />.
+
+<Check id="s05-digest-q09" />
+
+<Check id="s05-digest-q10" />
+
+</Segment>
+
+<Segment title="Move the streams into the transport">
+
+**In this part.** The last stall of Part 5 is not in HTTP but in TCP. So QUIC rebuilds the transport on UDP, and gives every stream an order of its own.
+
+<Stepper
+  slot="visual"
+  title="Round trips before the first byte of the response"
+  steps={[
+    {
+      caption: 'TCP, then TLS 1.2, then HTTP/2: two handshakes, four round trips',
+      lanes: [
+        { label: 'Stack', chunks: ['TCP + TLS 1.2 + HTTP/2'] },
+        { label: 'Handshakes', chunks: ['two: transport, then crypto'] },
+        { label: 'Round trips to the answer', chunks: ['4'] },
+        { label: 'May the client send early?', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'TLS 1.3 saves one. The two handshakes are still two.',
+      lanes: [
+        { label: 'Stack', chunks: ['TCP + TLS 1.3 + HTTP/2'] },
+        { label: 'Handshakes', chunks: ['two: transport, then crypto'] },
+        { label: 'Round trips to the answer', chunks: ['3'] },
+        { label: 'May the client send early?', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'QUIC merges them: the ClientHello rides in a CRYPTO frame',
+      lanes: [
+        { label: 'Stack', chunks: ['QUIC + HTTP/3, cold'] },
+        { label: 'Handshakes', chunks: ['one: crypto inside the transport'] },
+        { label: 'Round trips to the answer', chunks: ['2'] },
+        { label: 'May the client send early?', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: '0-RTT spends a stored ticket, and buys a replay risk',
+      lanes: [
+        { label: 'Stack', chunks: ['QUIC + HTTP/3, 0-RTT'] },
+        { label: 'Handshakes', chunks: ['one, from a stored ticket'] },
+        { label: 'Round trips to the answer', chunks: ['1'] },
+        { label: 'May the client send early?', chunks: ['yes, and a replay is possible'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a driver can see the road. QUIC hides almost all of its header from the boxes along the road on purpose, because anything that a box can read is a thing that can never change again.">
+
+A delivery company used to send every parcel for a street on one van, in one line. If one parcel fell off the back, the driver stopped the van until somebody found it, because the street had to get its parcels in order. The new company gives each house its own line, so a lost parcel holds up one house. Each parcel also carries a code for the customer instead of a house number, so a customer who moves still gets it.
+
+The van is one TCP connection, and a parcel is a packet. A house is one stream, and the rule about order is the in-order delivery that TCP promises. The customer code is the connection ID.
+
+</Picture>
+
+<KeyIdea id="identity-belongs-to-its-own-layer" title="Identity belongs to the layer that owns the meaning">
+
+TCP made an address and a connection the same thing, so a change of IP address kills the connection. QUIC names a connection with a connection ID, so a phone can move from Wi-Fi to LTE and keep it. An order guarantee belongs to the thing that it protects.
+
+</KeyIdea>
+
+Start with the question that the class asks first. Why UDP? The protocol number field has room, and the network does not. Every middlebox on the path drops a transport that it does not know.
+
+One handshake then replaces two, because the TLS ClientHello rides inside a QUIC CRYPTO frame. Every layer boundary is a place where you may pay a round trip.
+
+0-RTT removes one more round trip and sells you a risk. The client puts its request in the first flight, and an attacker can replay that flight. So 0-RTT is a cache of a negotiation, and a cache like that trades a round trip for a possible replay.
+
+Now the stall. Each QUIC STREAM frame carries a stream id and an offset, so order holds inside one stream and not between streams. Only the blast radius compares: every stream under HTTP/2, against one under HTTP/3.
+
+A connection also stops being an address. Walk out of a cafe and move from Wi-Fi to LTE, and every TCP connection dies. A NAT rebinding after an idle period does the same thing.
+
+The last piece is the price of out-of-order delivery. HPACK assumed one total order across all streams, so a header block could wait for a table insert that has not arrived, and HTTP/3 needed QPACK instead. Relax an order guarantee, and then go and find everything that was using it.
+
+<Remember>
+
+- Protocol numbers: TCP 6, UDP 17, SCTP 132. SCTP exists since 2000 and still cannot cross.
+- UDP is not a good foundation. It is a hole that already exists.
+- A middlebox depends on what it can read, and that part can then never change. See TCP options.
+- QUIC encrypts the packet numbers and most of the header, to stay changeable.
+- QUIC runs in user space. A TCP change needs a kernel upgrade, a QUIC change ships with the app.
+- Cold round trips to the answer: 4 with TLS 1.2, 3 with TLS 1.3, 2 for QUIC, 1 for 0-RTT.
+- TLS is not optional. There is no unencrypted QUIC.
+- RFC 9001 section 9.2: an attacker can replay early data, so a protocol MUST say how it stops one.
+- So 0-RTT carries idempotent requests only. GET yes, a payment POST no. 425 Too Early refuses.
+- With 18 datagrams deleted, only big.txt waited, at 78.2 ms. Compare blast radius, not 307 to 78.
+- A connection ID names the connection, so a new address with a validated path carries on (RFC 9000 5.1).
+- QPACK uses an encoder stream (0x02) and a decoder stream (0x03), and only safe entries.
+- Shared mutable state and out-of-order delivery do not mix.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s05-m10-quic-handshakes" /> and <ModuleLink id="s05-m11-quic-streams-fallback" />.
+
+<Check id="s05-digest-q11" />
+
+<Check id="s05-digest-q12" />
+
+</Segment>
+
+## How a client finds HTTP/3, and who still speaks HTTP/1.1
+
+A client cannot ask for HTTP/3 on a connection that it does not have yet. Three mechanisms answer that, and each one costs something different. ALPN answers inside the TLS handshake, Alt-Svc in a header that the browser remembers, and the HTTPS DNS record in the DNS answer itself. Only the last one makes the very first connection QUIC. Then the network votes, because a few percent of networks block every UDP packet. A client that loses its datagrams falls back to TCP, and any protocol with a fallback has a downgrade attack. There is no cutover either, only a long tail of HTTP/1.1. So read every adoption number with its unit.
+
+## Four ideas to carry out of this class
+
+Multiplexing needs identity. If a client must wait before the next message, look for a missing number. Every fix is the next problem. There is no final version, only a sequence of trades. Semantics and encoding differ: GET has not changed since 1996, and the wire format changed three times. And deployed reality beats a specification. That is why 307, six connections per origin, request smuggling, 418, server push and QUIC on UDP all exist. The closing slide puts it in six words: the protocol did not drift, it was pushed.
+
+## The two graded tasks that this class announced
+
+<SlideLink session={5} page={3} /> and <SlideLink session={5} page={4} /> name the graded work. This page names the tasks and nothing more: no code, no skeleton, no spec.
+
+The assignment is a calculator server, due before Session 7, in any language, on a plain socket and with no framework. The marker sends all six requests on one socket and then checks that the socket is still open. The hard part is Part 1 and Part 4 of this read together: find where one request ends, and treat byte n plus 1 as the start of the next one. <ModuleLink id="s05-m12-assignment-prep" /> holds the four operations, the four error cases, the stretch goals, and the rule that you fail once before you read `server11.py`.
+
+The project is "HTTP, in binary", in pairs: one person writes the server, bserve, and one writes the client, bcurl. bserve reads one binary request frame, maps the path to a file under a root, and replies with a status, headers and bytes. It answers 404 for a missing file and 400 for a malformed frame, and it keeps the connection open. bcurl builds the frame, writes the body to stdout, hexdumps every frame under -v, exits non-zero on a 4xx or a 5xx, and never opens a second connection. The core of the work is a fixed-size frame header, and you pick the fields and the widths and then defend them. Number the ten header names that you send and length-prefix the rest, which are the first two HPACK ideas of Part 5. A receiver MUST skip an unknown frame type cleanly, which leaves room for a version 2. Hand in a two-page spec, the program, and an annotated hexdump of one request and one response, because a spec whose own bytes you cannot annotate is not finished. Only the spec crosses between the pair, because a client that works only with its own server is not a protocol. The studio page is <ModuleLink id="s05-m13-project-studio" />.
+
+<NumbersTable
+  caption="The numbers of class 5, with the conditions that each one needs"
+  rows={[
+    { what: 'a 24-object page over HTTP/1.0, one connection at a time', value: '9.6 s', conditions: '200 ms RTT, 48 round trips. The slide model, with no parallel connections and no slow start.' },
+    { what: 'the status codes that the calculator assignment asks for', value: '200, 400, 404, 405', conditions: 'slide 3. add, sub, mul and div answer 200 with the result. A division by zero, a value that is not a number, and a missing Host answer 400. An unknown operation answers 404, and a POST to /add answers 405.' },
+    { what: 'the first HTTP/1.0 answer, from request to FIN', value: '263 body bytes, FIN at 2.9 ms', conditions: 'talk.py against server10 over loopback, the instructor run' },
+    { what: 'six assets: close, keep-alive, 2 connections, 6 connections, pipelined', value: '1369.2 / 985.4 / 607.0 / 608.2 / 303.7 ms', conditions: 'laggy.py --rtt 150 on loopback, port 9111, the instructor machine. The proxy charges half an RTT per new connection in a serial accept loop, which is why 6 connections did not beat 2.' },
+    { what: 'round trips and TCP connections for those same five rows', value: '12 / 7 / 4 / 2 / 2 and 6 / 1 / 2 / 6 / 1', conditions: 'counted by the fetch_page.py model, not captured from the wire' },
+    { what: 'a 304 answer, headers only', value: '256 bytes', conditions: 'talk.py against server11 over loopback. The request bytes are extra.' },
+    { what: 'big.txt after compression', value: '202,000 bytes becomes 5,763', conditions: 'gzip, the instructor run. deflate gave 5,751 bytes.' },
+    { what: 'five small files behind a 2 s answer, on one pipelined connection', value: '2003.6 to 2004.4 ms', conditions: 'hol.py --port 8011 --slow 2, direct loopback, no added RTT' },
+    { what: 'the same five files, on one connection each', value: '3.2 to 7.2 ms', conditions: 'the same run and the same conditions. big.txt arrived at 2006.0 ms.' },
+    { what: 'the headers of one realistic request', value: '805 bytes', conditions: 'headers.py, with cookies, User-Agent, Accept and sec-fetch fields' },
+    { what: 'the share of 80 requests of headers that repeats byte for byte', value: '97.5%', conditions: 'headers.py: 62,720 of 64,320 bytes. Only the paths are new, 1,600 bytes. On a 1 Mbit uplink that is 0.51 s.' },
+    { what: 'five requests with the head and the body in two writes', value: '0.9 ms, then 41.5 to 44.0 ms, 174.3 ms in total', conditions: 'nagle.py on loopback, on a connection that stays open, the instructor run' },
+    { what: 'the same five requests with one write and TCP_NODELAY', value: '3.2 ms in total', conditions: 'the same loopback run' },
+    { what: 'GET / as text, and the same request as HPACK', value: '67 bytes becomes 15', conditions: 'the slide capture of h2_client.py over loopback' },
+    { what: 'one header set as text, as HPACK the first time, and the second time', value: '174 / 79 / 6 bytes', conditions: 'hpack_mini.py, which passes the RFC 7541 Appendix C vectors and agrees with the pypi hpack package' },
+    { what: 'six requests on one HTTP/2 connection, with a 2 s answer among them', value: '4.9 to 7.8 ms, and 2005.9 ms for the slow one', conditions: 'h2_client.py --port 8020 --multiplex --slow 2, direct loopback, no added RTT' },
+    { what: 'the same six streams on the first lab server, which worked inside its read loop', value: '2005.6 to 2005.9 ms', conditions: 'the same conditions. The framing was already correct, and the server was not parallel.' },
+    { what: 'streams behind one 300 ms TCP hole under HTTP/2', value: '306.3 to 308.9 ms', conditions: 'stall_tcp.py --after 3000 --stall 300 on loopback, run 1, no added RTT. Which streams get caught changes every run.' },
+    { what: 'HTTP/3 with 18 datagrams deleted on the way from the server', value: '4.5 to 11.0 ms, and 78.2 ms for big.txt', conditions: 'lossy_udp.py --loss 0.05 --skip 10, seed 1, loopback. A different fault than the TCP run, so compare the blast radius only.' },
+    { what: 'a cold handshake to the first response byte', value: '3 round trips for TCP plus TLS 1.3 plus HTTP/2, 2 for QUIC, 1 for 0-RTT', conditions: 'the slide model. The lab gave 456.6, 319.8 and 161.7 ms at 150 ms RTT, but the TCP row stops at the first server frame and the QUIC rows stop at the full response, so the times do not compare.' },
+    { what: 'HTTP/2 SETTINGS defaults', value: 'header table 4,096 bytes, window 65,535 bytes, frame 16,384 bytes', conditions: 'RFC 9113. MAX_CONCURRENT_STREAMS has no default, with the advice of no fewer than 100.' },
+    { what: 'networks that block all UDP', value: '3 to 5%', conditions: 'RFC 9308 section 2' },
+    { what: 'Google video clients that could use QUIC', value: '95.3%, and 4.4% blocked', conditions: 'Google measurement of November 2016. For the 4.4%, a network blocked UDP or the packets were too large.' },
+    { what: 'requests that still use HTTP/1.1', value: 'about 15%', conditions: 'Web Almanac 2024, by request. The slide says 2026, and its own source row is the 2024 Almanac.' },
+    { what: 'the same shares counted by homepage', value: '21% h1, 70% h2, 7 to 9% h3', conditions: 'Web Almanac 2024, by homepage. Alt-Svc on 26 to 28% and an HTTPS record on 9 to 10%.' },
+    { what: 'HTTP/2 against HTTP/3 by website', value: '34.6% against 40.3%', conditions: 'W3Techs, 3 September 2026. HTTP/3 above HTTP/2 means the two categories are not the same question.' },
+    { what: 'the lab behind every number on this page', value: '5 servers, 5 clients, 4 proxies, about 2,900 lines', conditions: 'the instructor repo. It runs on one machine and needs no network at all.' },
+  ]}
+/>
+
+<ExitQuiz module="s05-digest" />
+
+<CardsAdded id="s05-digest" />

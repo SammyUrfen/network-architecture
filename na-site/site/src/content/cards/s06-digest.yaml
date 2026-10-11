@@ -1,0 +1,126 @@
+# The review cards of the class 6 digest, from docs/curriculum/session-06.md.
+# 30 cards, in page order: c01 to c06 the physics, c07 to c11 what a CDN is,
+# c12 to c18 the cache and the four tricks, c19 to c22 the cache bugs and the
+# faster bytes, c23 to c26 everything that is not speed, c27 to c30 the Workers,
+# the bill and the lab. Each card asks for one detail with one right answer.
+items:
+  - id: s06-digest-c01
+    front: What is a CDN in one sentence, and what does the class title add to it?
+    back: 'Somebody else''s computers, placed closer to your users. The title adds the second half: everything those computers can do while all your traffic passes through them.'
+    covers: [S06-C01, S06-C168]
+  - id: s06-digest-c02
+    front: What six questions does the class 6 agenda ask about the box in the middle?
+    back: Why the edge exists, what a CDN is, caching, moving bytes faster, everything that is not speed, and Cloudflare by hand.
+    covers: [S06-C11, S06-C05]
+  - id: s06-digest-c03
+    front: How fast does light travel in optical fibre, and how many ms does 1000 km cost one way?
+    back: 204,218 km/s at a group index of 1.468, which is about two thirds of the vacuum speed. That is 4.90 ms for each 1000 km, one way.
+    covers: [S06-C16]
+  - id: s06-digest-c04
+    front: What is the round-trip floor from Mumbai to us-east-1, and what sits on top of it on a new connection?
+    back: 126 ms over 12,847 km. A new TLS 1.3 connection then needs three of those round trips to the first byte, about 380 ms.
+    covers: [S06-C20, S06-C22]
+  - id: s06-digest-c05
+    front: What is a stretch factor, what was it for Chennai, and why does it decide whether a CDN helps?
+    back: The real ping divided by the physics floor. Chennai measured 23 ms against a 10 ms floor, a stretch of 2.3, and the Internet median is near 3.2. A large stretch is the part a CDN can buy back.
+    covers: [S06-C26, S06-C31]
+  - id: s06-digest-c06
+    front: In the Akamai table, how much does throughput fall from under 100 miles to about 6,000 miles, and why is that more than the distance?
+    back: From 44 Mbps to 0.4 Mbps, a factor of 110 over a factor of 60 in distance. Loss rose from 0.6% to 1.4%, and the Mathis ceiling divides by the square root of loss as well as by the round trip.
+    covers: [S06-C26, S06-C31]
+  - id: s06-digest-c07
+    front: Which three earlier classes does the CDN edge borrow its parts from, and what came from Squid in 1996?
+    back: Class 4 for the reverse proxy and `proxy_cache`, class 3 for the `upstream keepalive` pool, class 2 for anycast addressing. Squid already did reverse-proxy caching, so even the combination is old. The product is the geography.
+    covers: [S06-C47, S06-C50, S06-C51]
+  - id: s06-digest-c08
+    front: In the consistent-hashing bench, compare one point for each server against 160 points.
+    back: One point moves only 3.3% of URLs and leaves the busiest server at 2.93 times the mean. 160 points move 8.2% at 1.14 times the mean, against a 9.1% ideal. You pay a little churn for a lot of balance.
+    covers: [S06-C54, S06-C57]
+  - id: s06-digest-c09
+    front: How does nginx spell consistent hashing, and which paper is Akamai founded on?
+    back: '`hash $request_uri consistent`, with 160 points for each unit of server weight, which is ketama-compatible. The paper is Karger, Lehman, Leighton, Levine, Lewin and Panigrahy, STOC 1997.'
+    covers: [S06-C54]
+  - id: s06-digest-c10
+    front: What is a colo, which command prints it, and which header carries it on every response?
+    back: 'The CDN building that answered you, named by an IATA airport code: BOM Mumbai, DEL Delhi, MAA Chennai, SIN Singapore, LHR London, IAD Ashburn. `curl /cdn-cgi/trace` prints it, and the suffix of `cf-ray` carries it.'
+    covers: [S06-C73, S06-C74, S06-C78]
+  - id: s06-digest-c11
+    front: Who chooses which point of presence serves you, and on what basis?
+    back: BGP anycast chooses, by routing policy and path length, not by latency. So you get a nearby point of presence and not reliably the nearest one, and the colo code tells you after the fact.
+    covers: [S06-C75]
+  - id: s06-digest-c12
+    front: What is the default CDN cache key, and name three things it leaves out.
+    back: Scheme plus host plus path plus query, and nothing else. It leaves out cookies, `Authorization` and every `X-Forwarded-*` header, so two users with different cookies share one object.
+    covers: [S06-C85, S06-C86, S06-C88]
+  - id: s06-digest-c13
+    front: What is the default edge TTL when the origin says nothing about freshness?
+    back: 2 hours for a 200 and a 301, 3 minutes for a 404, and other statuses are not cached at all.
+    covers: [S06-C84]
+  - id: s06-digest-c14
+    front: Which status word means the origin was never consulted, and which means the cache was never consulted?
+    back: HIT means the origin was never touched. DYNAMIC means the object was never eligible, so the edge never looked in the cache.
+    covers: [S06-C93, S06-C98]
+  - id: s06-digest-c15
+    front: REVALIDATED against EXPIRED, and UPDATING against STALE. State both differences.
+    back: 'Both of the first pair mean the TTL passed: REVALIDATED means the origin answered 304 and only headers crossed the long leg, EXPIRED means a full body crossed it. Both of the second pair serve a stale body: UPDATING is a planned background refresh, STALE means the origin failed.'
+    covers: [S06-C95, S06-C97, S06-C92]
+  - id: s06-digest-c16
+    front: Name the four tricks that cache a personal page, with their years, and the one move behind all four.
+    back: SSI in 1994 at the web server, ESI in 2001 at the edge, Ajax from about 2005 in the browser, and Railgun from 2013 to 2024 as a delta to the origin. The one move is to push the personalisation outward so the shared part can be cached.
+    covers: [S06-C101, S06-C103, S06-C106, S06-C107]
+  - id: s06-digest-c17
+    front: Give the three ESI numbers from the lab, and say which resource ESI actually saves.
+    back: Origin bytes down 97.9%, bytes to the user up 0.06%, and origin requests up from 100 to 201. It saves origin rendering and origin egress, and it costs request count at both ends.
+    covers: [S06-C104, S06-C114]
+  - id: s06-digest-c18
+    front: How small does a 24 KB page compress against a one-minute-old copy of itself, and what happens with an hour-old copy?
+    back: 436 bytes with zstd and a dictionary, about 1.8% of raw, against 4,276 bytes for plain gzip. An hour-old dictionary needs 1,277 bytes, because the content drifted. The dictionary must be recent and identical at both ends.
+    covers: [S06-C126]
+  - id: s06-digest-c19
+    front: How many requests does a cache-poisoning attack need, what sets its cost, and name the three closes.
+    back: One request. The TTL sets the cost, so a 60-second window needs one request each minute. Drop the unkeyed header at the edge, add it to the cache key, or have the origin send `Vary` on it. Dropping is the defensible default.
+    covers: [S06-C128, S06-C131]
+  - id: s06-digest-c20
+    front: Who named each of the two classic cache attacks, and when?
+    back: 'James Kettle, "Practical Web Cache Poisoning", 2018. Omer Gil, "Web Cache Deception Attack", Black Hat USA 2017. Both come from one root cause: the cache key disagrees with reality.'
+    covers: [S06-C127, S06-C133, S06-C136]
+  - id: s06-digest-c21
+    front: What does BBR measure, whose behaviour is the saw-tooth, and why can a CDN turn BBR on for you?
+    back: BBR measures the bottleneck bandwidth and the minimum round trip, then paces the sender to that rate. The saw-tooth belongs to a loss-based controller such as CUBIC. Only the sender changes, and a CDN owns the sender on both legs.
+    covers: [S06-C139, S06-C141, S06-C147]
+  - id: s06-digest-c22
+    front: What setup does an edge pool amortise, and what did a shared pool do for one Cloudflare customer?
+    back: A 2-RTT TLS handshake to your origin, so "amortise the setup" now spans a continent. Pingora took one customer from 87.1% to 99.92% reuse, 160 times fewer new origin connections, and 434 years of handshake time saved each day.
+    covers: [S06-C157, S06-C153]
+  - id: s06-digest-c23
+    front: What is a shield or tiered cache for, and how does it relate to request collapsing?
+    back: 'Without it, 300 edges each miss the same object and send 300 requests to your origin. Collapsing stops many misses at one point of presence, and a tiered cache stops many points of presence fetching once each. Both say: never fetch the same object twice at once.'
+    covers: [S06-C161, S06-C165]
+  - id: s06-digest-c24
+    front: What is a WAF in one sentence, which lab payload bypassed every level, and where does the real fix live?
+    back: A denylist of spellings applied to request text, after some amount of decoding. `' --` leaked at every level, because it has no OR, no UNION and no digits to match. The fix is parameter binding in the origin.
+    covers: [S06-C173, S06-C180, S06-C182]
+  - id: s06-digest-c25
+    front: Give the five answers to "100 requests per 10 seconds" at the window boundary, and name the deployed choice.
+    back: 'Fixed window 200, sliding log 100, sliding estimate 104, token bucket 109, leaky bucket with burst 0 just 10. Cloudflare deploys the sliding estimate: two counters for each client, and 0.003% wrong across 400 million requests.'
+    covers: [S06-C191, S06-C194]
+  - id: s06-digest-c26
+    front: Are CDN rate-limit counts global, and why does that matter against a botnet?
+    back: No. They are per data centre, so a botnet spread across 330 cities gets 330 separate budgets. No choice of algorithm fixes that, because the geography beats the counting.
+    covers: [S06-C196]
+  - id: s06-digest-c27
+    front: Why can only a CDN absorb a 31.4 Tbps flood, and what was the matching flip side in 2021?
+    back: 'Capacity and geography together: about 500 Tbps across more than 330 cities, so anycast splits the flood. Your origin has one pipe. The flip side is Fastly on 8 June 2021, when one customer configuration change took 85% of the network to errors for 49 minutes.'
+    covers: [S06-C201, S06-C256]
+  - id: s06-digest-c28
+    front: What makes an edge API gateway real, and what does the lab gateway refuse?
+    back: 'The origin must refuse every client except the edge, through mutual TLS, which Cloudflare calls Authenticated Origin Pulls, or a Tunnel with no inbound port. The gateway returns 401 on a missing or expired token, and it refuses a token that claims `alg: none`.'
+    covers: [S06-C207, S06-C210, S06-C213]
+  - id: s06-digest-c29
+    front: Which command puts a laptop behind Cloudflare with no account, and what are the free-plan limits to know?
+    back: '`cloudflared tunnel --url http://localhost:8000`, with no account and no DNS record, 200 in-flight requests and testing only. Free plan: 5 WAF rules with no regex, 10 Cache Rules, 1 rate-limiting rule at 10 seconds only, and 100,000 Worker requests each day.'
+    covers: [S06-C217, S06-C222, S06-C223, S06-C232, S06-C234]
+  - id: s06-digest-c30
+    front: What does the class 6 lab refuse to model, and what does that mean for every latency number in the class?
+    back: Loss and bandwidth, HTTP/2 to the origin, anycast and BGP, and a real kernel accept queue. `laggy.py` delays each chunk and never drops a packet, so every latency number is a physics floor and not a prediction.
+    covers: [S06-C261, S06-C257, S06-C259]

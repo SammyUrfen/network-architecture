@@ -1,0 +1,126 @@
+# The review cards of the class 8 digest, from docs/curriculum/session-08.md.
+# 30 cards in page order: c01 to c04 the two shapes, c05 to c10 the push
+# protocols and the socket bill, c11 to c14 the arithmetic, c15 to c19 making
+# polling survive, c20 to c25 the stream, c26 to c30 the budget and the close.
+# No card asks which slide says what (lesson contract rule 11).
+items:
+  - id: s08-digest-c01
+    front: "Which clock, which audience and which file size does class 8 start from?"
+    back: "A ball every 25 to 45 s, with an over every 4 to 5 minutes. 50 M peak viewers and 20 M on average across a four-hour match. A scorecard of 4 to 5 KB of JSON, about 1 KB gzipped."
+    covers: [S08-C06, S08-C07, S08-C08]
+  - id: s08-digest-c02
+    front: "Name the two delivery families, and say what each one costs you."
+    back: "The client asks (polling, the conditional GET, nginx, a CDN), so every request is an ordinary GET and the server stays stateless and cacheable. The server tells (long polling, SSE, WebSockets, MQTT, a raw socket), so each viewer holds a connection and no cache can help."
+    covers: [S08-C11, S08-C13, S08-C15]
+  - id: s08-digest-c03
+    front: "Give the four moving parts of the polling loop, and the staleness that it buys."
+    back: "The stored ETag sent back as `If-None-Match`, a 304 with an empty body, plus or minus 20 percent of jitter, and a render only on a 200. Worst-case staleness is one poll interval plus every cache TTL on the path."
+    covers: [S08-C17, S08-C18, S08-C19, S08-C20, S08-C21]
+  - id: s08-digest-c04
+    front: "What does long polling cost, which two timeouts bound it, and where did the design come back?"
+    back: "A held request is a held socket at the client, at every proxy and at the server, so the hold time is 25 s instead of about 30 ms. The nginx `proxy_read_timeout` and the load-balancer idle timeout both default to 60 s. It returned as the blocking playlist reload of Low-Latency HLS."
+    covers: [S08-C22, S08-C23, S08-C24, S08-C26]
+  - id: s08-digest-c05
+    front: "How does Server-Sent Events frame, recover and travel?"
+    back: "One response that never ends, with `Content-Type: text/event-stream`. An event ends at a blank line, so it frames by delimiter. On reconnect the browser sends `Last-Event-ID` and the server replays only the gap. It runs one way, about six connections per browser on HTTP/1.1, and one on HTTP/2."
+    covers: [S08-C27, S08-C28, S08-C29, S08-C30, S08-C31]
+  - id: s08-digest-c06
+    front: "How does a WebSocket start, how does it frame, and why are client frames masked?"
+    back: "A GET with `Upgrade: websocket`, answered with 101 Switching Protocols and a `Sec-WebSocket-Accept` that is base64 of SHA-1 of the client key joined to a fixed GUID. It frames by length: 0 to 125 in the second byte, and 126 or 127 means read 2 or 8 more bytes. Masking stops stray bytes from looking like a request to a caching proxy. It is not encryption."
+    covers: [S08-C33, S08-C34, S08-C35, S08-C36, S08-C37]
+  - id: s08-digest-c07
+    front: "What does an MQTT broker do for you, and what are its retained message, its length field and its keepalive?"
+    back: "The scorer sends one PUBLISH and the broker copies it to every subscriber of the topic. A retained message is the broker's own cache of the last value, handed to each new subscriber at once. Remaining Length is a varint, 7 bits per byte with the top bit meaning more. A keepalive is `C0 00` out and `D0 00` back, and at QoS 1 duplicates arrive, so apply updates by version."
+    covers: [S08-C38, S08-C40, S08-C41, S08-C42, S08-C43, S08-C44]
+  - id: s08-digest-c08
+    front: "How did Hotstar get from 250,000 sockets to fifty million, and which sentence of theirs needs its context?"
+    back: "One EMQX node on a c5.4xlarge held 250k. A pre-warmed Classic ELB reached 4 M, and dropped connections at about 500k without pre-warming. A reverse bridge, with a Go service on each subscriber pulling from the publisher, reached 50 M on 200 nodes. \"Caching at any level is also not possible\" describes their per-viewer feed, not a shared file."
+    covers: [S08-C45, S08-C47, S08-C49, S08-C50]
+  - id: s08-digest-c09
+    front: "Price one held connection, and give Little's Law for the pull side and the push side."
+    back: "About 137 KB each for 250,000 sockets on a 32 GiB box, counting kernel buffers, TLS state and the per-client broker process, plus one keepalive per interval, so 20 M idle phones send 333k pings a second. Pull: 1.67 M a second times 0.03 s is about 50,000 in flight. Push: 50 M viewers held for four hours is 50 M sockets."
+    covers: [S08-C54, S08-C56, S08-C59, S08-C60, S08-C61]
+  - id: s08-digest-c10
+    front: "Why does a new broker box not relieve a hot one, and which three limits bite the rest of a push fleet?"
+    back: "A live socket cannot move, so only a disconnect reassigns a client, and rebalancing means disconnecting people. A load balancer holds one socket to the phone and one to the broker, and Hotstar stopped at 4 M per Classic ELB. The soft `ulimit -n` still starts at 1,024, and one client IP has 28,232 ephemeral ports per destination."
+    covers: [S08-C52, S08-C53, S08-C55, S08-C57, S08-C58]
+  - id: s08-digest-c11
+    front: "Do the multiplication for one match, and say what a 15 s poll changes."
+    back: "20 M average viewers times 14,400 s divided by 30 s is 9.6 B requests. 50 M divided by 30 s is 1.67 M a second at the peak. At about 1 KB each that is 9.6 TB. A 15 s poll doubles all three: 19.2 B, 3.33 M a second, 19.2 TB. Multiply before you choose the architecture."
+    covers: [S08-C66, S08-C67, S08-C68, S08-C69, S08-C72]
+  - id: s08-digest-c12
+    front: "Name the four bills per match, what each one is mostly, where each breaks first, and which line needs a correction."
+    back: "S3 direct $4.7K, mostly GET fees, breaks at 5,500 GET/s per prefix. An nginx fleet $1.2K to $1.8K, mostly egress, breaks at 20 to 50 M idle sockets. CloudFront India $12.5K, 92 percent request fees, no wall. Push on 200 boxes $0.9K to $1.6K, breaks at reconnect storms. All at AWS list prices of September 2026, body bytes only, a 30 s poll. The $680 fleet line is five hours at $136 an hour, not the four-hour match."
+    covers: [S08-C73, S08-C74, S08-C75, S08-C76, S08-C77, S08-C78]
+  - id: s08-digest-c13
+    front: "Where does S3 stop, what does it answer, and what do fifty million clients do next?"
+    back: "One prefix promises at least 5,500 GET requests a second, and one key lives under one prefix, so 1.67 M a second is 303 times over. The guide says you may see 503 Slow Down errors while it scales. Fifty million clients retrying with no backoff are Week 7's retry storm, aimed at your own bucket."
+    covers: [S08-C79, S08-C80, S08-C81, S08-C82]
+  - id: s08-digest-c14
+    front: "Where do the request fee and the byte fee cross on a CDN, and which four object sizes sit around that line?"
+    back: "About 11 KB. Per million responses the request fee is $1.20 either way, the byte fee is $0.11 for a 1 KB card and $59 to $90 for an 823 KB segment, so request fees are 92 percent of the scorecard bill and it is 0.28 percent of the video bill. The marked sizes are a 228 B playlist, a 1 KB card, a 360p segment and a 1.6 MB 720p segment. That 360p mark reads 459 KB on page 18 and 452,328 B on page 32."
+    covers: [S08-C84, S08-C85, S08-C86, S08-C87, S08-C88, S08-C91]
+  - id: s08-digest-c15
+    front: "What does a conditional GET send and receive, what should the ETag be, and where does it pay most?"
+    back: "It sends `If-None-Match` and receives 304 Not Modified with the ETag and a `Cache-Control` line. Make the ETag the version number, a fingerprint and not a clock. It saves the body, the parse and the re-render, and never the request fee, the round trip or the headers. It pays most between CDN tiers, where 304s replace copies."
+    covers: [S08-C92, S08-C93, S08-C94, S08-C95, S08-C96]
+  - id: s08-digest-c16
+    front: "How do you budget staleness across the layers, and what is prefresh?"
+    back: "The layers add. 30 s mid-tier, 30 s edge and a 30 s poll allows 90 s, which is two or three balls behind. 5 s, 5 s and a 15 s poll allows 25 s, which is inside one ball. Keep each CDN TTL at half your promised freshness or less. Prefresh refreshes the edge copy before it expires, at about 25 s of a 30 s TTL."
+    covers: [S08-C97, S08-C98, S08-C99, S08-C100]
+  - id: s08-digest-c17
+    front: "What happens at the instant an edge copy expires, and which three settings make it survivable?"
+    back: "Every request is a miss and all of them head for the origin. `proxy_cache_lock on` collapses them to one fetch per edge per object, so 20,000 phones in 50 ms give the origin 1 request. `proxy_cache_use_stale updating` answers from the old copy while one request refreshes it, and `proxy_cache_background_update on` keeps that refresh off the request path. A prefetch before expiry avoids the moment altogether."
+    covers: [S08-C101, S08-C102, S08-C103, S08-C104, S08-C106, S08-C107]
+  - id: s08-digest-c18
+    front: "What single condition does request collapsing need, and what happens without it?"
+    back: "A shareable answer. The first response decides for the whole queue, and `Cache-Control: public` releases every waiter at once. A `private` directive or a stray `Set-Cookie` drains the queue one request at a time, and Fastly then skips collapsing that object for two minutes. Early hints queue requests for a thing that does not exist yet."
+    covers: [S08-C108, S08-C109]
+  - id: s08-digest-c19
+    front: "Which errors may you cache, for how long, and what is the rule behind both answers?"
+    back: "Cache a 5xx for one or two seconds, so a struggling origin sees one probe per TTL per edge. Cache a 404 for one second or not at all, because Cloudflare's three-minute default outlives the missing file. The rule is that a negative TTL must be far shorter than the time the missing thing needs to appear. And check the default first: Cloudflare does not cache `.json` out of the box."
+    covers: [S08-C111, S08-C112, S08-C113, S08-C114, S08-C115, S08-C116]
+  - id: s08-digest-c20
+    front: "Three sizes of one scorecard, and how do you ship a diff that a cache can still serve?"
+    back: "4,117 bytes raw, 1,088 gzipped, and 183 bytes for one ball as a gzipped JSON Patch. With push, send the patch, and a version gap triggers one full fetch before patching resumes. With pull, never put the client version in the URL. Publish one file holding the current version and the recent changes, which is Week 6's Railgun idea and now RFC 9842."
+    covers: [S08-C117, S08-C118, S08-C119, S08-C120, S08-C121, S08-C122]
+  - id: s08-digest-c21
+    front: "Line a versioned scorecard up against an HLS media playlist. Which three fields match?"
+    back: "The version matches `EXT-X-MEDIA-SEQUENCE`, the recent-changes list matches the window of the last N segments, and the poll interval matches `EXT-X-TARGETDURATION`. A small index that everyone polls, over numbered pieces that never change, already has a name. It is HTTP Live Streaming."
+    covers: [S08-C123, S08-C124, S08-C125]
+  - id: s08-digest-c22
+    front: "What does a player fetch, how often, and which objects are control?"
+    back: "`master.m3u8` once, because it does not change during the match. Its chosen media playlist every target duration. Each new segment once, into the buffer, at 823 KB for a 4 s 480p piece. Both playlists are control and the segments are data: the small thing changes often and the big thing never changes."
+    covers: [S08-C126, S08-C128, S08-C129, S08-C130, S08-C131, S08-C132, S08-C136]
+  - id: s08-digest-c23
+    front: "What does each master-playlist variant line declare, and how does the deck's ladder compute BANDWIDTH?"
+    back: "An `EXT-X-STREAM-INF` line with BANDWIDTH, RESOLUTION and CODECS, then the URI of that variant's media playlist. BANDWIDTH is video plus audio times 1.1, so 3000k plus 128k gives 3,440,800. The run produced 3,440,800 at 1280x720, 1,755,600 at 854x480 and 950,400 at 640x360."
+    covers: [S08-C133, S08-C134, S08-C135]
+  - id: s08-digest-c24
+    front: "Give the two playlist reload rules, the halt rule, and what ends the polling."
+    back: "After a change, wait at least one target duration. After no change, wait half a target duration and ask again. If a segment keeps its media sequence number but changes its URI, halt playback. `EXT-X-ENDLIST` means no more segments, so read once and stop. VOD is a playlist that stopped changing, and the sample has target duration 10 with 64 segments. Ten seconds is old advice and Apple now says 6. Its query string is the same for every viewer, so it caches."
+    covers: [S08-C139, S08-C140, S08-C141, S08-C142, S08-C145, S08-C146, S08-C147, S08-C148]
+  - id: s08-digest-c25
+    front: "Describe one MPEG-TS packet, say why the number is 188, and give the measured overhead."
+    back: "188 bytes: a 4-byte header with a `0x47` sync byte, a 13-bit program identifier and a counter, then 184 bytes of payload. 188 was chosen for the ATM cell train of the day, not for video, and fixed length plus a sync byte is both of Session 2's framing answers at once. Measured overhead is 3.3 percent at 720p, 4.1 percent at 480p and 5.6 percent at 360p, and every segment size is an exact multiple of 188."
+    covers: [S08-C149, S08-C151, S08-C152]
+  - id: s08-digest-c26
+    front: "What does a shorter segment buy and cost, and why do a playlist and a segment need opposite cache policies?"
+    back: "Peak requests are viewers divided by segment length, 12.5 M a second at 4 s, and the latency floor is three times the segment length. Shorter means more requests, more keyframes and more round trips. The playlist is about 230 B gzipped, changes every target duration, is billed per request and stalls players when stale, so its TTL is half a target duration or less. A segment is 450 to 1,600 KB, never changes and is billed per byte, so its TTL runs to minutes or forever. Gzip every playlist. Apple makes it a MUST."
+    covers: [S08-C156, S08-C157, S08-C159, S08-C161, S08-C162, S08-C163, S08-C164, S08-C165, S08-C204]
+  - id: s08-digest-c27
+    front: "Why did the first ffmpeg one-liner give 8.33 s segments after asking for 4, and what fixes the cause?"
+    back: "`-codec: copy` cannot create a keyframe, so the muxer cuts at the existing ones, and x264 had put one every 250 frames, which is 8.33 s at 30 fps. `-hls_time` is only a target. The fix is to re-encode with a pinned keyframe interval, `-g 120 -keyint_min 120 -sc_threshold 0`, and even that is a frame count: a 24 fps source gave 5 s segments."
+    covers: [S08-C206, S08-C208, S08-C209, S08-C212, S08-C216, S08-C217]
+  - id: s08-digest-c28
+    front: "What does the buffer buy, what does it cost, and when is it the only thing working?"
+    back: "It buys tolerance of a bad network, holding segments ahead of the playhead, and the deck's picture shows 12 s buffered. It costs latency second for second, plus memory on low-end phones and TV sticks. A one-segment buffer gives the lowest latency and stalls on one slow fetch. When the playlist stops advancing, the buffer is the only thing keeping the picture going."
+    covers: [S08-C167, S08-C168, S08-C169, S08-C171]
+  - id: s08-digest-c29
+    front: "Give the four bars of the live latency budget, and the four recycled ideas that shrink the two largest."
+    back: "About 2 s to encode, 4 s while the segment fills, about 2 s to the CDN, and a 12 s hold-back of three target durations, so about 20 s with 4 s segments. Low-Latency HLS uses 1 s parts (Apple asks for at least three times the P95 round trip), a blocking reload that is long polling, preload hints that are early hints, and `EXT-X-SKIP` delta updates that are diffs. The hold-back then falls to about 3 s."
+    covers: [S08-C172, S08-C174, S08-C175, S08-C176, S08-C179]
+  - id: s08-digest-c30
+    front: "What is the spoiler window, how do you close it, and which rule governs every ABR decision?"
+    back: "The video path runs about 10 s behind the scorecard path, so the score reveals the wicket first. Close it with a shared clock, not a fixed delay: stamp each update with the ball's wall-clock time and reveal it when playback passes that instant, which is what `EXT-X-PROGRAM-DATE-TIME` makes possible. Throughput-based ABR reads the last segments, buffer-based ABR reads the buffer, Netflix measured 10 to 20 percent fewer rebuffers that way, and the rule behind both is that a stall is worse than a lower rendition."
+    covers: [S08-C180, S08-C181, S08-C182, S08-C184, S08-C185, S08-C186, S08-C187]

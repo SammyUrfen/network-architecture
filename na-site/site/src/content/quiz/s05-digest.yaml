@@ -1,0 +1,262 @@
+# The questions of the class 5 digest. Two for each of the six parts, in page
+# order. Six of them come back in the exit quiz, one for each KeyIdea of the
+# page, so the exit asks every must-know idea again.
+# The misconceptions come from docs/curriculum/session-05.md. The two items
+# about the graded tasks stay out: this page names the assignment and the
+# project and teaches no solution (CLAUDE.md rule 4).
+# Segments: 1 one file one call, 2 the validators, 3 the spec, 4 the bill,
+# 5 the frames, 6 the transport.
+items:
+  - id: s05-digest-q01
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: A page holds 24 objects and the client speaks HTTP/1.0. The link gets ten times faster. What happens to the 9.6 seconds?
+    options:
+      - text: It drops to about 1 second, because the bytes now arrive ten times faster.
+        correct: false
+        misconception: S05-M04
+        feedback: The 9.6 s is 48 round trips, not bytes. A faster link does not shorten a round trip.
+      - text: It drops to about 0.4 seconds, because only the first object pays a handshake.
+        correct: false
+        misconception: S05-M01
+        feedback: An HTTP/1.0 server closes the connection after one answer, so every object dials again.
+      - text: It stays near 9.6 seconds, because the page spends 48 round trips and bandwidth buys none of them back.
+        correct: true
+        feedback: Two round trips for each object, 24 objects, 200 ms each.
+    explanation: HTTP/1.0 opens a connection for each request, so N objects cost 2 times N round trips. At 200 ms that is 4.8 s of dialling plus 4.8 s of asking. Each new connection also starts its congestion window again.
+    covers: [S05-C30, S05-C32, S05-C33]
+    tags: []
+    taughtIn: a-connection-per-file
+
+  - id: s05-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: A request reaches an HTTP/1.1 server with no Host header. What does the server answer?
+    options:
+      - text: 400 Bad Request.
+        correct: true
+        feedback: RFC 2068 made Host a required field, and a missing one is a bad request.
+      - text: The first site in its configuration, because a server needs a default anyway.
+        correct: false
+        misconception: S05-M06
+        feedback: HTTP/1.1 requires the 400. A guess would send one site the traffic of another.
+      - text: The right site, because the address that the request arrived on already picks one.
+        correct: false
+        misconception: S05-M03
+        feedback: That is the HTTP/1.0 world, one website per IP address. Host is what ended it.
+    explanation: With Host, one IP address, one port and one socket serve both site-a and site-b. The field is required, so a request without it gets 400. The same move repeats upward as SNI and then as the :authority field.
+    covers: [S05-C49, S05-C34, S05-C50]
+    tags: []
+    taughtIn: seg-one-file-one-phone-call
+
+  - id: s05-digest-q03
+    use: [check, exit, practice]
+    segment: 2
+    type: mcq
+    prompt: A client holds the current ETag of a 202,000-byte file and repeats the request with If-None-Match. What comes back?
+    options:
+      - text: A 304 that carries the body again, so the client can compare it.
+        correct: false
+        misconception: S05-M09
+        feedback: A 304 carries headers only. That is the whole saving.
+      - text: A 304 of 256 bytes, headers only and no body at all.
+        correct: true
+        feedback: 202,000 bytes become 0 bytes of body.
+      - text: A 200 with the whole body, because the ETag is the modification time and that changed.
+        correct: false
+        misconception: S05-M07
+        feedback: server11 hashes the bytes. Equal bytes give an equal ETag, whatever the clock says.
+    explanation: An ETag is a fingerprint of the body, and server11 uses the first 16 hex digits of a SHA-256. A match gives 304 and no body, which talk.py counted as 256 bytes over loopback. A timestamp cannot do this, because it has no sub-second field, clocks drift, and a modification time is not an identity.
+    covers: [S05-C52, S05-C53, S05-C54]
+    tags: [measured]
+    taughtIn: a-validator-names-the-bytes
+
+  - id: s05-digest-q04
+    use: [check, practice]
+    segment: 2
+    type: numeric
+    prompt: 'A client sends `Range: bytes=100-199` for a file of 202,000 bytes. What Content-Length does the 206 answer carry?'
+    answer: { value: 100, tolerance: 0, unit: null }
+    distractors:
+      - value: 99
+        misconception: S05-M12
+        feedback: Both ends of a byte range count, so 100 to 199 is 100 bytes and not 99.
+      - value: 202000
+        feedback: 202,000 is the whole file. The Content-Range says bytes 100-199/202000, and the Content-Length counts the slice only.
+    explanation: A byte range includes both ends, so 100 to 199 is 100 bytes. The answer is 206, with Content-Range bytes 100-199/202000. A range that starts past the end gives 416 instead, because the file exists and only the range is wrong.
+    covers: [S05-C61, S05-C63]
+    tags: []
+    taughtIn: seg-a-fingerprint-a-slice-and-a-body-with-no-length
+
+  - id: s05-digest-q05
+    use: [check, exit, practice]
+    segment: 3
+    type: predict
+    prompt: One POST carries Content-Length 6 and chunked encoding at the same time. A CDN that trusts Content-Length stands in front of an origin that trusts chunked. What reaches the origin?
+    options:
+      - text: Nothing unusual, because a chunked body needs a Content-Length anyway, so both fields are normal.
+        correct: false
+        misconception: S05-M14
+        feedback: The two fields are alternatives, never a pair. Each one names the end of the body on its own.
+      - text: Nothing unusual, because each box picks the standard field and carries on safely.
+        correct: false
+        misconception: S05-M16
+        feedback: Safety needs agreement, not a rule each box applies alone. The next box can pick the other field.
+      - text: Two requests. The origin runs a GET that the CDN never saw, and a spare answer waits on the connection.
+        correct: true
+        feedback: About half the room expects the two boxes to agree because both follow a specification.
+    explanation: RFC 2616 section 4.4 told a parser to ignore Content-Length and recover. A Content-Length reader stops after 6 bytes and a chunked reader stops at the 0 chunk, so the bytes after the first stop are rubbish to one box and a whole new request to the other. framing.py against server11 returns a 200 and then a 404 for the request that nobody sent.
+    covers: [S05-C91, S05-C94, S05-C96, S05-C97]
+    tags: []
+    taughtIn: two-opinions-on-one-length
+
+  - id: s05-digest-q06
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: RFC 2068 meant a 302 to keep the method of the request. Browsers turned a redirected POST into a GET. What did RFC 2616 do about that?
+    options:
+      - text: It renamed 302 to Found, wrote the habit of the browsers down, and added 307 for the old meaning.
+        correct: true
+        feedback: It is easier to add a number than to fix a billion deployed clients.
+      - text: Nothing, because browsers kept the POST and the specification already matched them.
+        correct: false
+        misconception: S05-M17
+        feedback: Browsers changed the method. The specification is the side that moved.
+      - text: It answered with 504 Gateway Timeout, its other new status code of 1999.
+        correct: false
+        misconception: S05-M18
+        feedback: 504 is not a 1999 addition. RFC 2068 section 10.5.5 already has it, with the whole 5xx family.
+    explanation: The pattern runs through the whole class. A specification that meets a billion deployed clients writes down what they do and adds a new name for the old meaning. What RFC 2616 really added is 307, 416 and 417 with Expect.
+    covers: [S05-C88, S05-C89, S05-C90, S05-C87]
+    tags: []
+    taughtIn: seg-the-spec-bent-and-then-a-parser-lost
+
+  - id: s05-digest-q07
+    use: [check, exit, practice]
+    segment: 4
+    type: mcq
+    prompt: Six files go out on one pipelined HTTP/1.1 connection, and the server sleeps 2 seconds on the first one. When do the five small files arrive?
+    options:
+      - text: At 3 to 7 ms, because a pipelined answer may pass a slow answer in front of it.
+        correct: false
+        misconception: S05-M20
+        feedback: Pipelining created head-of-line blocking. It did not remove it.
+      - text: At about 2004 ms, because the answers have to come back in the order of the requests.
+        correct: true
+        feedback: hol.py measured 2003.6 to 2004.4 ms over direct loopback.
+      - text: At 3 to 7 ms, because a connection that stays open is never slower than a new one for each file.
+        correct: false
+        misconception: S05-M22
+        feedback: A kept connection can be slower. This queue is one way, and the Nagle stall is another.
+    explanation: Nothing in an HTTP/1.1 answer says which request it answers, so the order is the only identifier. That makes the order mandatory, and the slowest answer paces everything behind it. The same five files on one connection each arrived at 3.2 to 7.2 ms.
+    covers: [S05-C111, S05-C112, S05-C113, S05-C114]
+    tags: [measured]
+    taughtIn: order-is-the-only-id
+
+  - id: s05-digest-q08
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: A server writes the head and then the body in two calls, on a connection that stays open. Every request after the first takes about 40 ms. What causes the pause?
+    options:
+      - text: The time to parse the text headers, which is the real cost of a text protocol.
+        correct: false
+        misconception: S05-M21
+        feedback: Text parses fast. The missing lengths and identifiers cost far more than the characters do.
+      - text: The network, because a connection that stays open cannot be slower than a new one.
+        correct: false
+        misconception: S05-M22
+        feedback: This run is loopback, so there is no network. The two writes are the cause.
+      - text: Nagle holds the small second write until the first is acknowledged, and the receiver delays that acknowledgement.
+        correct: true
+        feedback: Two rules that each make sense alone, and that meet on a connection which stays open.
+    explanation: Nagle (RFC 896) says do not send a small segment while an earlier one is unacknowledged. The delayed ACK (RFC 1122) waits, up to 40 ms, to piggyback the acknowledgement. One write plus TCP_NODELAY took 3.2 ms for the whole run instead of 174.3 ms. The stall hides on a connection that closes, because close() pushes the data out.
+    covers: [S05-C120, S05-C121, S05-C122, S05-C124, S05-C125]
+    tags: [measured]
+    taughtIn: seg-the-bill-for-keeping-the-line-open
+
+  - id: s05-digest-q09
+    use: [check, exit, practice]
+    segment: 5
+    type: numeric
+    prompt: An HTTP/2 frame opens with the nine bytes `00 01 07 00 00 00 00 00 01`. How many bytes does the frame carry after its header?
+    answer: { value: 263, tolerance: 0, unit: null }
+    distractors:
+      - value: 272
+        misconception: S05-M24
+        feedback: The Length counts the payload only. Add the 9 header bytes and you get 272, which no field on the wire means.
+      - value: 459008
+        feedback: 459,008 reads the three bytes in the other order. The Length is big-endian, so 00 01 07 is 256 plus 7.
+    explanation: The first three bytes are a 24-bit Length, and 00 01 07 is 263. Then one byte of Type, 00 for DATA, one byte of Flags with none set, and four bytes that hold a reserved bit and a 31-bit Stream Identifier, here stream 1. The length is what makes the framing unambiguous, and the stream identifier is what makes the order optional.
+    covers: [S05-C142, S05-C143]
+    tags: []
+    taughtIn: a-length-and-a-number
+
+  - id: s05-digest-q10
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: HTTP/2 indexes its header fields with HPACK instead of running a general compressor over them. Why?
+    options:
+      - text: Because gzip needs a dictionary, and the HPACK static table is that dictionary under another name.
+        correct: false
+        misconception: S05-M28
+        feedback: HPACK indexes whole fields and uses a fixed Huffman code. A general compressor adapts, and that is the dangerous part.
+      - text: Because an attacker who sees only the size of a compressed header can guess a secret one character at a time.
+        correct: true
+        feedback: CRIME, 2012. A right guess made the output shorter, and the size leaked through the encryption.
+      - text: Because a CRIME attacker has to break the encryption first, and a stronger cipher is the cheaper answer.
+        correct: false
+        misconception: S05-M29
+        feedback: The attacker never reads the bytes. The length of the record is enough.
+    explanation: HPACK never adapts its Huffman code, and its dynamic table matches whole fields, so a right guess at a prefix wins nothing. The same trap waits in your own code. Compress a JSON answer that holds a user search term and an API key together, and you rebuild CRIME.
+    covers: [S05-C160, S05-C161, S05-C163]
+    tags: []
+    taughtIn: seg-a-length-and-a-number-on-every-frame
+
+  - id: s05-digest-q11
+    use: [check, practice]
+    segment: 6
+    type: mcq
+    prompt: QUIC carries its own transport on top of UDP. Which reason is the right one?
+    options:
+      - text: UDP has less machinery than TCP, so it moves the same bytes faster.
+        correct: false
+        misconception: S05-M36
+        feedback: QUIC adds back loss detection, ordering and congestion control. The speed comes from the handshake and the streams.
+      - text: Every NAT, firewall and proxy drops a transport that it does not know, and UDP already gets through.
+        correct: true
+        feedback: SCTP has existed since 2000 and still cannot cross the internet.
+      - text: UDP lets QUIC skip the encryption, and that is where the saved time comes from.
+        correct: false
+        misconception: S05-M38
+        feedback: TLS is not optional in QUIC. There is no unencrypted QUIC at all.
+    explanation: 'Protocol numbers are not the obstacle, because the field has room: TCP is 6, UDP is 17 and SCTP is 132. The network is the obstacle. UDP is not a good foundation, it is a hole that already exists. QUIC then encrypts the packet numbers and most of its header, so that no middlebox can come to depend on them.'
+    covers: [S05-C181, S05-C182, S05-C183, S05-C185]
+    tags: []
+    taughtIn: seg-move-the-streams-into-the-transport
+
+  - id: s05-digest-q12
+    use: [check, exit, practice]
+    segment: 6
+    type: mcq
+    prompt: You walk out of a cafe and your phone moves from Wi-Fi to LTE. What happens to an open TCP connection and to an open QUIC connection?
+    options:
+      - text: The TCP connection dies with the old address. The QUIC connection carries on, because a connection ID names it.
+        correct: true
+        feedback: A new address, the right connection ID and a validated path, and the connection continues.
+      - text: Both carry on, and the server follows the QUIC one by the single connection ID that it shows for its whole life.
+        correct: false
+        misconception: S05-M39
+        feedback: A fixed visible ID would track users, so endpoints hold a pool of IDs and rotate through it.
+      - text: Both die, and QUIC only reopens faster, because 0-RTT is safe for any request.
+        correct: false
+        misconception: S05-M37
+        feedback: An attacker can replay early data, so 0-RTT carries idempotent requests only. A migration needs no new handshake at all.
+    explanation: A TCP connection is its four-tuple, so a change of address or port kills it outright. RFC 9000 section 5.1 gives the connection its own identifier instead. That is the rule of the whole class in one line. Identity belongs to the layer that owns the meaning, and TCP made an address and a connection the same thing.
+    covers: [S05-C203, S05-C204, S05-C205, S05-C207, S05-C208]
+    tags: []
+    taughtIn: identity-belongs-to-its-own-layer

@@ -1,0 +1,123 @@
+# The review cards of the class 7 digest, from docs/curriculum/session-07.md.
+# 29 cards, in page order: c01 to c04 the six stages and the status question,
+# c05 to c11 the definition and the four questions, c12 to c17 the three knobs
+# and the breaker, c18 to c23 the player, c24 to c29 the whole system. Each
+# card asks for one detail with one right answer. No card asks which slide
+# says what (lesson contract rule 11).
+items:
+  - id: s07-digest-c01
+    front: Name the six places one request can fail, in order.
+    back: DNS lookup, TCP handshake, TLS handshake, request write, server processing, response read.
+    covers: [S07-C20, S07-C21]
+  - id: s07-digest-c02
+    front: Which failures prove that no server saw your request, and which ones can hide finished work?
+    back: A failure in stages 1 to 3, before the handshake finished, proves that no server saw it. A failure from the request write onward can hide a row written, an email sent or a card charged.
+    covers: [S07-C27, S07-C30, S07-C60, S07-C61]
+  - id: s07-digest-c03
+    front: What does a 5xx tell you about side effects?
+    back: Nothing. It admits that the server failed, and it stays silent about what the server did first.
+    covers: [S07-C37, S07-C38]
+  - id: s07-digest-c04
+    front: What one question does this class add to every status code, and what is the answer for each class?
+    back: 'Will anything be different next time? 1xx interim, so keep listening. 2xx done. 3xx depends, so ask somewhere else. 4xx usually not, because the same bytes get the same refusal. 5xx usually yes.'
+    covers: [S07-C32, S07-C33, S07-C34, S07-C35, S07-C36, S07-C39]
+  - id: s07-digest-c05
+    front: Define a retry, and give the one-sentence test.
+    back: 'The exact same step again: same method, same body, same headers that matter. The test: with nothing changed and only a wait, is attempt 2 identical to attempt 1?'
+    covers: [S07-C41, S07-C42, S07-C49]
+  - id: s07-digest-c06
+    front: Is a token refresh plus the same call again a retry?
+    back: No. The new Authorization header answers information the server just gave you, so it is a different request and it needs its own path in the code.
+    covers: [S07-C46, S07-C47, S07-C50]
+  - id: s07-digest-c07
+    front: What does a retry bet on, and which three causes make the bet worth placing?
+    back: That the failure was transient. A network blink, a brief server overload, and a load balancer that picked an unhealthy backend. All three clear on their own.
+    covers: [S07-C43, S07-C44, S07-C45]
+  - id: s07-digest-c08
+    front: Name the four classifying questions, in order.
+    back: Where did it fail, who admits fault, is the action idempotent, and is the cause transient?
+    covers: [S07-C52, S07-C53, S07-C54, S07-C55, S07-C56]
+  - id: s07-digest-c09
+    front: Name the five cases with no point in retrying.
+    back: A 404, a failure before the handshake, a geo-block, a preflight refusal, and an outright auth failure. The last one gets a token refresh, which is handling.
+    covers: [S07-C57, S07-C58, S07-C60, S07-C62, S07-C63, S07-C65]
+  - id: s07-digest-c10
+    front: Name the two families that deserve a retry, and their members.
+    back: 'The server admits fault: 500, 502, 503, 504, a connection timeout, a read timeout, and a DNS server with no answer at all. The environment shifted: a network switch mid-flight, a CDN edge or load balancer that refuses, a cache not found, and a TLS failure on a healthy host.'
+    covers: [S07-C66, S07-C67, S07-C68, S07-C69, S07-C70, S07-C71, S07-C72, S07-C73, S07-C74]
+  - id: s07-digest-c11
+    front: Which methods take a blind retry, and what makes a POST retry safe?
+    back: GET, PUT and DELETE are idempotent, so a blind retry after a timeout is safe. A POST needs an idempotency key that the server checks and deduplicates, because with no response you cannot tell whether the work ran.
+    covers: [S07-C76, S07-C79, S07-C80, S07-C81, S07-C84]
+  - id: s07-digest-c12
+    front: Name the three dangers of the loop everyone writes first.
+    back: No max count, so a dead dependency gives an infinite loop. No delay, so every client hammers at wire speed. No coordination, so every loop fires on the same tick after recovery, which is the thundering herd.
+    covers: [S07-C87, S07-C88, S07-C89, S07-C90, S07-C91]
+  - id: s07-digest-c13
+    front: Give the full-jitter delay, and say what jitter buys.
+    back: Sleep a uniform draw between zero and the smaller of the cap and the base times 2 to the attempt. It lowers the peak, not the total request count. Full jitter comes from AWS, 2015.
+    covers: [S07-C93, S07-C98, S07-C99, S07-C100, S07-C102]
+  - id: s07-digest-c14
+    front: What is the sleep ceiling of the live loop, and when does the 8.0 s cap first bind?
+    back: 3.0 s, from 0.2 plus 0.4 plus 0.8 plus 1.6, with 5 attempts and a base of 0.2 s. The cap first binds at attempt 6, so it never binds here.
+    covers: [S07-C92, S07-C94]
+  - id: s07-digest-c15
+    front: Name the three circuit breaker states, and say what each one does.
+    back: CLOSED lets requests flow and counts failures. OPEN fails instantly and locally, with no call attempted. HALF-OPEN lets exactly one probe out after a cooldown. The pattern comes from Nygard, "Release It!", 2007.
+    covers: [S07-C114, S07-C115, S07-C116, S07-C117, S07-C123]
+  - id: s07-digest-c16
+    front: What does the half-open probe decide, and what does a breaker reach that backoff cannot?
+    back: A probe success closes the breaker, and a probe failure opens it again. Backoff protects an upstream from one client. A breaker protects it from a whole fleet, and it saves each caller the full timeout cost.
+    covers: [S07-C118, S07-C119, S07-C120, S07-C121]
+  - id: s07-digest-c17
+    front: Which three status codes name your wait or reject nothing, and whose number wins?
+    back: 429 is a rate limit and the server is fine. 503 often carries `Retry-After`. 408 means the server gave up waiting for your bytes. The header wins over your own curve, in both directions.
+    covers: [S07-C104, S07-C105, S07-C106, S07-C107, S07-C108]
+  - id: s07-digest-c18
+    front: How does a player failure reach the user, and how big is its retry budget?
+    back: 'As a frozen frame or a spinner, not as an exception in a log. The budget is human: a few seconds of rebuffering, not minutes of correct exponential backoff.'
+    covers: [S07-C126, S07-C127, S07-C133]
+  - id: s07-digest-c19
+    front: What is the one named 404 exception, and what is the fix?
+    back: The newest segment of a live stream, which the origin may still encode or the CDN may still propagate. 2 or 3 attempts with a small fixed delay, for live-edge segment requests and nowhere else. An on-demand 404 still means give up.
+    covers: [S07-C139, S07-C140, S07-C142, S07-C143, S07-C144]
+  - id: s07-digest-c20
+    front: Which three player failures need a fallback and not a retry?
+    back: A denied DRM key, which drops to a lower security level or another key system. An unsupported codec, which picks another rendition. A broken device media state, which iOS ResetMedia rebuilds.
+    covers: [S07-C151, S07-C152, S07-C154, S07-C160, S07-C161]
+  - id: s07-digest-c21
+    front: What does a multi-CDN player do when an edge stops answering?
+    back: It switches CDN. Retry asks the same source again, and switch asks a different one. A network switch mid-download changes the IP, so the request is dead and not slow.
+    covers: [S07-C136, S07-C138]
+  - id: s07-digest-c22
+    front: What do 419, 474 and 475 have in common, and what do your own codes owe a caller?
+    back: 'No registry entry, so no generic client can read them. A 419 marks token or session expiry, so handle it like auth. Every private code needs two written facts: what the condition means, and whether a retry can change it.'
+    covers: [S07-C145, S07-C146, S07-C148, S07-C149]
+  - id: s07-digest-c23
+    front: Which entitlement failure takes a retry, and which signal sits below the status line?
+    back: Retry a check that times out. Never retry a clean "not entitled", because there the HTTP layer succeeded and the business layer decided. The response body can also say "degraded, use lower bitrate".
+    covers: [S07-C162, S07-C163, S07-C164, S07-C167]
+  - id: s07-digest-c24
+    front: What does `stale-if-error` do, which RFC defines it, and is it a retry?
+    back: It lets a cache serve its last good copy when it cannot reach the origin. RFC 5861. It is not a retry, because it changes the answer and not the attempt.
+    covers: [S07-C175, S07-C176, S07-C177]
+  - id: s07-digest-c25
+    front: Why does a system that answers smaller survive more outages, and which three levers do it?
+    back: A system that can answer with slightly-wrong data survives outages that a perfect-or-nothing system does not. Failover to a backup region, provider or CDN. A feature flag that turns off the expensive part in seconds with no deploy. Graceful degradation to a lower bitrate or a slightly stale price.
+    covers: [S07-C178, S07-C180, S07-C181, S07-C183, S07-C185, S07-C186]
+  - id: s07-digest-c26
+    front: What is the most dangerous moment of an incident, and why?
+    back: The recovery. Every client that was retrying or waiting tries again at once, because they all started failing at the same moment, and the server is at 1% of capacity against close to 100% of its normal traffic.
+    covers: [S07-C188, S07-C189, S07-C190, S07-C191, S07-C192]
+  - id: s07-digest-c27
+    front: Name the three recovery mitigations.
+    back: Jitter, staggered half-open probes, and slow start on the recovering server, which accepts traffic at a ramped rate.
+    covers: [S07-C194, S07-C195]
+  - id: s07-digest-c28
+    front: What three numbers does the class give for the Fastly outage of 8 June 2021, and what do they leave out?
+    back: About 85% of the network returning errors, about 1 minute to detect, and 49 minutes to 95% recovered. The 49 minutes is the vendor measure of recovery, and full mitigation took 2 h 48 min.
+    covers: [S07-C169, S07-C170, S07-C171]
+  - id: s07-digest-c29
+    front: Name the five steps of the chain, in order, and say how they run.
+    back: Classify, structural stop, transient retry, dependency breaker, no answer left. It is one chain, so each step runs only when the step above it found no answer.
+    covers: [S07-C196, S07-C197, S07-C198, S07-C199, S07-C200, S07-C201]

@@ -10,13 +10,13 @@ A living document. Update the status table when a phase changes state.
 | 1 | Site skeleton, theme, content schema, gate scripts | done 2026-09-14 | — |
 | 2 | Components for the two pilot pages, progress store, review page | done 2026-09-14 | — |
 | 3 | Pilot: `s01-m08-framing` and `s05-m12-assignment-prep`, then Bibek uses them | v2 done 2026-09-14: both pilots rebuilt to lesson contract v2, and all 15 feedback items fixed. Session 1 lessons 1 to 3 also built. All five lessons are `ready`. Next: Bibek reviews the five lessons. | Bibek's review |
-| Q | Quiz sprint: one class digest for classes 1 to 4 | done 2026-09-16: 4 digests, 410 core claims covered, verify rule 11 guards it | — |
+| Q | Quiz sprint: one class digest for classes 1 to 4 | done 2026-09-16: 4 digests for Quiz 1, 410 core claims covered, verify rule 11 guards it | — |
 | 4 | Remaining components, practice page, HTTP path: `s05-m01`, `s05-m02`, `s01-m04` | not started | 3–4 sessions |
 | 5 | Sessions 1 and 2, remaining modules (20) | Session 1 m01 to m03 built 2026-09-14, ahead of the hard gate (section 10). 17 modules wait for Bibek's review of the format. | 34–68 h of packets for the 17 |
 | 6 | Sessions 3 and 4 (22) | not started | 44–88 h of packets, 3–6 sessions |
 | 7 | Session 5, remaining modules and project studio (10) | not started | 20–40 h of packets, 2–3 sessions |
 | 8 | Threads, practice exam, glossary, end-term pack | not started | 1–2 sessions |
-| Q | Class digests: one fast read for each class, for the quiz on 2026-09-18 | harness done 2026-09-16: the `kind` field, verify rules 5 and 11, `Remember`, `NumbersTable`, `Myth`, the route and four `draft` stubs. The four digests wait for their packets. | 4 packets |
+| Q | Class digests: one fast read for each class | done 2026-10-11: eight digests, classes 1 to 8. Classes 5 to 8 were built for Quiz 2 on 2026-10-12. |  — |
 | R | Each new session (6, 7, 8): run `docs/ADD-A-SESSION.md` | recurring | within 48 h of the class |
 | D | Public GitHub repo, CI/CD and GitHub Pages deploy | Live on 2026-09-14: the repo is public, and CI and the Pages deploy pass on each merge to main. The site is at https://sammyurfen.github.io/network-architecture/. | — |
 
@@ -668,10 +668,13 @@ rows in Sessions 2 to 5. No script reads them. Phase 8 reads them by hand.
 | Date | Event |
 |---|---|
 | 2026-09-13 | Phase 0 |
-| Fri 2026-09-18 | Session 6, (Ab)using CDNs |
-| Fri 2026-09-25 | Session 7, Economics of cloud tech. The calculator assignment is due before this class. |
-| Fri 2026-10-02 | Session 8, Building for failures |
-| not known | the three post-class quizzes, the project deadline, the end-term |
+| Fri 2026-09-18 | Class 6, (Ab)using CDNs |
+| Mon 2026-09-21 | Quiz 1, on classes 1 to 4 |
+| Fri 2026-09-25 | Class 7, Building for Failures. The calculator assignment was due this day. |
+| Fri 2026-10-02 | Class 8, Streaming video at large scale. The last class. |
+| Thu 2026-10-08 | Project submission |
+| Mon 2026-10-12 | Quiz 2 |
+| not known | the third quiz and the end-term |
 
 Bibek says the dates can change. The instructor has not formally given the
 assignment or the project yet. Put each date in `assessments.yaml` when it

@@ -1,6 +1,6 @@
-# Not taught yet. The date can change.
 number: 8
-title: Building for failures
+title: Streaming video at large scale
+subtitle: One small file, fifty million times. Then the same loop with bigger bytes.
 date: 2026-10-02
 dateApprox: true
-sourceStatus: missing
+sourceStatus: complete

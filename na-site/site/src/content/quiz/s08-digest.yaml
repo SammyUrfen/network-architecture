@@ -1,0 +1,324 @@
+# The questions of the class 8 digest, in page order. Fourteen checks across
+# six parts: 3, 2, 2, 3, 2, 2. Four of them come back in the exit quiz, one
+# from the pull-or-push argument, one from the socket bill, one from the herd
+# at the edge, and one from the latency budget.
+# The misconceptions come from docs/curriculum/session-08.md, S08-M01 to
+# S08-M57. No item asks which slide says what (lesson contract rule 11).
+# Segments: 1 the two shapes, 2 the sockets, 3 the bills, 4 making polling
+# survive, 5 the stream, 6 the budget and the close.
+items:
+  - id: s08-digest-q01
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: "Fifty million phones want the same 1 KB scorecard. Which delivery shape lets a CDN edge answer most of the traffic?"
+    options:
+      - text: "Polling, because every request is an ordinary GET of one fixed URL."
+        correct: true
+        feedback: "A stateless GET is the only thing a cache on the path can answer for you."
+      - text: "Long polling, because the request is still an ordinary GET."
+        correct: false
+        misconception: S08-M03
+        feedback: "The request is a GET, but the edge must hold it open for 25 s instead of answering it."
+      - text: "Server-Sent Events, because it still runs over HTTP."
+        correct: false
+        misconception: S08-M02
+        feedback: "One response that never ends is one socket per viewer. The edge has nothing to store."
+      - text: "MQTT with a retained message, because the broker already caches the last score."
+        correct: false
+        misconception: S08-M02
+        feedback: "That cache lives inside the broker, behind fifty million sockets that you still pay for."
+    explanation: "A cache can answer a request. A cache cannot hold a socket on your behalf. Polling is the only shape of the four whose traffic is an ordinary cacheable GET."
+    covers: [S08-C11, S08-C13, S08-C15, S08-C17]
+    tags: []
+    taughtIn: a-cache-answers-a-request
+
+  - id: s08-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: multi
+    prompt: "A phone polls with `If-None-Match` and gets 304 Not Modified. What does that answer save?"
+    options:
+      - text: "The 1 KB body."
+        correct: true
+        feedback: "An empty body is the whole saving of a conditional request."
+      - text: "The JSON parse and the re-render on the phone."
+        correct: true
+        feedback: "No new body means no new parse and no new paint."
+      - text: "The CDN request fee."
+        correct: false
+        misconception: S08-M01
+        feedback: "The fee is $1.20 per million responses whatever the status code says."
+      - text: "The round trip to the edge."
+        correct: false
+        misconception: S08-M01
+        feedback: "The phone still sent a request and still waited for an answer."
+    explanation: "A 304 is a cheaper answer, not a missing request. The round trip, the headers and the request fee all happen exactly as they would for a 200."
+    covers: [S08-C94, S08-C95]
+    tags: []
+    taughtIn: seg-fifty-million-phones-want-one-file
+
+  - id: s08-digest-q03
+    use: [check, practice]
+    segment: 1
+    type: numeric
+    prompt: "Fifty million phones poll every 20 s. How many requests a second arrive at the peak, in millions?"
+    answer: { value: 2.5, tolerance: 0.05, unit: millions a second }
+    distractors:
+      - value: 0
+        misconception: S08-M01
+        feedback: "A 304 reply is still a request. Nothing about the peak rate depends on the status code."
+      - value: 1.67
+        misconception: S08-M19
+        feedback: "That is the 30 s row. A shorter interval means more requests, not the same number."
+    explanation: "The peak request rate is viewers divided by the poll interval. 50,000,000 divided by 20 is 2.5 million a second, whatever each answer turns out to be."
+    covers: [S08-C67, S08-C95]
+    tags: []
+    taughtIn: seg-fifty-million-phones-want-one-file
+
+  - id: s08-digest-q04
+    use: [check, exit, practice]
+    segment: 2
+    type: mcq
+    prompt: "Same audience, same file. Why does the push design need about a thousand times the concurrency of the polling design?"
+    options:
+      - text: "Push sends many more messages than polling does."
+        correct: false
+        misconception: S08-M13
+        feedback: "Push sends far fewer messages. One per ball, instead of one per poll per phone."
+      - text: "Push messages are much larger than a poll response."
+        correct: false
+        misconception: S08-M13
+        feedback: "A push diff is 183 bytes against a 1,088-byte card. The message size argues the other way."
+      - text: "Push needs more load balancers, and each one holds sockets."
+        correct: false
+        misconception: S08-M10
+        feedback: "A balancer does double the socket count, but it is a consequence of the held sockets, not the cause."
+      - text: "The hold time went from about 30 milliseconds to the whole four-hour match."
+        correct: true
+        feedback: "Little's Law. Concurrency is the arrival rate times the hold time, and only the hold time moved."
+    explanation: "Concurrency equals arrival rate times hold time. 1.67 million a second times 0.03 s gives about 50,000 requests in flight. Fifty million viewers held for four hours gives fifty million sockets."
+    covers: [S08-C59, S08-C60, S08-C61]
+    tags: []
+    taughtIn: hold-time-buys-sockets
+
+  - id: s08-digest-q05
+    use: [check, practice]
+    segment: 2
+    type: numeric
+    prompt: "Thirty million phones sit idle on an MQTT connection with a 60 s keepalive. How many pings a second does the fleet receive?"
+    answer: { value: 500000, tolerance: 0, unit: pings a second }
+    distractors:
+      - value: 0
+        misconception: S08-M12
+        feedback: "An idle connection is quiet, not free. It still pings, holds memory and holds a NAT mapping."
+      - value: 30000000
+        misconception: S08-M12
+        feedback: "That reads the keepalive as one second. Divide the audience by the keepalive interval."
+    explanation: "Each phone pings once per keepalive interval, so 30,000,000 divided by 60 is 500,000 a second. The deck's own figure is 333,000 a second for 20 million phones, before the first ball is bowled."
+    covers: [S08-C56, S08-C60]
+    tags: []
+    taughtIn: seg-the-server-tells-you-and-you-pay-in-sockets
+
+  - id: s08-digest-q06
+    use: [check, practice]
+    segment: 3
+    type: numeric
+    prompt: "One S3 prefix, fifty million phones, a 30 s poll, one key. How many times over the documented request rate is the peak demand?"
+    answer: { value: 303, tolerance: 1, unit: times }
+    distractors:
+      - value: 1
+        misconception: S08-M16
+        feedback: "Object storage is not unlimited. The documented promise is at least 5,500 GET requests a second per prefix."
+    explanation: "1,670,000 divided by 5,500 is about 303. One key lives under one prefix, so the design meets a documented wall long before it meets a large bill."
+    covers: [S08-C79, S08-C80, S08-C82]
+    tags: []
+    taughtIn: seg-multiply-before-you-choose
+
+  - id: s08-digest-q07
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: "A team shrinks the scorecard from 1 KB to 400 bytes to cut its CloudFront bill. How much of the bill goes away?"
+    options:
+      - text: "Almost none of it, because request fees are 92 percent of that bill."
+        correct: true
+        feedback: "Below about 11 KB the fee at the gate dominates, and it does not depend on the body size."
+      - text: "About 60 percent, because a CDN charges for the bytes that it moves."
+        correct: false
+        misconception: S08-M17
+        feedback: "A CDN charges for both. For a 1 KB object the byte fee is $0.11 against $1.20 of request fees."
+      - text: "The whole byte fee goes, and the byte fee was the larger half."
+        correct: false
+        misconception: S08-M17
+        feedback: "The byte fee is the smaller half for anything under about 11 KB."
+      - text: "Nothing changes, because most replies are 304s that carry no body already."
+        correct: false
+        misconception: S08-M20
+        feedback: "True about the body, wrong about the conclusion. The 304s are exactly why the bill is request fees."
+    explanation: "Per million responses the request fee is $1.20 either way. The byte fee is $0.11 for 1 KB and $59 to $90 for an 823 KB segment, so the two lines cross at about 11 KB."
+    covers: [S08-C84, S08-C85, S08-C86]
+    tags: []
+    taughtIn: the-bill-is-mostly-requests
+
+  - id: s08-digest-q08
+    use: [check, practice]
+    segment: 4
+    type: numeric
+    prompt: "A mid-tier cache holds the scorecard for 10 s, an edge holds it for 10 s, and the phone polls every 20 s. How stale can the screen be, in seconds?"
+    answer: { value: 40, tolerance: 0, unit: seconds }
+    distractors:
+      - value: 20
+        misconception: S08-M21
+        feedback: "The largest TTL is not the answer. Each layer runs its own clock, so the delays add."
+      - value: 10
+        misconception: S08-M21
+        feedback: "That is one layer only. Count both caches and the poll interval."
+    explanation: "Worst-case freshness is the poll interval plus every cache TTL on the path, so 20 plus 10 plus 10 is 40 s. Keeping each TTL at half of your promised freshness is what holds the total down."
+    covers: [S08-C20, S08-C97, S08-C99]
+    tags: []
+    taughtIn: seg-how-polling-survives-fifty-million-phones
+
+  - id: s08-digest-q09
+    use: [check, exit, practice]
+    segment: 4
+    type: mcq
+    prompt: "Twenty thousand phones ask one CDN edge for `score.json` inside the same 50 ms, just after the edge copy expired. Request collapsing is on and the answer says `public`. How many requests reach the origin?"
+    options:
+      - text: "Twenty thousand, because an expired copy makes every one of them a miss."
+        correct: false
+        misconception: S08-M22
+        feedback: "That is the behaviour with collapsing off. With it on, the edge sends one fetch and queues the rest."
+      - text: "One. The edge sends a single fetch upstream and holds the other askers in a queue."
+        correct: true
+        feedback: "One fetch per edge per object, and a `public` answer releases the whole queue at once."
+      - text: "Twenty thousand, but each one is a cheap 304 reply, so the origin barely notices."
+        correct: false
+        misconception: S08-M20
+        feedback: "A 304 still costs a round trip and a request at the origin. Twenty thousand of them is still a crowd."
+      - text: "None, because the edge keeps serving the expired copy and never asks again."
+        correct: false
+        misconception: S08-M44
+        feedback: "Serving stale while updating still sends one refresh request. It does not stop asking forever."
+    explanation: "At the instant a copy expires every request is a miss, and they all head for the origin. Request collapsing turns that crowd into one upstream fetch per edge per object."
+    covers: [S08-C101, S08-C102, S08-C107, S08-C108]
+    tags: []
+    taughtIn: one-fetch-per-edge-per-object
+
+  - id: s08-digest-q10
+    use: [check, practice]
+    segment: 4
+    type: spot-bug
+    prompt: "The origin starts adding `Set-Cookie: session=abc` to every `score.json` response. The configuration at the edge did not change. What breaks?"
+    options:
+      - text: "Request collapsing. The queue drains one request at a time, and Fastly stops collapsing that object for two minutes."
+        correct: true
+        feedback: "The first response decides for the whole queue, so it has to be shareable."
+      - text: "Nothing breaks, because the cookie adds only a few dozen bytes."
+        correct: false
+        misconception: S08-M22
+        feedback: "The size is not the problem. An unshareable answer cannot be handed to a queue of waiters."
+      - text: "The ETag stops matching, so every poll gets 200 instead of 304."
+        correct: false
+        misconception: S08-M24
+        feedback: "A cookie does not change the body, so the version-based ETag is unaffected."
+    explanation: "Collapsing needs a shareable answer. `Cache-Control: public` releases every waiter at once, while a `private` directive or a stray `Set-Cookie` dequeues them one by one."
+    covers: [S08-C108, S08-C109]
+    tags: []
+    taughtIn: one-fetch-per-edge-per-object
+
+  - id: s08-digest-q11
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: "A live stream caches each `.ts` segment for ten minutes and its media playlist for two seconds. Why the difference?"
+    options:
+      - text: "The segment is larger, so a cached copy is worth more."
+        correct: false
+        misconception: S08-M30
+        feedback: "Size does not set a TTL. A large object that changed is just as wrong as a small one."
+      - text: "The playlist is small, so a long TTL on it would save almost nothing anyway."
+        correct: false
+        misconception: S08-M36
+        feedback: "The playlist is the harder half. It is billed per request at millions a second, and a stale copy stalls the player."
+      - text: "The segment never changes, and the playlist changes every target duration."
+        correct: true
+        feedback: "A cache lifetime follows the change rate of the object, never its size."
+      - text: "A CDN cannot hold a binary body for long, while it can hold text."
+        correct: false
+        misconception: S08-M30
+        feedback: "A CDN holds either kind. What matters is whether the bytes can change after you publish them."
+    explanation: "HLS keeps control and data apart. The playlist carries all of the change, so it gets half a target duration or less. A segment is immutable, so it gets minutes to forever and may be served stale freely."
+    covers: [S08-C132, S08-C162, S08-C163, S08-C164]
+    tags: []
+    taughtIn: a-small-index-over-fixed-pieces
+
+  - id: s08-digest-q12
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: "A player reloads the media playlist and the body comes back byte for byte identical. When should it reload again?"
+    options:
+      - text: "After one full target duration, which is the normal reload interval."
+        correct: false
+        misconception: S08-M31
+        feedback: "One target duration is the wait after a change. An unchanged playlist gets the shorter wait."
+      - text: "Immediately, because the player is now behind the live edge."
+        correct: false
+        misconception: S08-M31
+        feedback: "A tight loop buys requests, not information. The RFC asks for half a target duration."
+      - text: "Never again, because nothing changed and the stream has clearly ended."
+        correct: false
+        misconception: S08-M29
+        feedback: "Only `EXT-X-ENDLIST` ends the polling. An unchanged playlist means something upstream is late."
+      - text: "After half a target duration."
+        correct: true
+        feedback: "Unchanged means late, so the client asks again sooner than usual."
+    explanation: "RFC 8216 gives two reload rules. After a change, wait at least one target duration. After no change, wait half a target duration and try again."
+    covers: [S08-C140, S08-C141]
+    tags: []
+    taughtIn: seg-the-same-loop-with-bigger-bytes
+
+  - id: s08-digest-q13
+    use: [check, exit, practice]
+    segment: 6
+    type: numeric
+    prompt: "A live stream uses 6 s segments, about 2 s to encode and about 2 s to reach the CDN. How far behind the stadium is the picture, in seconds?"
+    answer: { value: 28, tolerance: 0, unit: seconds }
+    distractors:
+      - value: 16
+        misconception: S08-M40
+        feedback: "The hold-back is not a fixed 6 s. It is three target durations, so it grows with your segment length."
+      - value: 10
+        misconception: S08-M40
+        feedback: "That leaves out the player hold-back, which is the largest bar of the four."
+    explanation: "The four bars are encode, the segment filling, delivery to the CDN, and a player hold-back of three target durations. With 6 s segments that is 2 plus 6 plus 2 plus 18, so 28 s."
+    covers: [S08-C157, S08-C172]
+    tags: []
+    taughtIn: latency-is-a-budget
+
+  - id: s08-digest-q14
+    use: [check, practice]
+    segment: 6
+    type: predict
+    prompt: "A buffer-based player has a nearly empty buffer, and the throughput it measured on the last few segments is high. Predict what it does next."
+    options:
+      - text: "It steps up, because the measured throughput allows a higher rendition."
+        correct: false
+        misconception: S08-M43
+        feedback: "That is the throughput-based rule. A buffer-based player reads the buffer first."
+      - text: "It steps down to a lower rendition."
+        correct: true
+        feedback: "A stall is worse than a lower rendition, so an empty buffer wins the argument."
+      - text: "It holds the current rendition until the buffer recovers."
+        correct: false
+        misconception: S08-M43
+        feedback: "Holding gambles that the next segment arrives in time. The policy does not take that bet."
+      - text: "It stalls on purpose to refill the buffer faster."
+        correct: false
+        misconception: S08-M43
+        feedback: "A deliberate stall is the exact outcome the policy exists to avoid."
+    explanation: "Throughput-based adaptation reads how fast the last segments arrived. Buffer-based adaptation reads the buffer: nearly empty means step down, full means step up. Netflix measured 10 to 20 percent fewer rebuffers with that rule, at a similar video rate."
+    covers: [S08-C184, S08-C185, S08-C187]
+    tags: []
+    taughtIn: seg-the-budget-the-switch-and-the-four-ideas

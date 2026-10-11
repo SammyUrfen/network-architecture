@@ -1,0 +1,637 @@
+---
+id: s06-digest
+session: 6
+order: 1
+kind: digest
+title: Class 6 in one fast read
+bigIdea: A CDN is Session 4's reverse proxy rented in 300 cities. It cannot beat the speed of light, so it moves the work or the data closer, and because all your traffic now converges there, the cache became your perimeter and the rent is trust.
+covers: [S06-C01, S06-C05, S06-C11, S06-C16, S06-C20, S06-C22, S06-C26, S06-C31, S06-C34, S06-C43, S06-C44, S06-C47, S06-C50, S06-C51, S06-C54, S06-C57, S06-C73, S06-C74, S06-C75, S06-C78, S06-C81, S06-C83, S06-C84, S06-C85, S06-C86, S06-C88, S06-C91, S06-C92, S06-C93, S06-C95, S06-C97, S06-C98, S06-C101, S06-C103, S06-C104, S06-C106, S06-C107, S06-C114, S06-C126, S06-C127, S06-C128, S06-C131, S06-C133, S06-C136, S06-C139, S06-C141, S06-C147, S06-C153, S06-C157, S06-C159, S06-C161, S06-C165, S06-C168, S06-C172, S06-C173, S06-C180, S06-C182, S06-C191, S06-C194, S06-C196, S06-C201, S06-C207, S06-C210, S06-C213, S06-C217, S06-C222, S06-C223, S06-C224, S06-C230, S06-C231, S06-C232, S06-C234, S06-C236, S06-C237, S06-C238, S06-C240, S06-C244, S06-C245, S06-C246, S06-C247, S06-C251, S06-C252, S06-C253, S06-C254, S06-C255, S06-C256, S06-C257, S06-C259, S06-C260, S06-C261, S06-C266]
+threads: [T-round-trip-tax, T-setup-off-path, T-honest-benchmarks, T-where-state-goes, T-law-or-habit]
+confidence: high
+status: ready
+---
+
+import Myth from '../../../components/lesson/Myth.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Beyond from '../../../components/lesson/Beyond.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import Picture from '../../../components/lesson/Picture.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+Weeks 1 to 5 made one origin fast. A faster origin does nothing for a user in Mumbai whose data sits in Virginia. Light in glass crosses that gap in 63 ms, so one question and its answer cost 126 ms before your code runs. No CPU removes that wait.
+
+This class rents somebody else's computers, in more than 300 cities, and puts them in front of your origin. The first half buys time back. The second half is the surprise. All your traffic already passes through those computers, so they became your firewall, your rate limiter, your flood absorber, your login check, and a place to run your code. The bill arrives at the end, in trust.
+
+**The path through this read.** Part 1 measures the floor that distance sets. Part 2 says what a CDN is, and how a fleet of caches agrees on who owns which URL. Part 3 reads the cache: what the edge keeps when you say nothing, the eight words it reports, and four tricks that cache a page which looks personal. Part 4 breaks that cache two ways, then moves the same bytes faster. Part 5 turns the edge into a security perimeter. Part 6 runs your own code up there, and reads the bill.
+
+<Segment title="The floor that distance sets">
+
+**In this part.** Every number in this class starts here. Distance puts a floor under your latency, and that floor is the reason an edge exists at all.
+
+<Stepper
+  slot="visual"
+  title="Seven ways to fetch one page, from Mumbai"
+  steps={[
+    {
+      caption: 'Direct to the origin, new connection. Three long round trips.',
+      lanes: [
+        { label: 'Path', chunks: ['you', 'origin, 204 ms away'] },
+        { label: 'Content', chunks: ['dynamic'] },
+        { label: 'Time to first byte', chunks: ['621 ms'] },
+        { label: 'Round trips', chunks: ['3.0'] },
+        { label: 'Origin touched', chunks: ['yes'] },
+      ],
+    },
+    {
+      caption: 'Direct to the origin, connection already open. One round trip.',
+      lanes: [
+        { label: 'Path', chunks: ['you', 'origin, 204 ms away'] },
+        { label: 'Content', chunks: ['dynamic'] },
+        { label: 'Time to first byte', chunks: ['208 ms'] },
+        { label: 'Round trips', chunks: ['1.0'] },
+        { label: 'Origin touched', chunks: ['yes'] },
+      ],
+    },
+    {
+      caption: 'An edge with no pool. Slower than direct, because it is only a longer proxy.',
+      lanes: [
+        { label: 'Path', chunks: ['you', 'edge, 10 ms', 'origin, 194 ms'] },
+        { label: 'Content', chunks: ['dynamic'] },
+        { label: 'Time to first byte', chunks: ['625 ms'] },
+        { label: 'Round trips', chunks: ['3.1'] },
+        { label: 'Origin touched', chunks: ['yes'] },
+      ],
+    },
+    {
+      caption: 'An edge with a warm pool. The handshakes to the origin are already paid.',
+      lanes: [
+        { label: 'Path', chunks: ['you', 'edge, 10 ms', 'warm pool'] },
+        { label: 'Content', chunks: ['dynamic'] },
+        { label: 'Time to first byte', chunks: ['233 ms'] },
+        { label: 'Round trips', chunks: ['1.1'] },
+        { label: 'Origin touched', chunks: ['yes'] },
+      ],
+    },
+    {
+      caption: 'An edge cache hit. The long leg never happens.',
+      lanes: [
+        { label: 'Path', chunks: ['you', 'edge, 10 ms'] },
+        { label: 'Content', chunks: ['static'] },
+        { label: 'Time to first byte', chunks: ['34 ms', '11 ms if open'] },
+        { label: 'Round trips', chunks: ['0.2'] },
+        { label: 'Origin touched', chunks: ['no'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a helper who does not know the answer is still useful, because she keeps a line to your friend's house open. Opening a line takes several trips of its own, and that is the part the picture hides.">
+
+Your friend lives on the far side of a big city. You shout a question down a very long tube to her house. The tube carries your voice at a fixed speed, so one question and its answer cost two minutes, even when she answers at once. Now put a helper in a shop near your house. When she knows the answer, you get it in seconds. When she does not, she shouts down the same tube and you wait the full two minutes.
+
+The tube is the fibre, and the fixed speed is light in glass. Your friend is your origin, and the helper in the shop is the edge. The answers the helper already knows are the cache. The walk to the shop is the 10 ms to the edge.
+
+</Picture>
+
+<KeyIdea id="the-pool-saves-handshakes-the-cache-saves-the-trip" title="The pool saves handshakes, only the cache saves the trip">
+
+An edge with a warm connection to your origin removes the setup round trips, which takes 621 ms down to 233 ms. It cannot remove the 194 ms leg, because the bytes still come from the origin. A cache hit deletes that leg completely, and the answer arrives in 34 ms.
+
+</KeyIdea>
+
+Light in a vacuum travels 299,792 km each second. Glass has a group index near 1.468, so light in fibre travels 204,218 km each second, which is 4.90 ms for each 1000 km one way. Mumbai to Ashburn is 12,847 km on the great circle, so the round-trip floor is 126 ms. A new TLS 1.3 connection then needs three of those round trips to the first byte, about 380 ms of nothing. Mumbai to Chennai is 1,033 km, a floor of 10 ms against a measured ping of 23 ms. That ratio of 2.3 is routing, not physics, and the Internet median sits near 3.2.
+
+Distance charges you twice, because it raises the loss rate as well as the round trip. The Mathis formula says one flow carries about its segment size divided by the round trip, divided again by the square root of the loss rate. The Akamai table of <SlideLink session={6} page={10} /> walks it out: 44 Mbps under 100 miles, and 0.4 Mbps at about 6,000 miles. The far edge is 110 times slower while it is only 60 times further away. One TCP flow cannot fill a long path, which is why multiplexing and BBR both exist.
+
+<Myth myth="Class 6 taught a new result about the QUIC handshake.">
+
+Page 9 of the class 6 deck is titled "QUIC, the round trips", and it carries class 5 numbers from the class 5 lab. It is a leftover paste from the previous deck, not new content. The handshake race belongs to <ModuleLink id="s05-m10-quic-handshakes" />. Nothing in class 6 depends on it.
+
+</Myth>
+
+<Beyond source="RFC 8446 section 2, verified 2026-10-10" url="https://www.rfc-editor.org/rfc/rfc8446#section-2">
+
+TLS 1.3 itself is a one-round-trip handshake. The three round trips of <SlideLink session={6} page={8} /> are one for TCP, one for TLS and one for the request. Say which layer owns each one, or the number reads as a fault in TLS 1.3.
+
+</Beyond>
+
+<Remember>
+
+- Light in fibre travels 204,218 km/s, about two thirds of its speed in a vacuum.
+- 4.90 ms for each 1000 km, one way. A round trip doubles it.
+- Mumbai to Ashburn is 12,847 km, so the floor is 126 ms. No code goes under a floor.
+- Three round trips to the first byte on a new TLS 1.3 connection, about 380 ms.
+- The stretch factor is the real ping divided by the floor. Chennai 2.3, Internet median 3.2.
+- A large stretch is the part a CDN can buy back. A small stretch leaves only the handshakes.
+- A cache miss through the edge is no faster than direct, and 625 ms against 621 ms is slower.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s06-m01-physics-budget" />.
+
+<Check id="s06-digest-q01" />
+
+<Check id="s06-digest-q02" />
+
+</Segment>
+
+<Segment title="A reverse proxy you rent by the city">
+
+**In this part.** Part 1 said why an edge has to exist. This part says what an edge is, and the answer is a let-down on purpose. The one new idea is the algorithm that picks an owner for each URL.
+
+<Stepper
+  slot="visual"
+  title="Ten caches become eleven. Who owns which URL?"
+  steps={[
+    {
+      caption: 'hash(url) % 10 becomes hash(url) % 11. N sits inside the formula.',
+      lanes: [
+        { label: 'Scheme', chunks: ['modulo'] },
+        { label: 'URLs that change owner', chunks: ['90.9%'] },
+        { label: 'Busiest server', chunks: ['1.02 times the mean'] },
+        { label: 'What it costs you', chunks: ['a near-total cache flush'] },
+      ],
+    },
+    {
+      caption: 'One ring, one point for each server. A new server steals one arc.',
+      lanes: [
+        { label: 'Scheme', chunks: ['consistent, 1 point'] },
+        { label: 'URLs that change owner', chunks: ['3.3%'] },
+        { label: 'Busiest server', chunks: ['2.93 times the mean'] },
+        { label: 'What it costs you', chunks: ['one server carries triple load'] },
+      ],
+    },
+    {
+      caption: '160 points for each server, spread around the ring. The deployed default.',
+      lanes: [
+        { label: 'Scheme', chunks: ['consistent, 160 points'] },
+        { label: 'URLs that change owner', chunks: ['8.2%'] },
+        { label: 'Busiest server', chunks: ['1.14 times the mean'] },
+        { label: 'What it costs you', chunks: ['a little extra movement'] },
+      ],
+    },
+    {
+      caption: 'The best that any scheme can reach: one URL in eleven moves.',
+      lanes: [
+        { label: 'Scheme', chunks: ['the ideal'] },
+        { label: 'URLs that change owner', chunks: ['9.1%'] },
+        { label: 'Busiest server', chunks: ['1.00 times the mean'] },
+        { label: 'What it costs you', chunks: ['nothing, and nobody reaches it'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a corner shop cannot bake bread it has never seen, and a cache can always fetch the real thing from head office and keep a copy.">
+
+A chain of corner shops sells the same bread. Head office bakes it, and each shop keeps a few loaves on the shelf. Every shop has the same phone number painted on the window, so your call goes to the shop nearest you. Nobody tells you which shop you reached, so every receipt prints a shop code. Head office also needs a stocking rule that survives opening a new shop.
+
+Head office is your origin, and a shop is an edge point of presence. The painted phone number is the anycast address, and the shop code is the colo. The stocking rule is the hashing scheme that decides which cache owns which URL.
+
+</Picture>
+
+<KeyIdea id="a-cdn-rents-geography-not-technology" title="A CDN rents geography, not new technology">
+
+Every part of an edge came from an earlier class. What you cannot install yourself is the geography: a cache 10 ms from your user, both ends of the long leg under one operator, and enough cities that one address answers everywhere.
+
+</KeyIdea>
+
+A CDN edge is the reverse proxy of class 4 with its three usual jobs. It terminates TLS, it caches, and it inspects requests. The cache is `proxy_cache`, the warm pool back to your origin is `upstream keepalive` from class 3, and the one address that answers in every city is anycast, from class 2. Squid did reverse-proxy caching in 1996, so even the combination is old. What a CDN sells you is geography.
+
+Inside one city many cache machines share the work, so something has to pick an owner for each URL. That is the founding question of a CDN, and `hash(url) % N` answers it badly. N sits inside the formula, so a change to N changes almost every owner, and the bench moves 90.9% of 100,000 URLs when ten caches become eleven. Even load is not the problem, because modulo leaves the busiest server at 1.02 times the mean. The churn is the problem, and it arrives as a cache flush plus an origin stampede at the moment you add capacity. Consistent hashing puts servers and URLs on one ring, so a new server steals only the arc in front of it.
+
+You do not choose the city that answers you either. BGP anycast chooses, by policy and path length, not by latency, so it gives you a nearby point of presence and not reliably the nearest one. The CDN then names the building for you. Every Cloudflare-proxied site answers `/cdn-cgi/trace` with your address, the colo, the HTTP version and the TLS version, and the suffix of every `cf-ray` header prints the colo again. A colo is an IATA airport code, so BOM is Mumbai and IAD is Ashburn. Read it first when one user is slow or stale.
+
+<Remember>
+
+- A CDN is class 4's caching reverse proxy, rented in more than 300 cities.
+- The cache is `proxy_cache`, the pool is `upstream keepalive`, the one address is anycast.
+- `hash(url) % N` moves 90.9% of 100,000 URLs when 10 caches become 11.
+- A capacity upgrade under modulo is a cache flush and an origin stampede at the worst moment.
+- Consistent hashing, 160 points: 8.2% moved, 1.14 times the mean. The ideal is 9.1%.
+- BGP anycast picks the colo, by policy and path length, not by latency.
+- `/cdn-cgi/trace` prints the colo, and the suffix of `cf-ray` prints it on every response.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s06-m02-what-a-cdn-is" />.
+
+<Check id="s06-digest-q03" />
+
+<Check id="s06-digest-q04" />
+
+<Check id="s06-digest-q05" />
+
+</Segment>
+
+<Segment title="What the edge keeps, and the eight words it reports">
+
+**In this part.** Two defaults decide your whole cache behaviour, and you set neither of them. Then one response header tells you which of eight things happened.
+
+<Stepper
+  slot="visual"
+  title="Six requests through one edge, and the word each one gets back"
+  steps={[
+    {
+      caption: 'A CSS file, first ever request. Eligible, absent, storable.',
+      lanes: [
+        { label: 'Request', chunks: ['/static/app.css'] },
+        { label: 'Eligible?', chunks: ['yes, .css is on the list'] },
+        { label: 'In the cache?', chunks: ['no'] },
+        { label: 'cf-cache-status', chunks: ['MISS'] },
+        { label: 'Origin touched', chunks: ['yes, full body'] },
+      ],
+    },
+    {
+      caption: 'The same file one second later. Still fresh.',
+      lanes: [
+        { label: 'Request', chunks: ['/static/app.css'] },
+        { label: 'Eligible?', chunks: ['yes, .css is on the list'] },
+        { label: 'In the cache?', chunks: ['yes, and fresh'] },
+        { label: 'cf-cache-status', chunks: ['HIT'] },
+        { label: 'Origin touched', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'The same file past its TTL. The origin answers 304.',
+      lanes: [
+        { label: 'Request', chunks: ['/static/app.css'] },
+        { label: 'Eligible?', chunks: ['yes, .css is on the list'] },
+        { label: 'In the cache?', chunks: ['yes, but stale'] },
+        { label: 'cf-cache-status', chunks: ['REVALIDATED'] },
+        { label: 'Origin touched', chunks: ['yes, headers only'] },
+      ],
+    },
+    {
+      caption: 'An HTML page. The extension is not on the list, so nothing is looked up.',
+      lanes: [
+        { label: 'Request', chunks: ['/page/home'] },
+        { label: 'Eligible?', chunks: ['no, HTML is off the list'] },
+        { label: 'In the cache?', chunks: ['never asked'] },
+        { label: 'cf-cache-status', chunks: ['DYNAMIC'] },
+        { label: 'Origin touched', chunks: ['yes, every time'] },
+      ],
+    },
+    {
+      caption: 'A private image. Eligible, so the edge looked, and then kept nothing.',
+      lanes: [
+        { label: 'Request', chunks: ['/me/avatar.png'] },
+        { label: 'Eligible?', chunks: ['yes, .png is on the list'] },
+        { label: 'In the cache?', chunks: ['no, the origin said private'] },
+        { label: 'cf-cache-status', chunks: ['BYPASS'] },
+        { label: 'Origin touched', chunks: ['yes, nothing stored'] },
+      ],
+    },
+    {
+      caption: 'The CSS file again, with the origin dead and a stale window open.',
+      lanes: [
+        { label: 'Request', chunks: ['/static/app.css'] },
+        { label: 'Eligible?', chunks: ['yes, .css is on the list'] },
+        { label: 'In the cache?', chunks: ['yes, stale, origin down'] },
+        { label: 'cf-cache-status', chunks: ['STALE'] },
+        { label: 'Origin touched', chunks: ['tried, and it failed'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a photocopier never checks with the teacher before it hands out a copy, and a cache can ask the origin whether its copy is still current and get a one-line answer.">
+
+A school keeps a photocopier in the corridor with a rule taped to it. Copy anything that looks like a worksheet, and never copy a report card. The rule reads the label on the folder, not the pages inside. The clerk then files each copy under the title on the front page, and ignores the name written inside. Two children hand in folders with the same title, and the clerk gives both of them the same copy.
+
+The label on the folder is the file extension, and the taped rule is the eligibility list. The title on the front page is the cache key. The name written inside is the cookie, and the clerk never reads it.
+
+</Picture>
+
+<KeyIdea id="two-defaults-you-did-not-choose" title="Two defaults you did not choose">
+
+The edge decides eligibility from the file extension, and HTML and JSON are not on the list. The cache key is scheme plus host plus path plus query, and nothing else. Every default cache behaviour, good and catastrophic, follows from those two lines.
+
+</KeyIdea>
+
+A CDN asks two questions before it asks anything about freshness. Is this object eligible at all, and what is its key. Cloudflare answers the first from a list of 68 static file extensions. HTML and JSON are off that list, and so is any response with `Set-Cookie`, `private`, `no-store` or `max-age=0`. When the origin says nothing about freshness, the default edge TTL is 2 hours for 200 and 301, and 3 minutes for 404. The key leaves out cookies and almost every header, so two users with different cookies share one object. That is right for `app.css` and catastrophic for `/account`. `Vary`, from class 5, is how you tell the edge that two requests differ.
+
+`cf-cache-status` is a small language with eight words, and the visual walks six of them. Two pairs repay care. REVALIDATED and EXPIRED both mean the TTL passed. REVALIDATED means the origin answered 304, so only headers crossed the long leg. EXPIRED means a full body crossed it. UPDATING and STALE both serve a stale body. UPDATING is planned, with a background refresh. STALE is unplanned, because the origin failed.
+
+Pages got personal, so four tricks cache them anyway, and all four are one move: push the personal part outward so the shared part can be cached. Server-Side Includes, 1994, fill holes at the web server, before CGI existed. Edge-Side Includes, from Akamai and Oracle in 2001, fill the same holes at the point of presence. Ajax, about 2005, pushes them to the browser. Railgun, 2013 to 2024, sent only the changed bytes. The ESI bench is honest about the trade: origin bytes fall 97.9%, user bytes rise 0.06%, and origin requests climb from 100 to 201.
+
+<Beyond source="Cloudflare cache docs, cache status response header, verified 2026-10-10" url="https://developers.cloudflare.com/cache/concepts/default-cache-behavior/">
+
+Cloudflare documents more than eight values. NONE, UNKNOWN and DEFERRED also exist. The eight of this class are the teaching set, not the whole vocabulary.
+
+</Beyond>
+
+<Remember>
+
+- Eligibility comes from the extension. HTML and JSON are off the list of 68, and so is anything with `Set-Cookie` or `private`.
+- The default key is scheme plus host plus path plus query. Nothing else.
+- Cookies are not in the key, so two users can share one object. `Vary` puts one back.
+- HIT: fresh from the cache, origin never touched. MISS: eligible, absent, full body fetched.
+- EXPIRED: TTL passed, full body came back. REVALIDATED: TTL passed, origin said 304.
+- UPDATING: stale now, planned background refresh. STALE: the origin failed.
+- DYNAMIC: never eligible, so the edge never looked. BYPASS: looked, then `no-store`.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s06-m03-caching-defaults" /> and <ModuleLink id="s06-m04-caching-the-uncacheable" />.
+
+<Check id="s06-digest-q06" />
+
+<Check id="s06-digest-q07" />
+
+<Check id="s06-digest-q08" />
+
+</Segment>
+
+<Segment title="Two ways to break the cache, three ways to beat the clock">
+
+**In this part.** A shared cache is shared state, so it is an attack surface. Both classic bugs have one root cause. Then come the three mechanisms that move the same bytes faster.
+
+<SequenceDiagram
+  slot="visual"
+  title="Cache poisoning: one request, every later visitor"
+  actors={['attacker', 'edge', 'origin', 'visitor']}
+  messages={[
+    { from: 'attacker', to: 'edge', label: 'GET /page/landing + forged host' },
+    { from: 'edge', to: 'origin', label: 'the forged header is passed on' },
+    { from: 'origin', to: 'edge', label: '200, script src from that header' },
+    { from: 'edge', to: 'edge', label: 'stored under host and target only' },
+    { from: 'visitor', to: 'edge', label: 'GET /page/landing, no headers' },
+    { from: 'edge', to: 'visitor', label: 'HIT, the attacker script' },
+  ]}
+/>
+
+<Picture breaks="a caretaker can look inside an envelope, and a cache deliberately does not, because reading every byte is what would make a cache slow.">
+
+A noticeboard in a block of flats holds one copy of each notice, and the caretaker files each notice under its title alone. A prankster hands in a notice titled "Bin collection" with a false date inside, and for the next hour every resident who asks for it gets the prank. The second trick runs the other way. A resident posts a private bank letter under that same title, and the caretaker pins it to the public board, where the prankster reads it.
+
+The title is the cache key, and the pages inside are the response. The first trick is cache poisoning, and the second is cache deception. Both times the caretaker filed by a name that did not describe the contents.
+
+</Picture>
+
+<KeyIdea id="the-key-is-the-name-of-the-answer" title="The key is the name of the answer">
+
+Poisoning works when something that changed the answer is not in the name. Deception works when the name claims a type that the body does not have. One root cause: the cache key disagrees with reality.
+
+</KeyIdea>
+
+Cache poisoning, named by Kettle in 2018, needs one request. The origin reflects a header such as `X-Forwarded-Host` into the page, that header is not in the key, and the edge stores the hostile page under the plain URL. The lab window is 60 seconds, so one request each minute keeps the poison alive forever. The cost of the attack is the TTL, never the request count. Three fixes exist: drop the unkeyed header at the edge, add it to the key, or make the origin send `Vary` on it. Dropping is the defensible default, because it needs no help from the origin. Cache deception, named by Gil at Black Hat USA 2017, runs the attack backwards. The victim loads `/account/settings/fake.css`, the edge sees `.css`, and the private page lands where the attacker reads it. Its two fixes are the two halves of part 3.
+
+Three mechanisms then move the same bytes faster. First, congestion control. CUBIC grows until a packet drops and then halves its window, which is the saw-tooth of class 2. On a long path, loss also comes from distance and random errors, so the halving is a mistake. BBR measures the real bottleneck bandwidth and the minimum round trip, then paces the sender to that rate. Only the sender changes, so a CDN that owns the sender on both legs can switch it on for you. Second, the warm pool. A connection opened by one worker can only be reused by that worker, so splitting the pool starves each part. Third, shielding. Without it, 300 edges each miss the same object and send 300 requests to your origin. Request collapsing stops that inside one city, and a tiered cache stops it across cities: never fetch the same object twice at once.
+
+<Myth myth="BBR is the thing that makes the TCP saw-tooth.">
+
+The saw-tooth belongs to a loss-based controller such as CUBIC, and class 2 drew it. BBR is the answer to it, not the cause of it. The class 6 source document stated this the wrong way round, and the deck corrects it on <SlideLink session={6} page={22} />. Getting the direction right is the point of the slide.
+
+</Myth>
+
+<Remember>
+
+- Poisoning needs one request, and the TTL sets its cost, not the request rate.
+- Three closes: drop the header, add it to the key, or send `Vary` on it. Drop it by default.
+- Deception reverses it: a `.css` suffix on a private path stores the victim's page.
+- Two closes for deception: stop trusting the extension, and honour `no-store`.
+- One root cause for both: the cache key disagrees with reality.
+- The saw-tooth belongs to CUBIC. BBR paces to a measured rate and ignores loss.
+- Pool reuse: 0%, 45.3%, 82.7%, 98.7% for no pool, 32 pools, 8 pools, 1 shared pool.
+- Most CDN-to-origin hops are still HTTP/1.1. Pooling, not multiplexing, saves the origin leg.
+- Collapsing at one city and a tiered cache across cities: never fetch one object twice at once.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s06-m05-cache-bugs" /> and <ModuleLink id="s06-m06-faster-bytes" />.
+
+<Check id="s06-digest-q09" />
+
+<Check id="s06-digest-q10" />
+
+</Segment>
+
+<Segment title="Everything that is not speed">
+
+**In this part.** Speed got you to adopt an edge. Now the surprise. All your traffic already passes through it, so the firewall, the rate limiter, the flood absorber and the login check all moved there.
+
+<Stepper
+  slot="visual"
+  title="One phrase, five meanings: 100 requests per 10 seconds"
+  steps={[
+    {
+      caption: 'A fixed window resets at a clock boundary, so a client spends a budget on each side.',
+      lanes: [
+        { label: 'Algorithm', chunks: ['fixed window'] },
+        { label: 'In one second at the boundary', chunks: ['200 pass'] },
+        { label: 'A normal page load', chunks: ['all pass'] },
+        { label: 'What it stores', chunks: ['one counter'] },
+      ],
+    },
+    {
+      caption: 'A sliding log keeps every accepted timestamp, so it is exact.',
+      lanes: [
+        { label: 'Algorithm', chunks: ['sliding log'] },
+        { label: 'In one second at the boundary', chunks: ['100 pass'] },
+        { label: 'A normal page load', chunks: ['all pass'] },
+        { label: 'What it stores', chunks: ['up to 100 timestamps'] },
+      ],
+    },
+    {
+      caption: 'A sliding estimate weights the previous window by how much of it still overlaps.',
+      lanes: [
+        { label: 'Algorithm', chunks: ['sliding estimate'] },
+        { label: 'In one second at the boundary', chunks: ['104 pass'] },
+        { label: 'A normal page load', chunks: ['all pass'] },
+        { label: 'What it stores', chunks: ['two counters'] },
+      ],
+    },
+    {
+      caption: 'A token bucket refills at a steady rate and allows a burst by design.',
+      lanes: [
+        { label: 'Algorithm', chunks: ['token bucket'] },
+        { label: 'In one second at the boundary', chunks: ['109 pass'] },
+        { label: 'A normal page load', chunks: ['all pass'] },
+        { label: 'What it stores', chunks: ['a count and a timestamp'] },
+      ],
+    },
+    {
+      caption: 'A leaky bucket with no burst is pure, and it refuses a real browser.',
+      lanes: [
+        { label: 'Algorithm', chunks: ['leaky bucket, burst 0'] },
+        { label: 'In one second at the boundary', chunks: ['10 pass'] },
+        { label: 'A normal page load', chunks: ['97% refused'] },
+        { label: 'What it stores', chunks: ['a count and a timestamp'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a festival gate sees each person once, and an edge sees the same visitor thousands of times and must decide in under a millisecond each time.">
+
+A festival puts one gate in front of the field. Everybody walks through that gate, so the gate becomes the place for everything else: a bag search, a counter that limits how many enter each minute, a wall of stewards for a crowd surge, and a ticket check. None of that was why the gate was built. The bag search works from a list of things it recognises, so a thing it has not seen walks through. And all of it is worthless if there is a hole in the fence round the back.
+
+The gate is the edge. The bag search is the WAF, the counter is the rate limiter, the stewards are the flood absorption, and the ticket check is the API gateway. The hole in the fence is your origin, still answering anybody who reaches its address.
+
+</Picture>
+
+<KeyIdea id="the-perimeter-sits-where-traffic-converges" title="The perimeter sits wherever the traffic converges">
+
+A CDN started as a cache. It became your security perimeter for one reason: a perimeter can only exist where all the traffic already goes. Speed got you to adopt it, and control is why you cannot leave.
+
+</KeyIdea>
+
+A WAF is a denylist of spellings. It reads the request text, decodes it by some amount, and matches a list of patterns. The lab shows two bypasses in four lines. `' OR 1=1 --` is blocked. `'/**/OR/**/1=1--` leaks 5 rows at the decode level, because SQL comments replace the spaces. And `' --` leaks 5 rows at every level, because it has no OR, no UNION and no digits to match. The arms race is normalisation against spelling, and you never win it outright. The bug still lives in your origin, and the fix is to bind the query parameters. A WAF is still a real layer, because it blocks the mass-scanned payloads and buys time.
+
+A rate limit is only as good as how it counts, and the visual shows five answers to one phrase. Two failure modes matter. A fixed window lets 200 requests through in one blink at the boundary, and the Cloudflare free plan offers only that window. A leaky bucket with no burst refuses 97% of a normal page load, which is why `limit_req` in nginx has a burst parameter. The deployed answer is the sliding estimate: two counters for each client, and 0.003% wrong across 400 million requests. Geography then beats the algorithm, because counts are per data centre, so a botnet in 330 cities gets 330 budgets.
+
+Flood absorption is the one job you could never do yourself. The record attack is 31.4 Tbps, reported by Cloudflare in December 2025, from 1 to 4 million devices for 35 seconds, and it was mitigated with no human in the loop. You cannot buy 31 Tbps of inbound capacity. A flood is won with more capacity than the attacker and enough cities that anycast splits it. The API gateway is the last job. The edge verifies the token, sets the identity header from the verified claims, and strips the headers your origin leaks. A token claiming `alg: none` is refused, because the token never picks the algorithm. All of it collapses if somebody reaches your origin directly, so a gateway is only real when the origin refuses every client except the edge.
+
+<Remember>
+
+- A WAF filters spellings at the edge. The defect stays in the origin.
+- `' --` leaks at every normalisation level. Parameter binding in the origin is the fix.
+- "100 per 10 seconds" has five meanings: 200, 100, 104, 109 and 10 at the boundary. The free plan offers only the 200.
+- A leaky bucket with burst 0 refuses 97% of a normal page load.
+- Rate-limit counts are per data centre, so a botnet in 330 cities gets 330 budgets.
+- The record flood is 31.4 Tbps, 35 seconds, mitigated automatically. You cannot buy that pipe.
+- An edge gateway sets the identity header itself and refuses `alg: none`.
+- An edge gateway is only real when the origin answers nobody else. Mutual TLS, or a Tunnel.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s06-m07-not-speed" />.
+
+<Check id="s06-digest-q11" />
+
+<Check id="s06-digest-q12" />
+
+<Check id="s06-digest-q13" />
+
+</Segment>
+
+<Segment title="Your own code up there, and the bill">
+
+**In this part.** Every idea in this class is runnable today, and six demos need no account. Then the rent falls due, in trust and in dependence.
+
+<Stepper
+  slot="visual"
+  title="Four generations answer one question: what must a web server be?"
+  steps={[
+    {
+      caption: 'CGI, 1993: a new program starts for every single request.',
+      lanes: [
+        { label: 'Generation', chunks: ['CGI'] },
+        { label: 'Unit of isolation', chunks: ['a whole process'] },
+        { label: 'Start cost', chunks: ['fork, exec, interpreter load'] },
+        { label: 'Memory for each unit', chunks: ['a whole process image'] },
+      ],
+    },
+    {
+      caption: 'FastCGI, 1996: the processes stay alive between requests.',
+      lanes: [
+        { label: 'Generation', chunks: ['FastCGI'] },
+        { label: 'Unit of isolation', chunks: ['a warm process'] },
+        { label: 'Start cost', chunks: ['none, it already runs'] },
+        { label: 'Memory for each unit', chunks: ['a resident process'] },
+      ],
+    },
+    {
+      caption: 'nginx, 2004: no worker owns a connection at all.',
+      lanes: [
+        { label: 'Generation', chunks: ['nginx'] },
+        { label: 'Unit of isolation', chunks: ['a slot in an event loop'] },
+        { label: 'Start cost', chunks: ['none'] },
+        { label: 'Memory for each unit', chunks: ['a few hundred bytes'] },
+      ],
+    },
+    {
+      caption: 'A Worker: an isolate inside a runtime already resident in every city.',
+      lanes: [
+        { label: 'Generation', chunks: ['Cloudflare Worker'] },
+        { label: 'Unit of isolation', chunks: ['a V8 isolate'] },
+        { label: 'Start cost', chunks: ['about 5 ms'] },
+        { label: 'Memory for each unit', chunks: ['about 3 MB, against 35 MB'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a helper can take a break, and an edge isolate has a hard budget of about 10 ms of processor time for each request on the free plan.">
+
+A market stall rents a till from the market company. The basic rental is a working till. If you want the till to do something unusual, the company also rents you a small shelf behind the counter where your own helper stands. The helper is already in the building when you arrive, so nothing has to be set up, and she can only do small jobs quickly.
+
+The till is the edge, and the small shelf is a Worker. The helper who is already in the building is the runtime, resident in every point of presence before your first request arrives.
+
+</Picture>
+
+<KeyIdea id="the-unit-of-isolation-keeps-getting-cheaper" title="The unit of isolation keeps getting cheaper">
+
+CGI forked a process for each request. FastCGI kept them warm. nginx ran one event loop. A Worker runs a V8 isolate in a runtime that is already resident. Each step pays less of the setup, and that is one thread from class 3 to here.
+
+</KeyIdea>
+
+Six demos need no account. `cloudflared tunnel --url http://localhost:8000` prints a random `trycloudflare.com` address and puts your laptop behind the edge in seconds, with no DNS record. An echo server behind it prints `CF-Connecting-IP`, the `CF-Ray` with each visitor colo, and `CDN-Loop`. It also shows how few connections the tunnel uses for a whole room, which is the pool of part 4 made visible. A free zone adds a Cache Rule that makes HTML cacheable, so the sequence reads MISS, HIT, purge, MISS. The free-plan limits are the lesson, because each one is a weakness from an earlier part. The orange cloud hides nothing by itself, because old DNS history and certificate logs leak the origin address.
+
+A Worker runs your own code up there. The gateway Worker does the whole of part 5 in JavaScript. It rate-limits, verifies a token with WebCrypto, sets the identity header, and falls back to a backup origin. The ESI Worker failed in an instructive way. HTMLRewriter ate the page header, because HTML has no self-closing custom elements, so a parser reads an ESI include as an open tag that runs to the closing header tag. ESI is XML-ish markup inside HTML, and the two grammars disagree about where an element ends. That is the class 2 framing question, in 2026.
+
+The bill has four lines. The edge terminates HTTPS, so it holds your keys and reads every byte. One network carrying a large share of the web is a single point of failure for that share. Whoever runs the edge decides what flows. And once the WAF, the rate limits, the authentication and your Workers live there, it is your perimeter, so leaving is a rebuild. Four ideas then carry out of the class. Move the work or move the data. The edge is wherever all the traffic converges. It is all of classes 2 to 5, rented by the city. And concentration cuts both ways: the pooling that absorbed 31.4 Tbps also took 85% of one network to errors for 49 minutes in June 2021. Today the edge survives your origin dying. What does your origin do when the edge dies?
+
+<Remember>
+
+- Free plan: 5 WAF rules with no regex, 10 Cache Rules, 1 rate limit at 10 seconds only.
+- The orange cloud hides nothing. DNS history and certificate logs leak the origin address.
+- A Worker is a V8 isolate: about 5 ms and about 3 MB, against 35 MB for a container.
+- CGI process, FastCGI warm process, nginx event loop, Worker isolate. One thread, four answers.
+- An HTML parser eats an ESI include, because HTML has no self-closing custom elements.
+- The bill: your TLS keys, one point of failure, the power to shape traffic, lock-in by architecture.
+- The four closing ideas: move the work or the data, the edge is where traffic converges, it is all of classes 2 to 5, and concentration cuts both ways.
+- Week 7: the edge survives your origin dying. What does your origin do when the edge dies?
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s06-m08-cloudflare-hands-on" /> and <ModuleLink id="s06-m09-the-bill" />.
+
+<Check id="s06-digest-q14" />
+
+<Check id="s06-digest-q15" />
+
+</Segment>
+
+## Run it yourself, then break it
+
+The lab is the evidence for every number above. `./setup.sh` builds a private certificate authority with `openssl` alone, and `./run_all.sh` runs seven benches and six demos in about 80 seconds, with no network. `edge/edge.py` is 486 lines and it is the whole lecture as code, with the stages in a fixed order: rate limit, then WAF, then gateway, then cache, then origin pool, then ESI assembly. The instructor task is to read it end to end and then break it. Set `--pool 0` and watch the reuse collapse. Set `--waf off` and watch the injection land. Each flag maps to one claim, so a flag that moves no number means you misread the code. The lab also names four things it does not model, so every latency number here is a floor and not a prediction.
+
+<NumbersTable
+  caption="The numbers of class 6, with the conditions that each one needs"
+  rows={[
+    { value: '204,218 km/s', what: 'the speed of light in single-mode fibre', conditions: 'group index 1.468 near 1550 nm, bench/01_physics.py run on 2026-10-10' },
+    { value: '4.90 ms', what: 'the one-way delay for each 1000 km of fibre', conditions: 'the same bench constant. A round trip doubles it.' },
+    { value: '126 ms', what: 'the round-trip floor from Mumbai to Ashburn', conditions: '12,847 km on the great circle, straight glass, no queueing' },
+    { value: '23 ms against a 10 ms floor', what: 'the real Mumbai to Chennai ping, a stretch of 2.3', conditions: 'WonderNetwork, 8 to 17 September 2026, one machine pair for each city' },
+    { value: '1.0003', what: 'the index of hollow-core fibre, which would be 47% faster', conditions: 'Microsoft started deploying it in September 2025. Not on your path today.' },
+    { value: '44 Mbps down to 0.4 Mbps', what: 'one-flow throughput from under 100 miles to about 6,000 miles', conditions: 'Akamai 2010, Nygren et al. Table 1, at 0.6% and 1.4% loss' },
+    { value: '621 / 233 / 34 ms', what: 'time to first byte for direct new, warm pool and cache hit', conditions: 'median of 5 runs, bench/02_split_tcp.py with laggy.py, delay only' },
+    { value: '90.9% against 8.2%', what: 'URLs that change owner when 10 caches become 11', conditions: '100,000 URLs, modulo against 160 virtual points, bench/06_consistent_hash.py' },
+    { value: '2 hours and 3 minutes', what: 'the default edge TTL for 200 or 301, and for 404', conditions: 'Cloudflare behaviour when the origin says nothing about freshness' },
+    { value: '100 to 201', what: 'origin requests with ESI on, for 100 logged-in users on one page', conditions: 'bench/04_esi_bytes.py: one shell fetch plus two fragments for each user' },
+    { value: '436 bytes', what: 'a 24 KB news page sent against a one-minute-old copy of itself', conditions: 'zstd with a dictionary, bench/05_delta.py. An hour-old copy needs 1,277.' },
+    { value: '0% to 98.7%', what: 'origin connection reuse, from no pool to one shared pool', conditions: '300 visitors one every 40 ms, origin 50 ms away, bench/03_pool.py' },
+    { value: '87.1% to 99.92%', what: 'the reuse one Cloudflare customer gained from a shared pool', conditions: 'the Pingora post of September 2022: 434 years of handshakes saved each day' },
+    { value: '200 against 100', what: 'requests a fixed window and a sliding log allow at the boundary', conditions: 'limit 100 per 10 s, simulated time, bench/07_ratelimit.py' },
+    { value: '97%', what: 'the share of a normal page load a leaky bucket with burst 0 refuses', conditions: '30 requests at once, every 10 s, six times. The same bench.' },
+    { value: '31.4 Tbps', what: 'the largest recorded DDoS, mitigated with no human in the loop', conditions: 'Cloudflare December 2025, Aisuru botnet, 1 to 4 million devices, 35 s' },
+    { value: '500 Tbps', what: 'the Cloudflare network capacity, the pool a flood lands in', conditions: 'more than 330 cities, the figure on page 28 of the deck' },
+    { value: '85% for 49 minutes', what: 'the share of the Fastly network that returned errors', conditions: '8 June 2021, one customer configuration change, not an attack' },
+    { value: 'about 5 ms, about 3 MB', what: 'the start cost and the memory of one Worker isolate', conditions: 'against about 35 MB and a cold start for a container, page 32' },
+    { value: '486 lines', what: 'the size of edge/edge.py, the whole lecture as code', conditions: 'cache, pool, WAF, rate limit, JWT and ESI in one measured file' },
+  ]}
+/>
+
+<ExitQuiz module="s06-digest" />
+
+<CardsAdded id="s06-digest" />

@@ -2,14 +2,20 @@ import { href } from '../../lib/url';
 
 /**
  * The decks in public/slides/, by session number: the page count and the file
- * size in megabytes, for the slides page. All five decks have a 960 x 540 pt
- * page, which is 16:9. A new deck needs a copy in public/slides/ and a row
+ * size in megabytes, for the slides page. Every deck has a 960 x 540 pt page,
+ * which is 16:9. The Session 6 and 7 pages are 959 pt wide, one point short. A new deck needs a copy in public/slides/ and a row
  * here. decks.test.ts reads the PDFs and checks the rows.
  *
  * `numbered` maps a PDF page to the number printed in the bottom-right corner
  * of the slide. The pages `from` to `to` print a number, and that number is
  * the page plus `offset`. So Session 1 page 21 prints 20. The other pages,
- * such as a title page, print no number. The Session 5 deck prints none.
+ * such as a title page, print no number. The Session 5 deck prints none. The
+ * The Session 7 deck prints a counter from page 9 on. Its pages 5 and 6 print
+ * 2 and 3, out of step with that run, so the range starts at 9 and the earlier
+ * pages cite a page. Sessions 6 and 8 print no number at all.
+ *
+ * The Session 8 deck is image-only, and the original is 40 MB. The published
+ * copy is downsampled to 120 dpi, which keeps every slide readable at 4 MB.
  */
 export const decks: Readonly<
   Record<number, { pages: number; mb: number; numbered?: { from: number; to: number; offset: number } }>
@@ -19,6 +25,9 @@ export const decks: Readonly<
   3: { pages: 34, mb: 2.2, numbered: { from: 3, to: 34, offset: -2 } },
   4: { pages: 36, mb: 2.3, numbered: { from: 2, to: 35, offset: 0 } },
   5: { pages: 51, mb: 4.0 },
+  6: { pages: 38, mb: 3.0 },
+  7: { pages: 37, mb: 2.1, numbered: { from: 9, to: 37, offset: -5 } },
+  8: { pages: 48, mb: 4.2 },
 };
 
 /** The number printed on a PDF page of a deck, or undefined when the page prints none. */

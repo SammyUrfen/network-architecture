@@ -1,0 +1,615 @@
+---
+id: s07-digest
+session: 7
+order: 1
+kind: digest
+title: Class 7 in one fast read
+bigIdea: A remote call fails at one named place, and that place decides whether a second try can change anything. When no second try can help, the system that survives is the one that answers with something worse than the ideal.
+covers: [S07-C01, S07-C12, S07-C13, S07-C14, S07-C15, S07-C16, S07-C17, S07-C18, S07-C19, S07-C20, S07-C21, S07-C22, S07-C24, S07-C25, S07-C26, S07-C27, S07-C28, S07-C29, S07-C30, S07-C31, S07-C32, S07-C33, S07-C34, S07-C35, S07-C36, S07-C37, S07-C38, S07-C39, S07-C41, S07-C42, S07-C43, S07-C44, S07-C45, S07-C46, S07-C47, S07-C48, S07-C49, S07-C50, S07-C51, S07-C52, S07-C53, S07-C54, S07-C55, S07-C56, S07-C57, S07-C58, S07-C59, S07-C60, S07-C61, S07-C62, S07-C63, S07-C64, S07-C65, S07-C66, S07-C67, S07-C68, S07-C69, S07-C70, S07-C71, S07-C72, S07-C73, S07-C74, S07-C75, S07-C76, S07-C77, S07-C78, S07-C79, S07-C80, S07-C81, S07-C82, S07-C83, S07-C84, S07-C85, S07-C86, S07-C87, S07-C88, S07-C89, S07-C90, S07-C91, S07-C92, S07-C93, S07-C94, S07-C95, S07-C96, S07-C97, S07-C98, S07-C99, S07-C100, S07-C101, S07-C102, S07-C103, S07-C104, S07-C105, S07-C106, S07-C107, S07-C108, S07-C109, S07-C110, S07-C111, S07-C112, S07-C113, S07-C114, S07-C115, S07-C116, S07-C117, S07-C118, S07-C119, S07-C120, S07-C121, S07-C122, S07-C123, S07-C124, S07-C125, S07-C126, S07-C127, S07-C128, S07-C129, S07-C130, S07-C131, S07-C132, S07-C133, S07-C134, S07-C135, S07-C136, S07-C137, S07-C138, S07-C139, S07-C140, S07-C141, S07-C142, S07-C143, S07-C144, S07-C145, S07-C146, S07-C147, S07-C148, S07-C149, S07-C150, S07-C151, S07-C152, S07-C153, S07-C154, S07-C155, S07-C156, S07-C157, S07-C158, S07-C159, S07-C160, S07-C161, S07-C162, S07-C163, S07-C164, S07-C165, S07-C166, S07-C167, S07-C168, S07-C169, S07-C170, S07-C171, S07-C172, S07-C173, S07-C174, S07-C175, S07-C176, S07-C177, S07-C178, S07-C179, S07-C180, S07-C181, S07-C182, S07-C183, S07-C184, S07-C185, S07-C186, S07-C187, S07-C188, S07-C189, S07-C190, S07-C191, S07-C192, S07-C193, S07-C194, S07-C195, S07-C196, S07-C197, S07-C198, S07-C199, S07-C200, S07-C201, S07-C202, S07-C203, S07-C204, S07-C205, S07-C206, S07-C207, S07-C208, S07-C209, S07-C210, S07-C211, S07-C212, S07-C213, S07-C215, S07-C216, S07-C217, S07-C218, S07-C219, S07-C220, S07-C221, S07-C222, S07-C223]
+threads: [T-network-not-function, T-fix-causes-next, T-where-state-goes, T-honest-benchmarks, T-deployed-reality]
+confidence: high
+status: ready
+---
+
+import Myth from '../../../components/lesson/Myth.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Beyond from '../../../components/lesson/Beyond.astro';
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import Picture from '../../../components/lesson/Picture.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+A function call ends in one of two ways. It returns a value, or it raises. A remote call has a third ending: nothing comes back at all, and you cannot tell whether the work ran. This class is about that third ending, and about the four endings next to it. The deck states the discipline as one line on <SlideLink session={7} page={6} />: fail on purpose.
+
+Two mistakes sit on opposite sides of one decision. The cheap one gives up on work that would have worked a moment later. The expensive one hammers a sick server until it dies, then hammers it again the second it comes back. Both come from the same gap: a failure that nobody named. So the repair is exact. Name the failure first, then choose the response.
+
+**The path through this read.** Part 1 puts every failure of the class on the timeline of one request, and adds one new question to every status code. Part 2 gives the exact meaning of "retry", then sorts a failure into retry, handle or stop. Part 3 builds the safe loop: a cap, a growing delay, real randomness, and a breaker one level above all three. Part 4 turns the lens on a video player, where the right answer is often a different source. Part 5 asks what a whole system does when nothing healthy is left.
+
+<Segment title="Six places to fail, one question for every status">
+
+**In this part.** One word in your log, "timeout", hides at least six different stories. This part names the six places a request can die, and it adds the question that turns a status code into a decision.
+
+<Stepper
+  slot="visual"
+  title="Where one request can die, and what each place proves"
+  steps={[
+    {
+      caption: 'Stage 1, DNS lookup: the name never became an address',
+      lanes: [
+        { label: 'Stage', chunks: ['1 DNS lookup'] },
+        { label: 'What it does', chunks: ['name into an IP address'] },
+        { label: 'Did a server see the request', chunks: ['no'] },
+        { label: 'Can work be half-done', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Stage 2, TCP handshake: SYN, SYN-ACK, ACK',
+      lanes: [
+        { label: 'Stage', chunks: ['2 TCP handshake'] },
+        { label: 'What it does', chunks: ['SYN, SYN-ACK, ACK'] },
+        { label: 'Did a server see the request', chunks: ['no'] },
+        { label: 'Can work be half-done', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Stage 3, TLS handshake: the certificate and the key exchange',
+      lanes: [
+        { label: 'Stage', chunks: ['3 TLS handshake'] },
+        { label: 'What it does', chunks: ['certificate, key exchange'] },
+        { label: 'Did a server see the request', chunks: ['no'] },
+        { label: 'Can work be half-done', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Stage 4, request write: your bytes leave your socket',
+      lanes: [
+        { label: 'Stage', chunks: ['4 request write'] },
+        { label: 'What it does', chunks: ['bytes leave your socket'] },
+        { label: 'Did a server see the request', chunks: ['maybe'] },
+        { label: 'Can work be half-done', chunks: ['maybe'] },
+      ],
+    },
+    {
+      caption: 'Stage 5, server processing: their problem, and now yours too',
+      lanes: [
+        { label: 'Stage', chunks: ['5 server processing'] },
+        { label: 'What it does', chunks: ['the server does the work'] },
+        { label: 'Did a server see the request', chunks: ['yes'] },
+        { label: 'Can work be half-done', chunks: ['yes'] },
+      ],
+    },
+    {
+      caption: 'Stage 6, response read: bytes arrive, or they stop arriving',
+      lanes: [
+        { label: 'Stage', chunks: ['6 response read'] },
+        { label: 'What it does', chunks: ['bytes arrive, or stop'] },
+        { label: 'Did a server see the request', chunks: ['yes'] },
+        { label: 'Can work be half-done', chunks: ['yes'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a letter leaves a paper trail. A lost response leaves none, so your program never learns which of the six stories it is in. Only the stage name in your log can tell it.">
+
+You post a letter to a friend in another town. Six things must work: the address book, the post office, the seal, the van, your friend reading it and writing back, and the reply reaching your letterbox. A week passes and no reply comes. In one story the address book was wrong, so the letter never left your town. In another story your friend read it, acted on it, and the reply burned in a sorting fire. Posting the same letter again is fine in the first story and terrible in the second.
+
+The address book is DNS, the post office is the TCP handshake, and the seal is TLS. The van leaving is the moment your bytes go out, your friend acting is the server doing the work, and the reply in your letterbox is the response you read.
+
+</Picture>
+
+<KeyIdea id="the-stage-decides" title="Nothing fails generically">
+
+A request fails at one named stage of six, and the stage decides whether a retry can possibly help. A failure before the handshake never reached a server, so no server failed. A failure after your bytes went out can hide finished work.
+
+</KeyIdea>
+
+Every failure of this class sits on one line of six stages, and <SlideLink session={7} page={10} /> draws it as one arrow. The first three end before any server reads a byte of yours. The last three can leave a row written, an email sent or a card charged, with no answer to tell you so. That is why the stage matters more than the exception type. Two code paths can raise the same timeout error, and only one of them proves that no work started.
+
+Class 5 taught what each status class means. This class adds one question to all of them, and <SlideLink session={7} page={11} /> puts it in a new column: will anything be different next time? A 1xx is interim, so keep listening. A 2xx means the server did the thing. A 3xx says to ask somewhere else, so the answer depends. A 4xx means the server refuses those same bytes every time you send them unchanged. A 5xx means the server admits that it failed. That question is the entire retry decision.
+
+<Myth myth="A timeout is a timeout, so one handler can cover all of them.">
+
+A DNS timeout and a read timeout write the same word and are completely different problems. The DNS timeout never reached a server, so a retry of the same broken path only burns the time twice. The read timeout had a socket and then went quiet, so a server saw your request and may have half-done the work. Log the stage name next to the word, or every later decision is a guess.
+
+</Myth>
+
+<Myth myth="A 500 proves that the server changed nothing.">
+
+A 5xx tells you one fact only: the server knows that it failed. It says nothing about whether the server wrote a row, sent an email or charged a card before it failed. The class is a prior, not a rule, in the other direction too. The deck itself names two retryable 4xx codes later, 408 and 429, so read the code and not only its first digit.
+
+</Myth>
+
+<Myth myth="The class 1 client and the class 1 echo server on the slides connect to each other.">
+
+The echo server binds port 2026 and sends your bytes back one time, with a listen backlog of 1. The client on <SlideLink session={7} page={8} /> prints port 8080, and the repo file uses 2026, so the printed pair cannot connect. The point still holds. The client sets a linger option of 1 and 0, so close sends RST in place of FIN, and the peer sees stage 6 die with no news about stage 5.
+
+</Myth>
+
+<Remember>
+
+- The six stages in order: DNS lookup, TCP handshake, TLS handshake, request write, server processing, response read.
+- DNS turns a name into an IP address. The handshake is SYN, SYN-ACK, ACK. TLS carries the certificate and the key exchange.
+- Stage 4 is the moment your bytes leave your socket. Stage 5 is the server problem, and it becomes yours too. Stage 6 is bytes that arrive, or bytes that stop.
+- A failure in stages 1 to 3 proves that no server saw the request.
+- A 5xx admits a failure and stays silent about side effects.
+- The new question on every status: will anything be different next time?
+- 1xx interim. 2xx done. 3xx depends. 4xx usually not. 5xx usually yes.
+- A linger option of 1 and 0 makes close send RST in place of FIN.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s07-m01-failure-taxonomy" />.
+
+<Check id="s07-digest-q01" />
+
+<Check id="s07-digest-q02" />
+
+<Check id="s07-digest-q03" />
+
+</Segment>
+
+<Segment title="A retry is the same request, and four questions come first">
+
+**In this part.** Part 1 named where a failure happened. Now you decide what to do about it. Two tools do the work: an exact meaning for the word "retry", and four questions that sort any failure into retry, handle or stop.
+
+<Stepper
+  slot="visual"
+  title="Four questions on one failure: a payment POST that timed out while reading the response"
+  steps={[
+    {
+      caption: 'Question 1: where in the request did it fail?',
+      lanes: [
+        { label: 'Question', chunks: ['1 where did it fail'] },
+        { label: 'The answer here', chunks: ['stage 6, after the bytes went out'] },
+        { label: 'What that rules out', chunks: ['the no-server stop case'] },
+        { label: 'Verdict', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'Question 2: is the server admitting fault?',
+      lanes: [
+        { label: 'Question', chunks: ['2 who admits fault'] },
+        { label: 'The answer here', chunks: ['no answer at all, so nobody'] },
+        { label: 'What that rules out', chunks: ['a 4xx refusal of your bytes'] },
+        { label: 'Verdict', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'Question 3: is the action idempotent?',
+      lanes: [
+        { label: 'Question', chunks: ['3 is it idempotent'] },
+        { label: 'The answer here', chunks: ['no, a charge is not'] },
+        { label: 'What that rules out', chunks: ['a blind second attempt'] },
+        { label: 'Verdict', chunks: ['not decided'] },
+      ],
+    },
+    {
+      caption: 'Question 4: transient or structural?',
+      lanes: [
+        { label: 'Question', chunks: ['4 transient or structural'] },
+        { label: 'The answer here', chunks: ['transient, the socket went quiet'] },
+        { label: 'What that rules out', chunks: ['the stop decision'] },
+        { label: 'Verdict', chunks: ['retry, with an idempotency key'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="the machine tells you which case you are in. A network usually does not, so your code must classify first.">
+
+A vending machine eats your coin and gives you nothing. You press the same button again. That is a retry: same slot, same button, same hope that the jam cleared. Now the screen reads "card expired". You take out a different card and tap it. That is not a retry, because you answered what the machine just told you with a new input.
+
+The coin and the button are the method, the body and the headers that matter. The second card is a fresh token. People call both moves "trying again", and the machine treats them as two different events.
+
+</Picture>
+
+<KeyIdea id="same-request-or-a-new-one" title="A retry is the exact same step again">
+
+Same method, same body, same headers that matter. You bet that the same action gives a different result, because you believe the failure was transient. The test is one sentence: with nothing changed and only a wait, is attempt 2 identical to attempt 1? A no means you are handling, not retrying.
+
+</KeyIdea>
+
+Three causes make that bet worth placing, and all three clear on their own: a network blink, a brief server overload, and a load balancer that picked an unhealthy backend.
+
+Then classify, by nature and severity, before you touch a retry counter. <SlideLink session={7} page={15} /> gives four questions. Where did it fail, before a connection existed or after? Who admits fault, since a 5xx says "I failed" and a 4xx says "you failed"? Is the action idempotent, so does the same effect hold however many times it runs? And will a wait of 200 ms change anything?
+
+Five answers mean stop, and <SlideLink session={7} page={16} /> lists them. A 404 resource that is not there now will not be there 200 ms from now, with one named exception that Part 4 gives. A failure before the handshake never reached a server, so the same broken path only burns the time twice. A geo-block refuses by policy, and no retry changes geography. A preflight failure, from CORS or from mixed content, means the client already refused and the real request never left. An outright auth failure needs a different credential.
+
+Two families mean retry, because nothing was decided against you. Either the server admits fault, or the environment shifted under you. <SlideLink session={7} page={17} /> names eight members, and the list below holds them.
+
+The last question is the dangerous one. GET, PUT and DELETE are idempotent, so a blind retry after a timeout is safe: reading twice changes nothing, setting X twice still gives X, and already gone stays already gone. POST is not, and charging the card twice means two charges. <SlideLink session={7} page={18} /> cites RFC 9110 section 9.2 for the method table, a callback to class 5.
+
+<Myth myth="A token refresh plus the same call again is a retry with extra steps.">
+
+The new Authorization header answers information the server just gave you, so the second call is a different request. Give it its own path in the code. A retry counter around a refresh hides a credential that is simply wrong, and then the client loops against the token endpoint for nothing.
+
+</Myth>
+
+<Myth myth="Auth failure is on the do-not-handle list, so the client gives up.">
+
+The deck is careful here. An outright auth failure is not "do not handle it". It is "handle it with a token refresh", which is a different and valid flow. What a retry cannot fix is the same credential sent twice, because the same credential gives the same refusal.
+
+</Myth>
+
+<Myth myth="A POST must never be retried, because a retry can double-charge.">
+
+The fix is not "do not retry". With no response you do not know whether the server finished the work, so a blind second attempt can double-execute. The fix makes the server able to tell that attempt 2 was attempt 1 again: the client sends an idempotency key, and the server checks it and deduplicates.
+
+</Myth>
+
+<Remember>
+
+- A retry is the identical request again: same method, same body, same headers that matter.
+- The test: with nothing changed and only a wait, is attempt 2 identical?
+- The four questions: where did it fail, who admits fault, is it idempotent, is it transient?
+- The five stop cases: 404, a failure before the handshake, a geo-block, a preflight refusal, an outright auth failure.
+- The server-fault family: 500, 502, 503, 504, a connection timeout, a read timeout, a DNS server with no answer at all.
+- The environment family: a network switch mid-flight, a CDN edge or load balancer that refuses, a cache not found, a TLS failure on a healthy host.
+- GET, PUT and DELETE are idempotent. POST is not, so retry it after a timeout only with an idempotency key.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s07-m02-retry-definitions" /> and <ModuleLink id="s07-m03-when-to-retry" />.
+
+<Check id="s07-digest-q04" />
+
+<Check id="s07-digest-q05" />
+
+<Check id="s07-digest-q06" />
+
+</Segment>
+
+<Segment title="Three knobs, then one level up">
+
+**In this part.** Part 2 said which failures deserve a second attempt. This part is the machinery: the loop everyone writes first, the three knobs that make it safe, and the one control that works on a dependency instead of a request.
+
+<Stepper
+  slot="visual"
+  title="The live loop: max_attempts 5, base 0.2 s, cap 8.0 s"
+  steps={[
+    {
+      caption: 'Attempt 0 fails. The ceiling is 0.2 s, and the real sleep is a draw inside it.',
+      lanes: [
+        { label: 'Attempt', chunks: ['0'] },
+        { label: 'Ceiling, base times 2 to the attempt', chunks: ['0.2 s'] },
+        { label: 'Full jitter draws from', chunks: ['0 to 0.2 s'] },
+        { label: 'Sleep ceiling so far', chunks: ['0.2 s'] },
+      ],
+    },
+    {
+      caption: 'Attempt 1 fails. The ceiling doubles.',
+      lanes: [
+        { label: 'Attempt', chunks: ['1'] },
+        { label: 'Ceiling, base times 2 to the attempt', chunks: ['0.4 s'] },
+        { label: 'Full jitter draws from', chunks: ['0 to 0.4 s'] },
+        { label: 'Sleep ceiling so far', chunks: ['0.6 s'] },
+      ],
+    },
+    {
+      caption: 'Attempt 2 fails. The ceiling doubles again.',
+      lanes: [
+        { label: 'Attempt', chunks: ['2'] },
+        { label: 'Ceiling, base times 2 to the attempt', chunks: ['0.8 s'] },
+        { label: 'Full jitter draws from', chunks: ['0 to 0.8 s'] },
+        { label: 'Sleep ceiling so far', chunks: ['1.4 s'] },
+      ],
+    },
+    {
+      caption: 'Attempt 3 fails. The last sleep of the policy.',
+      lanes: [
+        { label: 'Attempt', chunks: ['3'] },
+        { label: 'Ceiling, base times 2 to the attempt', chunks: ['1.6 s'] },
+        { label: 'Full jitter draws from', chunks: ['0 to 1.6 s'] },
+        { label: 'Sleep ceiling so far', chunks: ['3.0 s'] },
+      ],
+    },
+    {
+      caption: 'Attempt 4 fails and the loop raises. The cap of 8.0 s never applied.',
+      lanes: [
+        { label: 'Attempt', chunks: ['4, the last'] },
+        { label: 'Ceiling, base times 2 to the attempt', chunks: ['3.2 s, unused'] },
+        { label: 'Full jitter draws from', chunks: ['no sleep, the loop raises'] },
+        { label: 'Sleep ceiling so far', chunks: ['3.0 s, final'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a child sees the crowd. A client sees only its own failure, so the random wait is the only coordination it gets for free.">
+
+A school bell rings and 600 children run at one door that holds two at a time. Tell each child to push at most 5 times, so nobody stands there until dark. Tell each child to wait longer after each failed push, so the crowd thins. Then give each child a different random wait, or they all push on the same beat again and nothing changes. The fourth fix is not about the children. A teacher at the door says "this one is broken, use the other", and nobody even walks up until the teacher checks again.
+
+The children are clients, the door is one upstream service, and the teacher is a circuit breaker.
+
+</Picture>
+
+<KeyIdea id="three-knobs-three-jobs" title="Three knobs, three different jobs">
+
+Max attempts caps total damage, so a dead dependency fails in seconds and not forever. The exponential growth spaces the attempts out, so load on the upstream decays instead of holding steady. Full jitter decorrelates clients. Each knob fixes one of the three dangers, and none of them substitutes for another.
+
+</KeyIdea>
+
+The loop everyone writes first catches the timeout and continues at once, forever. <SlideLink session={7} page={20} /> shows it in four lines and names three dangers. No max count turns a permanently-down dependency into an infinite loop instead of a fast failure. No delay lets every client hammer the upstream at wire speed. No coordination across clients makes every retry loop fire on the same tick when the upstream recovers, which is the thundering herd.
+
+The safe loop on <SlideLink session={7} page={21} /> is built live with the class. It takes a max of 5 attempts, a base of 0.2 s and a cap of 8.0 s. The delay is the smaller of the cap and the base times 2 to the attempt number, and then the real sleep is a uniform draw between zero and that delay. On the last attempt the loop raises instead of sleeping. The slide credits full jitter to AWS, 2015.
+
+Some servers name the wait for you, and then their number wins. <SlideLink session={7} page={22} /> gives three codes. A 429 is a rate limit, so the server is fine and you ask too fast. A 503 often carries `Retry-After` during planned maintenance or load shedding. A 408 means the server gave up waiting for you to finish sending, and it rejected nothing about the request. Connection limits and interval caps of 5 or 10 seconds exist because clients that ignore the header can still overwhelm a server together.
+
+The last control stops you asking a question whose answer you already have. A circuit breaker holds three states on <SlideLink session={7} page={23} />. CLOSED lets requests flow and counts failures. OPEN means the threshold broke, so requests fail instantly and locally with no call attempted at all. HALF-OPEN lets exactly one probe out after a cooldown: success closes the breaker, failure opens it again. Backoff protects an upstream from one client. A breaker protects it from a whole fleet, and it saves each caller the full timeout cost. The deck credits Nygard, "Release It!", 2007.
+
+<Myth myth="Jitter means the delay plus or minus a little.">
+
+Full jitter is a uniform draw between zero and the delay. A delay of plus or minus 10% keeps every client inside a narrow window around the same instant, so the herd only arrives a little wider. Without jitter, every client computes the same delay and retries in lockstep, which is the same herd, delayed.
+
+</Myth>
+
+<Myth myth="Your own backoff curve belongs on top of Retry-After.">
+
+A server that hands you a number knows its own load better than your curve does. Honor the header and do not add your own delay on top of it. Trust the number over the curve, in both directions: a 30-second header beats your 0.8-second ceiling, and it also beats a longer one.
+
+</Myth>
+
+<Myth myth="A circuit breaker is a retry cap with a new name.">
+
+It is the same idea one level up. A retry cap counts attempts inside one request, and the count dies with the call. A breaker counts failures per dependency, it remembers the verdict for a cooldown, and every caller shares that verdict. The state lives next to the dependency, which is the whole difference.
+
+</Myth>
+
+<Remember>
+
+- The naive loop has three dangers: no max count, no delay, no coordination across clients.
+- The live loop: max 5 attempts, base 0.2 s, cap 8.0 s. On the last attempt it raises instead of sleeping.
+- The delay is the smaller of the cap and the base times 2 to the attempt. The sleep is a uniform draw from zero to it.
+- With base 0.2 s and 5 attempts the sleep ceiling is 3.0 s, and the cap never binds.
+- Full jitter comes from AWS, 2015. The breaker comes from Nygard, "Release It!", 2007.
+- 429 is a rate limit and the server is fine. 503 often carries the header. 408 rejected nothing about your request.
+- CLOSED counts failures. OPEN fails instantly and locally. HALF-OPEN lets one probe out.
+- Backoff protects an upstream from one client. A breaker protects it from a fleet.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s07-m04-retry-mechanics" />.
+
+<Check id="s07-digest-q07" />
+
+<Check id="s07-digest-q08" />
+
+<Check id="s07-digest-q09" />
+
+</Segment>
+
+<Segment title="A video player, where the answer is often a different source">
+
+**In this part.** The same taxonomy meets a client that a human watches in real time. The clock gets tighter, and most of the hard cases turn out not to be retries at all.
+
+<SequenceDiagram
+  slot="visual"
+  title="The one 404 that is a race, not a verdict"
+  actors={['player', 'edge', 'origin']}
+  messages={[
+    { from: 'player', to: 'edge', label: 'GET the newest live segment' },
+    { from: 'origin', to: 'origin', label: 'still encoding that segment' },
+    { from: 'edge', to: 'player', label: '404, nothing here yet' },
+    { from: 'player', to: 'player', label: 'wait a small fixed delay' },
+    { from: 'player', to: 'edge', label: 'GET the same segment, attempt 2' },
+    { from: 'edge', to: 'player', label: '200, the segment exists now' },
+    { from: 'player', to: 'player', label: 'an on-demand 404 stops at once' },
+  ]}
+/>
+
+<Picture breaks="a projectionist can see the audience and the loop. A player sees only its own buffer, so its whole retry budget is a guess about human patience.">
+
+A cinema runs a film from reels that arrive one by one from a depot. A little film sits in the loop, so the projectionist has a few seconds of slack before the screen goes dark. If a reel is late, asking the depot again may work. If the depot says "we are still printing that one", asking again in half a second is exactly right. If the projector cannot read this format, asking a hundred times changes nothing, and the fix is a different print. And if the lamp fails, no reel helps. You rebuild the projector.
+
+The loop is the buffer, the depot is a CDN, the format is the codec, and the lamp is the media state of the device.
+
+</Picture>
+
+<KeyIdea id="switch-instead-of-retry" title="Retry asks the same source. Switch asks a different one">
+
+A player fails silently, as a frozen frame or a spinner, and its retry budget is human: a viewer takes a few seconds of rebuffering, not a few minutes of correct exponential backoff. So many player failures want a different CDN, a lower bitrate or another rendition, and not the same request again.
+
+</KeyIdea>
+
+One play session makes hundreds of requests: a manifest, a key and dozens of segments, each with its own retry policy, on one timeline that a human watches. An API client can afford a long correct backoff. The player cannot, so timeouts differ by request type, and <SlideLink session={7} page={26} /> maps five network failures to a player answer.
+
+Some failures are not network failures at all, and <SlideLink session={7} page={28} /> lists six fallbacks for them. A denied DRM key returns the same denial every time, so the player drops to a lower security level or a different key system. An unsupported codec means the device genuinely cannot decode this, so the player picks another rendition. A repeated child-manifest or segment failure escalates to a fatal coded error, not to an infinite loop. And iOS ResetMedia rebuilds the whole player pipeline, because that failure lives in device media state and not in a request.
+
+Two last signals come from above the transport. Retry an entitlement check that times out, and never retry a clean "not entitled", because there the HTTP layer succeeded and the business layer decided. And read the response body, because it can say "degraded, use lower bitrate". Parts 1 to 3 used transport signals alone. A mature policy reads both layers.
+
+<Myth myth="A 404 always means give up.">
+
+The newest segment of a live stream can 404 for a real reason: the origin is still encoding it, or the CDN has not finished propagating it, and it will exist in a few hundred milliseconds. The fix is a short bounded retry of 2 or 3 attempts with a small fixed delay, for live-edge segment requests and nowhere else. A 404 on an on-demand asset still means give up.
+
+</Myth>
+
+<Myth myth="Real deployments only use the status codes in the registry.">
+
+Players meet 419, 474 and 475, which no RFC defines. A 419 marks token or session expiry, so handle it like auth. The 474 and 475 codes appeared when a retried segment came back as a mismatched partial result. The lesson is not the numbers. Your own codes owe a caller the same two facts: what the condition means, and whether it is retryable.
+
+</Myth>
+
+<Remember>
+
+- A player fails silently, as a frozen frame or a spinner. An API client fails visibly.
+- One session makes hundreds of requests: a manifest, a key, and dozens of segments, each with its own policy.
+- The retry budget is human: seconds of rebuffering, not minutes of backoff.
+- A network switch changes the IP mid-download, so the request is dead, not slow.
+- A multi-CDN player switches CDN instead of retrying the same dead edge.
+- The one 404 exception: the newest live segment, 2 or 3 attempts, a small fixed delay, nowhere else.
+- Fallbacks, not retries: a denied DRM key, an unsupported codec, a broken device media state.
+- 419 is token or session expiry. Document your own codes the same way.
+- Retry an entitlement check that times out. Never retry a clean "not entitled".
+- The response body can carry the signal, not only the status line.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s07-m05-player-case-study" />.
+
+<Check id="s07-digest-q10" />
+
+<Check id="s07-digest-q11" />
+
+<Check id="s07-digest-q12" />
+
+</Segment>
+
+<Segment title="What survives is the system, not the request">
+
+**In this part.** Parts 1 to 4 lived inside one request. This part asks what a whole system does when no healthy path is left, and why the recovery is more dangerous than the failure.
+
+<Stepper
+  slot="visual"
+  title="One chain of five steps, walked by a payment provider that has returned 500 for ten minutes"
+  steps={[
+    {
+      caption: 'Step 1, classify: where did it fail, who admits fault, is it idempotent?',
+      lanes: [
+        { label: 'Step', chunks: ['1 classify'] },
+        { label: 'What the step asks', chunks: ['where, whose fault, idempotent'] },
+        { label: 'This failure', chunks: ['stage 6, a 500, not idempotent'] },
+        { label: 'Does the chain end here', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Step 2, structural: a 404, a geo-block, a preflight or bad auth stops here.',
+      lanes: [
+        { label: 'Step', chunks: ['2 structural'] },
+        { label: 'What the step asks', chunks: ['stop and handle, do not retry'] },
+        { label: 'This failure', chunks: ['none of those four'] },
+        { label: 'Does the chain end here', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Step 3, transient: back off with full jitter, cap the attempts, honor Retry-After.',
+      lanes: [
+        { label: 'Step', chunks: ['3 transient'] },
+        { label: 'What the step asks', chunks: ['jitter, a cap, the header'] },
+        { label: 'This failure', chunks: ['five attempts, still failing'] },
+        { label: 'Does the chain end here', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Step 4, dependency level: repeated failures trip a breaker, so you fail fast.',
+      lanes: [
+        { label: 'Step', chunks: ['4 dependency level'] },
+        { label: 'What the step asks', chunks: ['cap failures per dependency'] },
+        { label: 'This failure', chunks: ['the breaker is OPEN'] },
+        { label: 'Does the chain end here', chunks: ['no'] },
+      ],
+    },
+    {
+      caption: 'Step 5, no good answer left: fail over, degrade, or serve stale.',
+      lanes: [
+        { label: 'Step', chunks: ['5 no good answer left'] },
+        { label: 'What the step asks', chunks: ['anything but nothing'] },
+        { label: 'This failure', chunks: ['the second provider, or queue it'] },
+        { label: 'Does the chain end here', chunks: ['yes'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="bread carries a visible date and a stale cache does not, unless the cache says so.">
+
+A town has one bakery and the oven breaks. A shop with no plan puts up a "closed" sign. A shop with a plan sells yesterday's bread, marked as yesterday's, and most people buy it. When the oven comes back, a worse problem starts. Everyone who walked away in the morning returns inside the same ten minutes, and the oven is still warming up. The fix is not more bread. It is to let people in at a steady rate, and to tell them different times to return.
+
+Yesterday's bread is a stale cache copy, the sign is an error page, and the warming oven is a recovering service at a fraction of its capacity.
+
+</Picture>
+
+<KeyIdea id="answer-with-something-worse" title="Answer smaller, not nothing">
+
+A system that can answer with slightly-wrong data survives outages that a system demanding perfectly-fresh-or-nothing does not. Three levers do it: failover to a backup, a feature flag that turns off the expensive part, and graceful degradation that answers smaller.
+
+</KeyIdea>
+
+On 8 June 2021 about 85% of the Fastly network returned errors. Detection took about 1 minute, and 95% recovered took 49 minutes. <SlideLink session={7} page={31} /> reopens the closing question of class 6. Today's edge survives your origin dying, because a cache can serve a stale hit. So what happens when the edge, or a whole region, is the thing that dies? The `stale-if-error` directive of RFC 5861 points the same idea the other way, and keeps the last good copy in service when the cache cannot reach the origin.
+
+Three levers sit above that. Failover trips a breaker OPEN on the primary and routes to a backup: a different region, provider or CDN. A feature flag disables a non-essential feature, such as recommendations, to shed load off playback itself, with no deploy and in seconds. Graceful degradation answers smaller, with a lower bitrate or a slightly stale price instead of a spinner. Every case study of the class has one lever.
+
+Then plan the recovery. Every client that was retrying, backing off or waiting on a cooldown now tries again, and their schedules line up because they all started failing at the same moment. The recovering service runs at 1% of capacity while it warms caches, and it gets close to 100% of normal traffic in its first reachable second. <SlideLink session={7} page={33} /> names three mitigations: jitter, staggered half-open probes, and slow start on the recovering side.
+
+<Myth myth="stale-if-error is a kind of retry inside the cache.">
+
+It is not a retry at all. It changes the answer, not the attempt. The cache decides to serve something known-stale rather than nothing. The generalization reaches past caches, and it is the one line to carry out of this part.
+
+</Myth>
+
+<Myth myth="The failure is the most dangerous moment of an incident.">
+
+The recovery is. At the failure the load drains away. At the recovery it all arrives at once, in lockstep, against a cold server. That is why jitter, staggered probes and a server-side ramp belong in the design before the incident, and not in the postmortem after it.
+
+</Myth>
+
+<Remember>
+
+- Fastly, 8 June 2021: about 85% of the network erroring, about 1 minute to detect, 49 minutes to 95% recovered.
+- `stale-if-error` (RFC 5861) lets a cache serve its last good copy when it cannot reach the origin.
+- A system that answers with slightly-wrong data survives more outages than a perfect-or-nothing one.
+- The three levers: failover, feature flags, graceful degradation.
+- A flag works in seconds with no deploy, so it is the lever you can pull during an incident.
+- Clients synchronize during an outage, because they all started failing at the same moment.
+- A recovering service is at 1% of capacity and gets close to 100% of traffic in its first second.
+- The three recovery mitigations: jitter, staggered half-open probes, server slow start.
+- The chain: classify, structural stop, transient retry, dependency breaker, no answer left.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s07-m06-systems-that-survive" /> and <ModuleLink id="s07-m07-synthesis" />.
+
+<Check id="s07-digest-q13" />
+
+<Check id="s07-digest-q14" />
+
+<Check id="s07-digest-q15" />
+
+</Segment>
+
+## The task, and the question it leaves open
+
+<SlideLink session={7} page={35} /> sets one practice task for the week, due before class 8. Take a client you already have and put it behind a resilient-call wrapper that you write from scratch. The checklist of the slide, and nothing past it:
+
+- Classify the failure as retryable or not, by the rules of this class.
+- Back off with full jitter, capped at a max attempt count.
+- Honor a `Retry-After` header when the server sends one.
+- Open a circuit after N consecutive failures to one dependency, and fail fast while it is open.
+- Write the test server too, with three routes: `/sometimes-500`, which fails a configurable fraction of the time, `/always-503-with-retry-after`, and `/always-down`.
+- Hand in the wrapper, the test server, and a log or plot of request timestamps under each mode. It must show the backoff curve, the circuit opening, and the circuit closing again.
+
+The homework list adds five more items and asks for at least one. The fifth is the one to do if you do only one. A hint ladder of questions sits in <ModuleLink id="s07-m08-build-the-wrapper" />, and no page here gives a solution.
+
+Class 8 is the last one. It puts this retry policy, this breaker and this fallback logic inside a real video pipeline, with adaptive bitrate, segment prefetch and the CDN material of class 6. The DRM tiers, the multi-CDN switching and the manifest fallback of Part 4 become the thing you design there. Every fallback of this class answers with something worse than the ideal, so when does "worse" stop being acceptable, and who decides? That question stays open until class 8.
+
+<NumbersTable
+  caption="The numbers of class 7, with the conditions that each one needs"
+  rows={[
+    { value: '5 / 0.2 s / 8.0 s', what: 'max attempts, base delay and cap in the loop built live with the class', conditions: 'the loop on the slide, written in Python with time.sleep' },
+    { value: '0.2, 0.4, 0.8, 1.6 s', what: 'the delay ceiling of each sleep, which is base times 2 to the attempt', conditions: 'base 0.2 s, 5 attempts. Our arithmetic, recomputed by hand and in Python' },
+    { value: '3.0 s', what: 'the sleep ceiling of the whole policy, so the full-jitter mean is 1.5 s', conditions: 'the same loop. The four ceilings added, with the last attempt raising instead of sleeping' },
+    { value: 'attempt 6', what: 'where the cap of 8.0 s would first bind, so it never binds at 5 attempts', conditions: '0.2 times 2 to the attempt first passes 8.0 at attempt 6. Our arithmetic' },
+    { value: 'about 4,050', what: 'requests in the first second from 1,000 clients on the full-jitter schedule', conditions: 'a 4-million-draw simulation of the same policy. A model, not a measurement' },
+    { value: '3 spikes of 1,000', what: 'the same 1,000 clients with no jitter, which lands the same work as peaks', conditions: 'the bare ceilings put the calls at 0, 0.2 and 0.6 s. Our model' },
+    { value: '500, 502, 503, 504', what: 'the 5xx codes that the deck lists as worth retrying', conditions: 'the deck list. RFC 9110 makes 501 and 505 permanent exceptions' },
+    { value: '408 and 429', what: 'the two 4xx codes that the deck calls retryable', conditions: 'the deck. A 429 is a rate limit, and a 408 rejected nothing about your request' },
+    { value: '2 or 3 attempts', what: 'the bounded retry for a 404 at the live edge, with a small fixed delay', conditions: 'live-edge segment requests only. An on-demand 404 still means give up' },
+    { value: '85%', what: 'the share of the Fastly network returning errors', conditions: 'global, 8 June 2021, from the Fastly blog of the same day' },
+    { value: 'about 1 minute', what: 'the time Fastly took to detect the fault', conditions: 'onset 09:47 UTC to detection 09:48 UTC, Fastly monitoring, their timeline' },
+    { value: '49 minutes', what: 'the time to 95% of the network back to normal', conditions: '09:47 to 10:36 UTC. The vendor measure of recovery, not of full mitigation' },
+    { value: '2 h 48 min', what: 'the time to "incident mitigated", which the slide does not show', conditions: '09:47 to 12:35 UTC, the same Fastly timeline. Beyond the slides' },
+    { value: '1% against 100%', what: 'the capacity of a recovering service against the traffic it receives', conditions: 'illustrative on the slide. No machine, no run and no measurement' },
+    { value: '96', what: 'player failure modes in the production taxonomy that the case study condenses', conditions: 'the deck. The instructor repo holds no code and no taxonomy for this class' },
+  ]}
+/>
+
+<ExitQuiz module="s07-digest" />
+
+<CardsAdded id="s07-digest" />

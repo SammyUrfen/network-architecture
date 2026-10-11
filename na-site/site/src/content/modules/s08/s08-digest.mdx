@@ -1,0 +1,689 @@
+---
+id: s08-digest
+session: 8
+order: 1
+kind: digest
+title: Class 8 in one fast read
+bigIdea: "Fifty million phones want the same small file. If every phone may have the same answer, a cache carries the load. If each phone needs its own answer, you buy sockets instead. A live video stream is that same loop with bigger bytes."
+covers: [S08-C01, S08-C02, S08-C04, S08-C06, S08-C07, S08-C08, S08-C10, S08-C11, S08-C12, S08-C13, S08-C14, S08-C15, S08-C16, S08-C17, S08-C18, S08-C19, S08-C20, S08-C21, S08-C22, S08-C23, S08-C24, S08-C25, S08-C26, S08-C27, S08-C28, S08-C29, S08-C30, S08-C31, S08-C33, S08-C34, S08-C35, S08-C36, S08-C37, S08-C38, S08-C40, S08-C41, S08-C42, S08-C43, S08-C45, S08-C47, S08-C49, S08-C50, S08-C52, S08-C53, S08-C54, S08-C55, S08-C56, S08-C57, S08-C58, S08-C59, S08-C60, S08-C61, S08-C66, S08-C67, S08-C68, S08-C69, S08-C72, S08-C73, S08-C74, S08-C75, S08-C76, S08-C77, S08-C78, S08-C79, S08-C80, S08-C81, S08-C82, S08-C84, S08-C85, S08-C86, S08-C87, S08-C88, S08-C91, S08-C92, S08-C93, S08-C94, S08-C95, S08-C96, S08-C97, S08-C98, S08-C99, S08-C100, S08-C101, S08-C102, S08-C103, S08-C104, S08-C106, S08-C107, S08-C108, S08-C109, S08-C111, S08-C112, S08-C113, S08-C114, S08-C115, S08-C116, S08-C117, S08-C118, S08-C119, S08-C120, S08-C121, S08-C122, S08-C123, S08-C124, S08-C125, S08-C126, S08-C128, S08-C129, S08-C130, S08-C131, S08-C132, S08-C133, S08-C134, S08-C135, S08-C136, S08-C139, S08-C140, S08-C141, S08-C142, S08-C145, S08-C146, S08-C147, S08-C148, S08-C149, S08-C151, S08-C152, S08-C156, S08-C157, S08-C159, S08-C161, S08-C162, S08-C163, S08-C164, S08-C165, S08-C167, S08-C168, S08-C169, S08-C171, S08-C172, S08-C174, S08-C175, S08-C176, S08-C179, S08-C180, S08-C181, S08-C182, S08-C184, S08-C185, S08-C186, S08-C187, S08-C193, S08-C195, S08-C196, S08-C197, S08-C198, S08-C199, S08-C202, S08-C204, S08-C206, S08-C208, S08-C209, S08-C212, S08-C216, S08-C217, S08-C221, S08-C222, S08-C223, S08-C224, S08-C225, S08-C226, S08-C227, S08-C228, S08-C230, S08-C231, S08-C232, S08-C233, S08-C238]
+threads: [T-where-state-goes, T-littles-law, T-law-or-habit, T-framing, T-round-trip-tax, T-fix-causes-next, T-setup-off-path]
+confidence: high
+status: ready
+terms:
+  - term: poll
+    meaning: ask the same URL again every few seconds, and use whatever the answer says
+  - term: push
+    meaning: hold one connection open to each viewer, and send each change down it
+  - term: ETag
+    meaning: a short label for one version of a file. The client sends the label back to ask whether the file changed.
+  - term: TTL
+    meaning: time to live. How long a cache may answer from its own copy before it asks the layer behind it.
+  - term: playlist
+    meaning: a small text file that names the pieces of a video stream, in order
+  - term: segment
+    meaning: one numbered piece of a video stream, a few seconds long. It never changes after it appears.
+---
+
+import CardsAdded from '../../../components/lesson/CardsAdded.astro';
+import KeyIdea from '../../../components/lesson/KeyIdea.astro';
+import ModuleLink from '../../../components/lesson/ModuleLink.astro';
+import Myth from '../../../components/lesson/Myth.astro';
+import NumbersTable from '../../../components/lesson/NumbersTable.astro';
+import Picture from '../../../components/lesson/Picture.astro';
+import Remember from '../../../components/lesson/Remember.astro';
+import Segment from '../../../components/lesson/Segment.astro';
+import WordCard from '../../../components/lesson/WordCard.astro';
+import SequenceDiagram from '../../../components/diagram/SequenceDiagram.astro';
+import Stepper from '../../../components/diagram/Stepper.astro';
+import Check from '../../../components/check/Check.astro';
+import ExitQuiz from '../../../components/check/ExitQuiz.astro';
+import SlideLink from '../../../components/slides/SlideLink.astro';
+
+A wicket falls in Mumbai. Fifty million phones must learn about it. The file that carries the news is about one kilobyte of gzipped JSON. It is the same kilobyte for every phone. That is the whole of the last class.
+
+There are two ways to deliver it. The server can hold a connection to each phone and send the news down it. Or each phone can ask again every few seconds. The first way is fresher. The second way is an ordinary GET, so any cache on the path can answer it. The arithmetic decides which one you can afford. Then the class shows that a live video stream is the same loop with bigger bytes.
+
+**The path through this read.** Part 1 sets the two shapes against each other and prices one poll. Part 2 opens the push side: three protocols, and the fifty million sockets that Hotstar paid for. Part 3 does the multiplication and reads four bills. Part 4 makes polling survive the herd. Part 5 shows that an HLS stream is a polled index over numbered pieces. Part 6 spends the latency budget and closes the course.
+
+<WordCard terms={frontmatter.terms} />
+
+<Segment title="Fifty million phones want one file">
+
+**In this part.** The class starts with a live cricket scorecard. You meet the two delivery shapes, the clock that cricket sets, and the price of one poll.
+
+<Stepper
+  slot="visual"
+  title="One poll cycle, and its two answers"
+  steps={[
+    {
+      caption: 'The phone holds version 1841 and its ETag. It waits out the interval.',
+      lanes: [
+        { label: 'Phone holds', chunks: ['version 1841'] },
+        { label: 'Phone sends', chunks: ['nothing yet'] },
+        { label: 'Server answers', chunks: ['nothing yet'] },
+        { label: 'Bytes on the wire', chunks: ['0'] },
+      ],
+    },
+    {
+      caption: 'The timer fires. The phone asks for the same URL and attaches the ETag.',
+      lanes: [
+        { label: 'Phone holds', chunks: ['version 1841'] },
+        { label: 'Phone sends', chunks: ['GET score.json', 'If-None-Match v1841'] },
+        { label: 'Server answers', chunks: ['still deciding'] },
+        { label: 'Bytes on the wire', chunks: ['headers only'] },
+      ],
+    },
+    {
+      caption: 'No ball was bowled. The answer is 304 and the screen does not change.',
+      lanes: [
+        { label: 'Phone holds', chunks: ['version 1841'] },
+        { label: 'Phone sends', chunks: ['GET score.json', 'If-None-Match v1841'] },
+        { label: 'Server answers', chunks: ['304 Not Modified', 'empty body'] },
+        { label: 'Bytes on the wire', chunks: ['headers only'] },
+      ],
+    },
+    {
+      caption: 'A wicket falls. The next poll gets 200 with the new card and a new ETag.',
+      lanes: [
+        { label: 'Phone holds', chunks: ['version 1842'] },
+        { label: 'Phone sends', chunks: ['GET score.json', 'If-None-Match v1841'] },
+        { label: 'Server answers', chunks: ['200 OK', '1,088 bytes', 'ETag v1842'] },
+        { label: 'Bytes on the wire', chunks: ['headers plus 1 KB'] },
+      ],
+    },
+    {
+      caption: 'The phone renders, saves the new ETag, and sets the next timer with jitter.',
+      lanes: [
+        { label: 'Phone holds', chunks: ['version 1842'] },
+        { label: 'Phone sends', chunks: ['nothing yet'] },
+        { label: 'Server answers', chunks: ['nothing yet'] },
+        { label: 'Bytes on the wire', chunks: ['0'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a traveller reads the board at once, while a polling phone waits for its next tick and then for a network round trip.">
+
+A big railway station has one departure board. Thousands of people look up at it every half minute, and nobody tells the board who looked. Now the station hands every traveller a walkie-talkie instead. Staff keep a list of who holds one.
+
+The board is polling, and each traveller who looks up is one request. The walkie-talkies are push. Each one is a held socket, and the list is server state.
+
+</Picture>
+
+<KeyIdea id="a-cache-answers-a-request" title="A cache can answer a request. A cache cannot hold a socket.">
+
+Both shapes work. Only one of them can hand the work to somebody else. Every poll is an ordinary GET of one fixed URL, so the server keeps no memory of who asked. nginx or a CDN edge can answer it. Push gives each viewer a private connection, so no cache on the path has anything to answer.
+
+</KeyIdea>
+Cricket sets the clock. A ball arrives every 25 to 45 seconds, and an over takes 4 to 5 minutes. A poll faster than the balls buys nothing. The audience sets the size: 50 million people at the peak, and 20 million on average across four hours. The file is 4 to 5 KB of JSON, about 1 KB after gzip. Week 5 showed the same win, when gzip took 202,000 bytes down to 5,763.
+
+The asking family holds polling, the conditional GET, nginx and a CDN. The telling family holds long polling, Server-Sent Events, WebSockets, MQTT and a raw socket. The split is about state. An asking server forgets each request, so a cache may sit anywhere. HTTP/1.0 hung up after every response, so asking is also the older shape.
+
+The real loop is 14 lines. The phone keeps the ETag, sends it back in `If-None-Match`, and renders only on a 200. The next timer runs one interval times `0.8 + Math.random() * 0.4`, so the jitter is plus or minus 20 percent. Long polling changes one step. The server holds each request open until the next ball, or until 25 seconds pass. But a held request is a held socket, so the hold time moves from 30 milliseconds to 25 seconds.
+
+<Myth myth="A 304 response makes polling free.">
+
+A 304 saves the body, the parse and the re-render. It saves nothing else. The request happens, the round trip happens, and a CDN charges its request fee exactly as it would for a 200.
+
+</Myth>
+
+<Myth myth="Push removes the spike, because the server sends only when there is news.">
+
+Long polling synchronises the herd instead of removing it. A wicket completes 20 million responses in one second. The same phones send 20 million new requests in the next second. Jitter spreads the same work across the whole interval.
+
+</Myth>
+
+<Remember>
+
+- A ball every 25 to 45 s, an over every 4 to 5 minutes. That clock sets every interval here.
+- 50 M viewers at the peak, 20 M on average, across a four-hour match.
+- Asking: polling, the conditional GET, nginx, a CDN. Every request is an ordinary GET.
+- Telling: long polling, SSE, WebSockets, MQTT, a raw socket. Every viewer holds a connection.
+- Jitter of plus or minus 20 percent keeps fifty million phones off the same second.
+- Worst-case staleness is one poll interval plus every cache TTL on the path.
+- A long poll holds a socket for up to 25 s, bounded by two 60 s idle timeouts.
+- The blocking playlist reload of Low-Latency HLS is long polling, standardised.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s08-m01-push-or-pull" />.
+
+<Check id="s08-digest-q01" />
+
+<Check id="s08-digest-q02" />
+
+<Check id="s08-digest-q03" />
+
+</Segment>
+
+<Segment title="The server tells you, and you pay in sockets">
+
+**In this part.** Part 1 priced one poll. Now you price the other family. Three protocols carry the news, and all three send the same bill: one held socket for every viewer.
+
+<Stepper
+  slot="visual"
+  title="How Hotstar reached fifty million sockets, in five steps"
+  steps={[
+    {
+      caption: 'Step 1. One EMQX broker on one c5.4xlarge box.',
+      lanes: [
+        { label: 'Shape', chunks: ['1 broker node'] },
+        { label: 'Connections held', chunks: ['250,000'] },
+        { label: 'The wall they met', chunks: ['one box is one box'] },
+      ],
+    },
+    {
+      caption: 'Step 2. Split the publisher from the subscriber nodes.',
+      lanes: [
+        { label: 'Shape', chunks: ['publisher', 'subscriber cluster'] },
+        { label: 'Connections held', chunks: ['2,000,000'] },
+        { label: 'The wall they met', chunks: ['Mnesia wants under 10 nodes'] },
+      ],
+    },
+    {
+      caption: 'Step 3. Put a Classic ELB in front of the subscribers.',
+      lanes: [
+        { label: 'Shape', chunks: ['ELB', 'publisher', 'subscriber cluster'] },
+        { label: 'Connections held', chunks: ['500,000 cold', '4,000,000 pre-warmed'] },
+        { label: 'The wall they met', chunks: ['the ELB holds sockets too'] },
+      ],
+    },
+    {
+      caption: 'Step 4. Five clusters of eight subscribe nodes, bridged together.',
+      lanes: [
+        { label: 'Shape', chunks: ['5 clusters', '8 nodes each', 'bridges'] },
+        { label: 'Connections held', chunks: ['over 10,000,000'] },
+        { label: 'The wall they met', chunks: ['bridge fan-out'] },
+      ],
+    },
+    {
+      caption: 'Step 5. A reverse bridge: each subscriber pulls from the publisher.',
+      lanes: [
+        { label: 'Shape', chunks: ['200 nodes', 'a Go puller on each'] },
+        { label: 'Connections held', chunks: ['50,000,000'] },
+        { label: 'The wall they met', chunks: ['reconnect storms stay'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a real guest can walk to another hall on request, but a live TCP socket cannot move to another box at all.">
+
+A wedding gives every guest one staff member, who stays beside that guest all evening. The hall fills up, so the family opens a second hall. The new hall stays empty, because nobody gives up a staff member and walks across.
+
+Each guest is a viewer and each staff member is a held socket. One hall is one broker box. A new box relieves nothing until viewers disconnect, so rebalancing means disconnecting people.
+
+</Picture>
+
+<KeyIdea id="hold-time-buys-sockets" title="Hold time, not audience, is what you buy machines for">
+
+Little's Law says that concurrency equals the arrival rate times the hold time. On the pull side, 1.67 million requests a second times 0.03 seconds gives about 50,000 requests in flight. On the push side the hold time is the whole match, so 50 million sockets stay open whether a ball arrives or not. Same audience, same file, a thousand times the concurrency.
+
+</KeyIdea>
+Server-Sent Events is one HTTP response that never ends, marked `Content-Type: text/event-stream`. An event ends at a blank line, so SSE frames by delimiter. That is the lone dot of SMTP in a new costume. On reconnect the browser sends `Last-Event-ID`, so the server replays only the gap. SSE runs one way, about six per browser on HTTP/1.1 and one on HTTP/2.
+
+A WebSocket starts as a GET with `Upgrade: websocket` and gets 101 Switching Protocols. The proof is `Sec-WebSocket-Accept`, base64 of SHA-1 of the client key plus a fixed GUID. After the 101 each frame carries its own length, so a WebSocket frames by length. Client frames are masked, and the reason is not secrecy. The mask stops stray bytes from looking like a request to a caching proxy. MQTT moves the fan-out into a broker, which copies one PUBLISH to every subscriber.
+
+Now the bill. Each phone lives on one named box for hours. Memory per connection is about 137 KB for 250,000 phones on a 32 GiB box. Idle is not free either. At a 60 second keepalive, 20 million quiet phones send 333,000 pings a second. A load balancer holds every socket twice, and one test client IP has only 28,232 ephemeral ports.
+
+<Myth myth="MQTT at QoS 1 delivers each message exactly once.">
+
+QoS 1 means at least once, so duplicates do arrive. The fix is not a stronger delivery promise. Put a version number in every update and apply updates by version. A repeat then applies nothing new.
+
+</Myth>
+
+<Myth myth="Hotstar proved that caching cannot help a live audience.">
+
+The sentence was "Caching at any level is also not possible", and it describes their own problem. Their social feed differed per viewer, so there was nothing shared to cache. A scorecard is the opposite case: one file, identical for everyone. Read the quote with its subject attached.
+
+</Myth>
+
+<Remember>
+
+- SSE is one endless response. An event ends at a blank line, so it frames by delimiter.
+- A WebSocket upgrade is a GET plus `Upgrade: websocket`, answered with 101 Switching Protocols.
+- WebSocket frames by length. Masking hides nothing. It only stops bytes that look like a request.
+- MQTT: one PUBLISH in, N copies out. A retained message is the last value, kept by the broker.
+- One EMQX node on a c5.4xlarge held 250k sockets. A pre-warmed Classic ELB reached 4 M.
+- A reverse bridge took 200 nodes to 50 M, with a Go puller on each subscriber.
+- About 137 KB per connection for 250k sockets on a 32 GiB box, buffers and TLS and broker state.
+- 20 M idle phones at a 60 s keepalive send 333k pings a second with no news at all.
+- One client IP has 28,232 ephemeral ports per destination, so 250k test sockets need nine IPs.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s08-m02-sse-websockets-mqtt" /> and <ModuleLink id="s08-m03-hotstar-sockets" />.
+
+<Check id="s08-digest-q04" />
+
+<Check id="s08-digest-q05" />
+
+</Segment>
+
+<Segment title="Multiply before you choose">
+
+**In this part.** Parts 1 and 2 gave you two shapes. Now you choose between them with arithmetic. Four designs, four bills, and for three of them a wall that the bill does not show.
+
+<Stepper
+  slot="visual"
+  title="Four places to put the scorecard, with the bill and the first failure"
+  steps={[
+    {
+      caption: 'Bill 1. S3 straight to phones.',
+      lanes: [
+        { label: 'Design', chunks: ['bucket to phone'] },
+        { label: 'Per match', chunks: ['$4.7K'] },
+        { label: 'Mostly', chunks: ['GET fees, $3,840'] },
+        { label: 'Breaks first at', chunks: ['5,500 GET/s per prefix'] },
+      ],
+    },
+    {
+      caption: 'Bill 2. An nginx fleet behind an ALB.',
+      lanes: [
+        { label: 'Design', chunks: ['ALB', 'nginx times N'] },
+        { label: 'Per match', chunks: ['$1.2K to $1.8K'] },
+        { label: 'Mostly', chunks: ['egress $864', 'balancer units'] },
+        { label: 'Breaks first at', chunks: ['20 to 50 M idle sockets'] },
+      ],
+    },
+    {
+      caption: 'Bill 3. CloudFront in India, over a bucket.',
+      lanes: [
+        { label: 'Design', chunks: ['edge', 'mid-tier', 'bucket'] },
+        { label: 'Per match', chunks: ['$12.5K'] },
+        { label: 'Mostly', chunks: ['request fees, 92%'] },
+        { label: 'Breaks first at', chunks: ['nothing. It is just the bill.'] },
+      ],
+    },
+    {
+      caption: 'Bill 4. Push on 200 c5.4xlarge boxes.',
+      lanes: [
+        { label: 'Design', chunks: ['brokers', 'held sockets'] },
+        { label: 'Per match', chunks: ['$0.9K to $1.6K'] },
+        { label: 'Mostly', chunks: ['fleet $680', 'egress'] },
+        { label: 'Breaks first at', chunks: ['reconnect storms', 'rebalancing'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a turnstile counts one person whatever the size of their bag, and a CDN adds a small byte fee as well, so the two fees add and do not swap.">
+
+A stadium charges every person at the turnstile, one fixed coin each. A haulage firm in the car park charges by the tonne. Move a thousand schoolchildren and the turnstile dominates.
+
+The turnstile is the CDN request fee, the same coin for a 228-byte playlist and a 1.6 MB video piece. The weight charge is the byte fee. A scorecard is a schoolchild. A segment is a crane.
+
+</Picture>
+
+<KeyIdea id="the-bill-is-mostly-requests" title="Below about 11 KB you are on the request bill, not the byte bill">
+
+Per million responses on CloudFront in India, the request fee is $1.20 whatever the body size. The byte fee is $0.11 for a 1 KB scorecard, and $59 to $90 for an 823 KB video segment. The two lines cross at about 11 KB. So request fees are 92 percent of the scorecard CDN bill, and nobody optimises a segment by cutting requests.
+
+</KeyIdea>
+Start with the multiplication. 20 million average viewers across 14,400 seconds at a 30 second poll is 9.6 billion requests a match. At the peak, 50 million divided by 30 seconds is 1.67 million a second. At about 1 KB each that is 9.6 TB. A 15 second poll doubles all three. Every bill below holds only at AWS list prices of September 2026, with CloudFront in India and a 30 second poll.
+
+Two numbers need a warning spoken aloud. <SlideLink session={8} page={16} /> gives $680 for a peak-sized fleet of 200 `c5.4xlarge` boxes. Those boxes cost $136 an hour, so $680 is five hours, not the four-hour match used everywhere else. Four hours gives $544, and we read the extra hour as warm-up and drain. The log axis on <SlideLink session={8} page={18} /> marks the 360p segment at 459 KB, while the measurement on <SlideLink session={8} page={32} /> gives 452,328 bytes for the same rendition. The two disagree, so use the measurement.
+
+The wall matters more than the bill. One S3 prefix promises at least 5,500 GET requests a second, and one key lives under one prefix. So 1.67 million a second is 303 times over. Fifty million clients that retry a 503 with no backoff are the retry storm of Week 7, aimed at your own bucket.
+
+<Myth myth="The cheapest bill names the right design.">
+
+Price and capacity are separate questions. At list price push is the cheapest per match and the CDN is the dearest, and the instructor answers that ranking with "Hold that thought." Three of the four designs have a hard first failure. A contract can move a price. Nothing negotiates away 5,500 GETs a second per prefix.
+
+</Myth>
+
+<Remember>
+
+- 9.6 B requests a match: 20 M viewers times 14,400 s divided by a 30 s poll.
+- 1.67 M requests a second at the peak, and 9.6 TB at about 1 KB each. A 15 s poll doubles all three.
+- Bill 1, S3 to phones: $4.7K a match, mostly GET fees. Wall: 5,500 GET/s per prefix.
+- Bill 2, nginx behind an ALB: $1.2K to $1.8K, mostly egress. Wall: 20 to 50 M idle sockets.
+- Bill 3, CloudFront India: $12.5K, and 92 percent of it is request fees. No wall, just the bill.
+- Bill 4, push on 200 boxes: $0.9K to $1.6K. Wall: reconnect storms and rebalancing.
+- The $680 fleet line on page 16 is five hours at $136 an hour, not the four-hour match.
+- Page 18 marks the 360p segment at 459 KB and page 32 measures 452,328 B. Use the measurement.
+- Per million responses: $1.20 of request fee, $0.11 of bytes for 1 KB, $59 to $90 for 823 KB.
+
+</Remember>
+
+**The full lesson of this part:** <ModuleLink id="s08-m04-the-arithmetic" />.
+
+<Check id="s08-digest-q06" />
+
+<Check id="s08-digest-q07" />
+
+</Segment>
+
+<Segment title="How polling survives fifty million phones">
+
+**In this part.** Part 3 chose the pull side. Now you make it survive. Five mechanisms do the work: the conditional request, a TTL budget, request collapsing, negative caching and diffs.
+
+<Stepper
+  slot="visual"
+  title="The instant the edge copy expires, with collapsing off and then on"
+  steps={[
+    {
+      caption: 'Before expiry. The edge answers everybody from its own copy.',
+      lanes: [
+        { label: 'Edge copy', chunks: ['fresh, 6 s left'] },
+        { label: 'Phones asking', chunks: ['20,000 in 50 ms'] },
+        { label: 'Sent upstream', chunks: ['0'] },
+        { label: 'Origin sees', chunks: ['0 requests'] },
+      ],
+    },
+    {
+      caption: 'At t = 10 s the copy expires. With no collapsing, every ask is a miss.',
+      lanes: [
+        { label: 'Edge copy', chunks: ['expired'] },
+        { label: 'Phones asking', chunks: ['20,000 in 50 ms'] },
+        { label: 'Sent upstream', chunks: ['20,000'] },
+        { label: 'Origin sees', chunks: ['20,000 requests'] },
+      ],
+    },
+    {
+      caption: 'Collapsing on. The first miss goes upstream and the rest queue.',
+      lanes: [
+        { label: 'Edge copy', chunks: ['expired', 'fetch in flight'] },
+        { label: 'Phones asking', chunks: ['1 sent', '19,999 queued'] },
+        { label: 'Sent upstream', chunks: ['1'] },
+        { label: 'Origin sees', chunks: ['1 request'] },
+      ],
+    },
+    {
+      caption: 'The answer arrives and says public, so the whole queue is released at once.',
+      lanes: [
+        { label: 'Edge copy', chunks: ['fresh again'] },
+        { label: 'Phones asking', chunks: ['20,000 served'] },
+        { label: 'Sent upstream', chunks: ['1'] },
+        { label: 'Origin sees', chunks: ['1 request'] },
+      ],
+    },
+    {
+      caption: 'A stray Set-Cookie instead. The answer is private, so the queue drains one by one.',
+      lanes: [
+        { label: 'Edge copy', chunks: ['not shareable'] },
+        { label: 'Phones asking', chunks: ['served one at a time'] },
+        { label: 'Sent upstream', chunks: ['19,999 more'] },
+        { label: 'Origin sees', chunks: ['20,000 requests'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a real kitchen cooks one dish at a time, while an origin serves thousands of requests at once and only falls over at a much larger number.">
+
+A school canteen sells one dish of the day. At noon the tray runs empty, and two hundred children wait in the queue. In a bad canteen all two hundred walk into the kitchen. In a good one, one child goes and the rest wait at the counter.
+
+The tray is the cached copy at an edge, and an empty tray is the end of its TTL. The kitchen is your origin, and the one child who goes is request collapsing.
+
+</Picture>
+
+<KeyIdea id="one-fetch-per-edge-per-object" title="One fetch per edge per object, and everybody else waits">
+
+At the instant a cached copy expires, every request is a miss, and all of them head for the origin at once. Request collapsing turns that crowd into one upstream fetch while the rest queue at the edge. On the figures in the deck, 20,000 phones that ask one edge inside the same 50 milliseconds produce exactly one request at the origin.
+
+</KeyIdea>
+A conditional request costs nothing to add. The phone sends `If-None-Match`, and the server answers 304 Not Modified with the ETag and a `Cache-Control` line. Build the ETag from the version number, so it is a fingerprint and not a clock. Then budget the staleness, because the layers add and do not take a maximum. Three 30 second layers allow 90 seconds of stale screen, two or three balls behind. Cut them to 5, 5 and 15 and the worst case is 25 seconds, inside one ball.
+
+Three nginx settings make the herd survivable. `proxy_cache_lock on` is request collapsing. `proxy_cache_use_stale updating` answers from the old copy while one request refreshes it. `proxy_cache_background_update on` keeps that refresh off the request path. Collapsing has one condition: the answer must be shareable. The first response decides for the whole queue, and a stray `Set-Cookie` drains it one by one.
+
+Last, send the change instead of the card. The same T20 card measures 4,117 bytes raw, 1,088 gzipped, and 183 bytes for one ball as a gzipped JSON Patch. With pull, never put the version in the query, because `?since=1841` gives every client its own URL. Publish one file with the version and the recent balls. Line it up against an HLS media playlist and the mapping is exact: the version matches `EXT-X-MEDIA-SEQUENCE`, the recent list matches the segment window, and the poll interval matches `EXT-X-TARGETDURATION`. That design already has a name.
+
+<Myth myth="A CDN caches whatever you put behind it.">
+
+Check the default before you trust it. Cloudflare does not cache `.json` out of the box. With no cache rule, `cf-cache-status` reports DYNAMIC, and every poll from every phone reaches your origin. The design was right and the configuration was missing.
+
+</Myth>
+
+<Myth myth="Caching a 404 protects the origin, in the same way as caching a 503.">
+
+A 503 says that something is broken now, so a one or two second cache helps. A 404 at the live edge says that a file has not appeared yet, and it will appear in about four seconds. The default edge TTL for a 404 at Cloudflare is three minutes. Cache it that long and the error outlives the problem.
+
+</Myth>
+
+<Remember>
+
+- A conditional GET sends `If-None-Match` and gets 304 with the ETag and a `Cache-Control` line.
+- TTLs and the poll interval add. 30 s, 30 s and 30 s allows 90 s of stale screen.
+- 5 s mid-tier, 5 s edge and a 15 s poll allows 25 s, which is inside one ball.
+- Keep each CDN TTL at half the freshness you promise, or less. Prefresh at 25 s of a 30 s TTL.
+- Collapsing needs a shareable answer. `private` or a stray `Set-Cookie` drains the queue one by one.
+- Cache a 5xx for 1 to 2 s. Cache a 404 for 1 s or not at all. The Cloudflare default is 3 minutes.
+- A negative TTL must be far shorter than the time the missing thing needs to appear.
+- One T20 card: 4,117 B raw, 1,088 B gzipped, 183 B as a gzipped one-ball JSON Patch.
+- Never put the version in the URL. Publish one file with the version and recent changes, and fetch the whole card once after a gap.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s08-m05-making-polling-survive" /> and <ModuleLink id="s08-m06-diffs-and-versions" />.
+
+<Check id="s08-digest-q08" />
+
+<Check id="s08-digest-q09" />
+
+<Check id="s08-digest-q10" />
+
+</Segment>
+
+<Segment title="The same loop with bigger bytes">
+
+**In this part.** Part 4 ended on a sentence that is also the second half of the class. A player polls a small index and fetches numbered pieces. So everything above applies again, with three more orders of magnitude of bytes.
+
+<SequenceDiagram
+  slot="visual"
+  title="What a player fetches, and how often"
+  actors={['player', 'CDN edge', 'origin']}
+  messages={[
+    { from: 'player', to: 'CDN edge', label: 'GET master.m3u8 (once)' },
+    { from: 'CDN edge', to: 'player', label: '3 variants: 3440800, 1755600, 950400' },
+    { from: 'player', to: 'player', label: 'picks one rendition, caches the menu' },
+    { from: 'player', to: 'CDN edge', label: 'GET stream_1/index.m3u8' },
+    { from: 'CDN edge', to: 'origin', label: 'miss: 228 B playlist, TTL 2 s' },
+    { from: 'CDN edge', to: 'player', label: 'last 10 segment names' },
+    { from: 'player', to: 'CDN edge', label: 'GET stream_1/seg_000011.ts' },
+    { from: 'CDN edge', to: 'player', label: '823,440 B, cached for 10 minutes' },
+    { from: 'player', to: 'player', label: 'reload index.m3u8 after 4 s' },
+  ]}
+/>
+
+<Picture breaks="a library list is written once a day, while a live playlist is rewritten every four seconds, and a reader who trusts an old copy asks for a volume that the library already threw away.">
+
+A library keeps a long shelf of numbered volumes. On the door hangs one sheet of paper, and it lists the ten volumes now on the shelf. Readers glance at the sheet, then take the volume they want. Only the sheet changes.
+
+The sheet is the media playlist and each volume is a segment. The sheet is rewritten every few seconds, so it needs a short cache lifetime. A volume is finished for good.
+
+</Picture>
+
+<KeyIdea id="a-small-index-over-fixed-pieces" title="HLS keeps control and data apart">
+
+A player does four things. It reads `master.m3u8` once and picks a rendition. It reloads that media playlist every target duration. It fetches each new segment into a buffer. It plays from the buffer and changes rendition when the throughput changes. The playlists are control and the segments are data. The small thing changes often, and the big thing never changes at all.
+
+</KeyIdea>
+Lay the three requests side by side and the claim of the class is visible. A 1 KB scorecard every 15 seconds, a 228-byte playlist every 4 seconds, and one 823 KB segment fetched once. The master playlist is the menu, read one time. Each variant line carries BANDWIDTH, RESOLUTION and CODECS, and BANDWIDTH is video plus audio times 1.1.
+
+The media playlist carries all the change, and the RFC gives two reload rules. After a change, wait at least one target duration. After no change, wait half a target duration, because an unchanged playlist means something upstream is late. If a segment keeps its sequence number but changes its URI, the client should halt playback. `EXT-X-ENDLIST` ends the polling, and video on demand is a playlist that stopped changing.
+
+A segment is a chain of 188-byte packets. Each one has a 4-byte header with a `0x47` sync byte, a 13-bit program identifier and a counter, then 184 bytes of payload. Fixed length and a sync byte are both framing answers at once, and 188 came from the ATM cell train of the day.
+
+Segment length is the knob with no free direction. Peak requests are the audience divided by the segment length, so 12.5 million a second at 4 seconds, and the latency floor is three times that length. The first ffmpeg line asked for 4 second segments and produced 8.33 second ones, because `-codec: copy` cannot create a keyframe.
+
+<Myth myth="The segments are the hard caching problem, because they are large.">
+
+Playlist traffic is harder than segment traffic. A segment never changes, so you cache it for ten minutes and forget it. The playlist changes every target duration, it is billed per request at millions a second, and a stale copy either stalls the player or names a file that no longer exists. Size is not difficulty.
+
+</Myth>
+
+<Myth myth="The -hls_time flag sets the segment length.">
+
+It states a target, not a promise. The muxer can only cut at a keyframe, so the keyframe interval in the encoded bytes decides where each segment ends. With `-codec: copy` you inherit whatever interval the source already had. Only a re-encode with a fixed keyframe interval gives you the length you asked for.
+
+</Myth>
+
+<Remember>
+
+- BANDWIDTH in the ladder of the deck is video plus audio times 1.1, so 3000k plus 128k is 3,440,800.
+- Reload rules: one target duration after a change, half a target duration after no change.
+- A segment that keeps its sequence number but changes its URI means halt playback.
+- `EXT-X-ENDLIST` means no more segments. VOD is a playlist that stopped changing, and Apple now says 6 s.
+- A segment is 188-byte packets: a `0x47` sync byte, a 13-bit PID, a counter, 184 bytes of payload.
+- 188 bytes was chosen for ATM, not for video. Measured overhead is 3.3 to 5.6 percent.
+- Peak segment requests are viewers divided by segment length: 12.5 M/s at 4 s, 8.3 M/s at 6 s.
+- The latency floor is three times the segment length: 12 s at 4 s segments, 18 s at 6 s.
+- Playlist TTL is half a target duration or less. Segment TTL is minutes to forever. Gzip every playlist.
+- `-codec: copy` cannot make a keyframe, so a 250-frame interval gave 8.33 s segments at 30 fps.
+- `-g 120` is a frame count: 4 s at 30 fps, 5 s at 24 fps. `-sc_threshold 0` stops extra keyframes.
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s08-m07-hls-playlists" />, <ModuleLink id="s08-m08-segments" /> and <ModuleLink id="s08-m11-making-the-stream" />.
+
+<Check id="s08-digest-q11" />
+
+<Check id="s08-digest-q12" />
+
+</Segment>
+
+<Segment title="The budget, the switch and the four ideas">
+
+**In this part.** Part 5 built the stream. Now you spend its latency, let the player choose a quality, survive a dead CDN, and read the four sentences that close the course.
+
+<Stepper
+  slot="visual"
+  title="Where twenty seconds of live latency go, and what LL-HLS removes"
+  steps={[
+    {
+      caption: 'Encode. About 2 s, which the deck calls a typical guess.',
+      lanes: [
+        { label: 'Bar', chunks: ['encode'] },
+        { label: 'Seconds', chunks: ['2'] },
+        { label: 'Running total', chunks: ['2'] },
+        { label: 'Set by', chunks: ['your transcoder'] },
+      ],
+    },
+    {
+      caption: 'The segment fills. 4 s, because a 4 s segment is not written until it is complete.',
+      lanes: [
+        { label: 'Bar', chunks: ['segment fill'] },
+        { label: 'Seconds', chunks: ['4'] },
+        { label: 'Running total', chunks: ['6'] },
+        { label: 'Set by', chunks: ['your segment length'] },
+      ],
+    },
+    {
+      caption: 'Delivery to the CDN. About 2 s, the deck’s other typical guess.',
+      lanes: [
+        { label: 'Bar', chunks: ['to the CDN'] },
+        { label: 'Seconds', chunks: ['2'] },
+        { label: 'Running total', chunks: ['8'] },
+        { label: 'Set by', chunks: ['your upload path'] },
+      ],
+    },
+    {
+      caption: 'Player hold-back. 12 s, which is three target durations from the spec.',
+      lanes: [
+        { label: 'Bar', chunks: ['hold-back'] },
+        { label: 'Seconds', chunks: ['12'] },
+        { label: 'Running total', chunks: ['about 20'] },
+        { label: 'Set by', chunks: ['the spec, from your segment length'] },
+      ],
+    },
+    {
+      caption: 'LL-HLS with 1 s parts: the fill bar and the hold-back both shrink.',
+      lanes: [
+        { label: 'Bar', chunks: ['fill 1 s', 'hold-back about 3 s'] },
+        { label: 'Seconds', chunks: ['1 plus 3'] },
+        { label: 'Running total', chunks: ['about 8 (our sum)'] },
+        { label: 'Set by', chunks: ['parts, a blocking reload, hints, diffs'] },
+      ],
+    },
+  ]}
+/>
+
+<Picture breaks="a bucket under a tap can empty faster than it fills, while a live stream can never run ahead of the match itself.">
+
+A child fills a bucket from a slow tap and pours the water into a jug with a hole in the bottom. A nearly full jug drips without a pause. A nearly empty jug stops dead after one slow moment at the tap.
+
+The jug is the player buffer and the drip is the picture. Each bucket is a segment, and the slow tap is a bad network. Every second of water is one second behind the stadium.
+
+</Picture>
+
+<KeyIdea id="latency-is-a-budget" title="Latency is a budget that you spend on safety">
+
+The four bars add to about 20 seconds behind the stadium with 4 second segments. About 2 seconds to encode, 4 while the segment fills, about 2 to reach the CDN, and a player hold-back of three target durations, which is 12. The encode and delivery figures are typical guesses in the deck, and the hold-back is the spec. Every second you remove buys you less tolerance somewhere else.
+
+</KeyIdea>
+The buffer is what the player already downloaded ahead of the playhead. A large buffer survives a bad minute on a train, and it costs latency second for second. A one-segment buffer gives the lowest latency and stalls on one slow fetch. When the playlist stops advancing, the buffer is the only thing that keeps the picture going.
+
+Low-Latency HLS shrinks the two largest bars with four ideas from earlier in this read: 1 second parts, a blocking reload that is long polling, preload hints that replaced HTTP/2 push, and `EXT-X-SKIP` delta updates that are diffs. The hold-back then falls to about 3 seconds.
+
+Two paths with two budgets produce the spoiler. The scorecard shows a wicket about ten seconds before the video does. A fixed delay is the wrong fix, because it breaks as soon as either budget moves. Stamp each update with the wall-clock time of the ball, and reveal it when playback passes that instant. Who picks the quality is a policy question, and one sentence drives every rule: a stall is worse than a lower rendition.
+
+One failure catches teams in production. The `delete_segments` flag keeps one unreferenced segment, while RFC 8216 wants the segment duration plus the playlist duration, so 44 seconds here. A stale playlist then names a deleted file, the player gets a 404, that 404 is cached, and the stall outlives the blip. Four levers steer a player between CDNs, and client failover is the fastest because it acts at the next segment.
+
+<Myth myth="Serving stale content is always safe, because stale beats an error.">
+
+Not for a playlist. A stale playlist names segments that the origin already deleted. A player follows it, gets a 404, and that 404 is negatively cached. One short origin blip becomes a stall that outlives it. The line in the deck reads "Serve stale may cause player issues." Serve segments stale freely, and give a playlist one target duration at most.
+
+</Myth>
+
+<Remember>
+
+- A one-segment buffer gives the lowest latency and stalls on one slow fetch. A large one costs latency and memory.
+- The budget: 2 s encode, 4 s fill, 2 s to the CDN, 12 s hold-back. About 20 s with 4 s segments.
+- LL-HLS is four old ideas: 1 s parts, a blocking reload, preload hints, `EXT-X-SKIP` diffs.
+- The spoiler window is about 10 s. Fix it with wall-clock stamps, never with a fixed delay.
+- The policy behind every ABR rule: a stall is worse than a lower rendition.
+- Four ways to steer: DNS (slowest), the master playlist, Content Steering, client failover (fastest).
+- A removed segment must stay available for its duration plus the playlist duration, so 44 s here.
+- The four-link failure: early deletion, a stale playlist, a 404, that 404 negatively cached.
+- Four objects, four policies: minutes, half a target duration, long, and half your promise.
+- Weeks 1 and 2 in the match: 16-bit ports, base64 in the handshake, and three kinds of framing.
+- Weeks 3 and 4: fifty million held sockets, Little's Law, `proxy_cache_lock`, and one location per file type.
+- Weeks 5 to 7: the ETag and the 304, the 101 upgrade, tiers and collapsing, jitter and the live-edge 404.
+- Week 8: HLS is a playlist, polled like a scorecard, over bytes that never change.
+- Idea 1: pull scales through caches, and push scales through machines.
+- Idea 2: number the pieces, then cache them forever.
+- Idea 3: latency is a budget you spend on safety.
+- Idea 4: know which bill you are on. The closing line: "Every live stream is a scorecard with bigger bytes."
+
+</Remember>
+
+**The full lessons of this part:** <ModuleLink id="s08-m09-buffers-latency" />, <ModuleLink id="s08-m10-many-cdns" /> and <ModuleLink id="s08-m12-whole-course" />.
+
+<Check id="s08-digest-q13" />
+
+<Check id="s08-digest-q14" />
+
+</Segment>
+
+<NumbersTable
+  caption="The numbers of class 8, each one with the assumptions that it needs"
+  rows={[
+    { value: '50 M peak, 20 M average', what: 'the audience for one live cricket match', conditions: 'a four-hour match, the figures the deck uses for one event' },
+    { value: '25 to 45 s', what: 'the gap between two balls, which sets every interval in the class', conditions: 'cricket, with an over every 4 to 5 minutes' },
+    { value: '4,117 B raw, 1,088 B gzipped, 183 B as a patch', what: 'three sizes of the same scorecard', conditions: 'a synthetic T20 card with two innings, batting and bowling figures and fall of wickets. The patch is one ball as gzipped JSON Patch.' },
+    { value: '9.6 B, 1.67 M a second, 9.6 TB', what: 'requests a match, peak request rate and bytes a match', conditions: '20 M average viewers over 14,400 s at a 30 s poll, 50 M at the peak, about 1 KB per response' },
+    { value: '5,500 GET/s', what: 'the request rate that one S3 prefix promises', conditions: 'Amazon S3 User Guide, checked September 2026. One key lives under one prefix, so 1.67 M a second is 303 times over.' },
+    { value: 'about 11 KB', what: 'where the request fee and the byte fee cross on a CDN', conditions: 'CloudFront India list prices of September 2026: $0.0120 per 10,000 HTTPS requests and $0.109 per GB after 1 free TB' },
+    { value: '$4.7K, $1.2K to $1.8K, $12.5K, $0.9K to $1.6K', what: 'the four bills per match: S3 direct, an nginx fleet, CloudFront, and push', conditions: 'AWS list prices September 2026, S3 and EC2 and ELB in US East, CloudFront in India, body bytes only, a 30 s poll, push sending 183-byte diffs up to full cards' },
+    { value: '$680', what: 'the peak-sized push fleet line of the fourth bill', conditions: '200 c5.4xlarge at $0.68 an hour is $136 an hour, so $680 is five hours and not the four-hour match. Four hours gives $544.' },
+    { value: '250,000', what: 'connections held by one EMQX broker node', conditions: 'one c5.4xlarge, the first step of the Hotstar ladder, latency inside bounds. The slide is the only source: the blog post could not be fetched.' },
+    { value: 'about 137 KB', what: 'memory for one held connection, all in', conditions: '250,000 sockets on a 32 GiB box, so 34,359,738,368 bytes divided by 250,000. It counts kernel buffers, TLS state and the per-client broker process.' },
+    { value: '333,000 a second', what: 'keepalive pings that carry no news at all', conditions: '20 M idle phones at a 60 s MQTT keepalive, before the first ball' },
+    { value: '28,232', what: 'sockets from one client IP to one destination', conditions: 'the Linux default ephemeral range, 32768 to 60999. So 250k test sockets need at least 9 source IPs.' },
+    { value: '1', what: 'requests that reach the origin from a herd at the edge', conditions: '20,000 phones ask one edge inside 50 ms just after expiry, with proxy_cache_lock on and a public response' },
+    { value: '823,440 B', what: 'one 4-second 480p segment', conditions: 'the ffmpeg run in the deck. 4,380 packets of 188 bytes, 4.1 percent overhead.' },
+    { value: '452,328 B', what: 'one 4-second 360p segment', conditions: 'the measurement on page 32 of the deck. Page 18 marks the same rendition as 459 KB, and the two numbers disagree.' },
+    { value: '12.5 M a second', what: 'peak segment requests across the audience', conditions: '50 M peak viewers divided by a 4 s segment length' },
+    { value: 'about 20 s', what: 'how far a live stream sits behind the stadium', conditions: '4 s segments. 2 s encode and 2 s to the CDN are the typical guesses of the deck. The 12 s hold-back is three target durations from the spec.' },
+    { value: '8.33 s', what: 'the segment length that the first ffmpeg one-liner produced, after asking for 4 s', conditions: 'the deck run with -codec: copy on a 30 fps source whose keyframe interval was the x264 default of 250 frames' },
+    { value: '44 s', what: 'the minimum time a removed segment must stay available', conditions: 'RFC 8216, with 4 s segments and a 40 s playlist window: 4 plus 40' },
+    { value: '10 to 20 percent', what: 'fewer rebuffers with the buffer-based rule', conditions: 'Netflix A/B tests, Huang and others at SIGCOMM 2014, at a similar video rate' },
+    { value: '0.28 percent', what: 'the scorecard bill as a share of the same match video bill', conditions: 'list price, and it assumes every viewer watches the 480p rung, which no real ladder produces' },
+  ]}
+/>
+
+<ExitQuiz module="s08-digest" />
+
+<CardsAdded id="s08-digest" />

@@ -25,10 +25,10 @@ and `projects/`. Run a command in the folder that the command block names.
 
 | Part | State |
 |---|---|
-| Curriculum maps | Sessions 1–5 written and reviewed on 2026-09-14: 57 modules, 894 claims. Sessions 6–8 not taught yet. |
-| Site | Live at https://sammyurfen.github.io/network-architecture/. Phases 1 and 2 done. 5 lessons and 4 class digests ready on 2026-09-16. The digests cover every core claim of classes 1 to 4, for the quiz on 2026-09-18. |
-| Class digests | The harness is done on 2026-09-16: `kind: digest` in the schema, verify rules 5 and 11, `Remember`, `NumbersTable` and `Myth`, the route `/s0N/digest/`, the two review prompts, and a `draft` stub for classes 1 to 4. The four digests wait for their packets, before the quiz on Friday 2026-09-18. |
-| Sources | All five decks complete. No transcripts. See `sources/MANIFEST.md`. |
+| Curriculum maps | Classes 1 to 8, all written and reviewed. 86 planned modules, 1,623 claims. |
+| Site | Live at https://sammyurfen.github.io/network-architecture/. Phases 1 and 2 done. 5 lessons and 8 class digests ready on 2026-10-11. The digests cover every core claim of every class. |
+| Class digests | One fast read for each class, at `/s0N/digest/`. Classes 1 to 4 landed on 2026-09-16 for Quiz 1. Classes 5 to 8 landed on 2026-10-11 for Quiz 2. The contract is `docs/PEDAGOGY.md` section 3. |
+| Sources | All eight decks complete. The class 8 deck is image-only, and its text comes from a page-by-page transcription. No transcripts. See `sources/MANIFEST.md`. |
 
 Update this table when a phase ends.
 
@@ -41,14 +41,14 @@ Update this table when a phase ends.
 | 3 | Server Side Considerations for scale | taught, about 2026-08-27 |
 | 4 | nginx deep dive | taught, about 2026-09-04 |
 | 5 | Evolution of HTTP | taught, about 2026-09-11 |
-| 6 | (Ab)using CDNs | Fri 2026-09-18 |
-| 7 | Economics of cloud tech | Fri 2026-09-25 |
-| 8 | Building for failures | Fri 2026-10-02 |
+| 6 | (Ab)using CDNs | taught, Fri 2026-09-18 |
+| 7 | Building for Failures | taught, Fri 2026-09-25 |
+| 8 | Streaming video at large scale | taught, Fri 2026-10-02 |
 
-Future dates can change. The Session 5 deck lists a different week 7 and 8
-("Building for failures", "Streaming video at large scale"). The Session 4 and
-5 decks preview Session 6 as "Where did the state go?". The table above is
-the official one.
+The course is over. The decks of classes 7 and 8 do not match the official
+table, which named week 7 "Economics of cloud tech" and week 8 "Building for
+failures". The rows above follow the decks that the instructor taught. The
+dates of classes 7 and 8 are a guess from the weekly Friday pattern.
 
 **Grading:** post-class quizzes 30% (three quizzes), project 30%, assignment
 20%, end-term exam 20%. The Session 5 deck announces the calculator

@@ -1,6 +1,6 @@
-# Not taught yet. The date can change.
 number: 6
 title: (Ab)using CDNs
+subtitle: A CDN is a reverse proxy you rent in 300 cities. What it buys, what it costs, and what it breaks.
 date: 2026-09-18
 dateApprox: true
-sourceStatus: missing
+sourceStatus: complete

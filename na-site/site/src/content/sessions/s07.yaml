@@ -1,6 +1,6 @@
-# Not taught yet. The date can change.
 number: 7
-title: Economics of cloud tech
+title: Building for Failures
+subtitle: Timeouts, retries, backoff, circuit breakers, and what a video player does when the network lies.
 date: 2026-09-25
 dateApprox: true
-sourceStatus: missing
+sourceStatus: complete

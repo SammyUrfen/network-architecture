@@ -12,11 +12,12 @@ teaches". Do not write lesson prose here. Write the plan for the prose.
 | [session-03.md](session-03.md) | 3. Server Side Considerations for scale | about 2026-08-27 | 34 slides, code |
 | [session-04.md](session-04.md) | 4. nginx deep dive | about 2026-09-04 | 36 slides, code, source tour |
 | [session-05.md](session-05.md) | 5. Evolution of HTTP | about 2026-09-11 | 51 slides, code, README |
-| session-06.md | 6. (Ab)using CDNs | Fri 2026-09-18 | not taught yet |
-| session-07.md | 7. Economics of cloud tech | Fri 2026-09-25 | not taught yet |
-| session-08.md | 8. Building for failures | Fri 2026-10-02 | not taught yet |
+| [session-06.md](session-06.md) | 6. (Ab)using CDNs | Fri 2026-09-18 | 38 slides |
+| [session-07.md](session-07.md) | 7. Building for Failures | Fri 2026-09-25 | 37 slides |
+| [session-08.md](session-08.md) | 8. Streaming video at large scale | Fri 2026-10-02 | 48 slides, transcribed from images |
 
-All five decks are complete. Future dates can change. No class transcripts
+All eight decks are complete. The dates of classes 7 and 8 are a guess from
+the weekly Friday pattern, and Bibek can correct them. Future dates can change. No class transcripts
 exist for any session. Sessions 1 and 2 have AI revision notes.
 
 Source files live in `sources/` (git-ignored). See `sources/MANIFEST.md`.
@@ -45,7 +46,7 @@ now, so cross-session links work. An author can add a module with the next
 free number. An author does not rename or reuse a listed ID. If a listed
 module turns out wrong, keep the ID and record the change under "Open
 questions" in the session file. The `### sNN-mNN` headings in the session
-files and this table must list the same 57 modules.
+files and this table must list the same 85 modules.
 
 | Session | Modules, with the PDF pages each one starts from |
 |---|---|
@@ -54,6 +55,9 @@ files and this table must list the same 57 modules.
 | 3 | `s03-m01-threads-and-fork` (3–5) · `s03-m02-select` (6, 7) · `s03-m03-stacking-and-timeouts` (8, 9) · `s03-m04-cgi` (10–14) · `s03-m05-fastcgi-servlets` (15–18) · `s03-m06-stateless-servers` (20, 21) · `s03-m07-limits` (22–26) · `s03-m08-in-the-wild` (27–32) · `s03-m09-servlets` (19) |
 | 4 | `s04-m01-history` (3–7) · `s04-m02-the-nginx-question` (8–10) · `s04-m03-process-model` (11, 13) · `s04-m04-event-loop` (12) · `s04-m05-select-vs-epoll` (14, 15) · `s04-m06-sendfile` (16, 17) · `s04-m07-reverse-proxy` (18) · `s04-m08-cache` (19–21) · `s04-m09-routing` (22, 23, 25) · `s04-m10-upstreams` (24) · `s04-m11-parser-phases` (30, 31) · `s04-m12-reading-the-source` (26–29, 33) · `s04-m13-fastcgi-records` (32) |
 | 5 | `s05-m01-http10` (5–10) · `s05-m02-keepalive-host` (11, 12) · `s05-m03-validators-vary` (13, 14) · `s05-m04-range-chunked-extras` (15–17) · `s05-m05-rfcs-and-smuggling` (19–24) · `s05-m06-what-it-cost` (18, 25–29) · `s05-m07-http2-frames` (30–33) · `s05-m08-hpack-crime` (34, 35) · `s05-m09-http2-multiplexing` (36–39) · `s05-m10-quic-handshakes` (40–42, 44) · `s05-m11-quic-streams-fallback` (43, 45–47) · `s05-m12-assignment-prep` (3) · `s05-m13-project-studio` (4) |
+| 6 | `s06-m01-physics-budget` (8–11) · `s06-m02-what-a-cdn-is` (12–15) · `s06-m03-caching-defaults` (16, 17) · `s06-m04-caching-the-uncacheable` (18–20) · `s06-m05-cache-bugs` (21) · `s06-m06-faster-bytes` (22–24) · `s06-m07-not-speed` (25–29) · `s06-m08-cloudflare-hands-on` (30–32) · `s06-m09-the-bill` (33) |
+| 7 | `s07-m01-failure-taxonomy` (6–11) · `s07-m02-retry-definitions` (12, 13) · `s07-m03-when-to-retry` (14–18) · `s07-m04-retry-mechanics` (19–23) · `s07-m05-player-case-study` (24–29) · `s07-m06-systems-that-survive` (30–33) · `s07-m07-synthesis` (34) · `s07-m08-build-the-wrapper` (35) |
+| 8 | `s08-m01-push-or-pull` (4–7) · `s08-m02-sse-websockets-mqtt` (8–10) · `s08-m03-hotstar-sockets` (11–13) · `s08-m04-the-arithmetic` (14–19) · `s08-m05-making-polling-survive` (20–24) · `s08-m06-diffs-and-versions` (25, 26) · `s08-m07-hls-playlists` (27–31) · `s08-m08-segments` (32–34) · `s08-m09-buffers-latency` (35–38) · `s08-m10-many-cdns` (39–41) · `s08-m11-making-the-stream` (42, 43) · `s08-m12-whole-course` (44, 45) |
 
 The site order of Session 1 is m09, m11, m10. The slide numbers are a
 starting map from the slide titles. Opening slides,

@@ -1,0 +1,328 @@
+# The questions of the class 6 digest. 15 items, in page order, 2 or 3 for each
+# of the six parts. q01, q07, q11 and q15 come back in the exit quiz: one from
+# the physics, one from the cache language, one from the perimeter and one from
+# the bill. The misconceptions come from docs/curriculum/session-06.md.
+# Segments: 1 the physics, 2 what a CDN is, 3 the cache, 4 the bugs and the
+# bytes, 5 everything that is not speed, 6 the Workers and the bill.
+items:
+  - id: s06-digest-q01
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: A user 12,000 km from your origin waits 1.2 s for a page. The server renders it in 10 ms. What do you work on first?
+    options:
+      - text: The origin CPU, because rendering is what the server actually does.
+        correct: false
+        misconception: S06-M01
+        feedback: 10 ms of 1,200 ms is under 1%. Almost all of the wait is travel time.
+      - text: The connection setup and the cache, because nearly all of the wait is travel time.
+        correct: true
+        feedback: Three round trips of TLS setup alone cost about 380 ms at a 126 ms floor.
+      - text: The link bandwidth at the origin, so that the bytes leave faster.
+        correct: false
+        misconception: S06-M04
+        feedback: Bandwidth is bytes each second. A round trip is a distance divided by a speed.
+    explanation: Propagation delay is a floor that no CPU and no link upgrade crosses. The two things a CDN can change are the handshake count, through a warm pool, and the long leg itself, through a cache hit.
+    covers: [S06-C20, S06-C22, S06-C44]
+    tags: []
+    taughtIn: the-pool-saves-handshakes-the-cache-saves-the-trip
+
+  - id: s06-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: numeric
+    prompt: How many milliseconds does light need to cross 1000 km of optical fibre, one way?
+    answer: { value: 4.9, tolerance: 0.05, unit: ms }
+    distractors:
+      - value: 3.3
+        misconception: S06-M02
+        feedback: 3.3 ms uses the vacuum speed. Glass has a group index near 1.468, so light is slower in it.
+      - value: 9.8
+        misconception: S06-M02
+        feedback: 9.8 ms is the round trip. The question asks for one way.
+    explanation: 1000 km divided by 204,218 km/s is 4.90 ms. The fibre speed comes from the vacuum speed divided by the group index of 1.468, and the bench reproduced both on 2026-10-10.
+    covers: [S06-C16]
+    tags: [measured]
+    taughtIn: seg-the-floor-that-distance-sets
+
+  - id: s06-digest-q03
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: In architectural terms, what is a CDN edge?
+    options:
+      - text: A new protocol that runs between the browser and your origin.
+        correct: false
+        misconception: S06-M06
+        feedback: Nothing new runs on the wire. The edge speaks the same HTTP and TLS as your origin.
+      - text: A faster kind of origin server, tuned by the vendor.
+        correct: false
+        misconception: S06-M06
+        feedback: It is the same software family you already know. The product is the geography.
+      - text: A caching reverse proxy, run in many cities behind one anycast address.
+        correct: true
+        feedback: The proxy and the cache are class 4, the pool is class 3, and the one address is class 2.
+    explanation: A CDN invents almost nothing. Squid did reverse-proxy caching in 1996. What you rent is a cache 10 ms from your user, both ends of the long leg under one operator, and enough cities that one address answers everywhere.
+    covers: [S06-C47, S06-C50, S06-C51]
+    tags: []
+    taughtIn: a-cdn-rents-geography-not-technology
+
+  - id: s06-digest-q04
+    use: [check, practice]
+    segment: 2
+    type: numeric
+    prompt: Ten caches share 100,000 URLs by `hash(url) % N`. You add an eleventh. What percentage of the URLs changes owner?
+    answer: { value: 90.9, tolerance: 0.2, unit: '%' }
+    distractors:
+      - value: 9.1
+        misconception: S06-M07
+        feedback: 9.1% is the ideal, one URL in eleven. Modulo is ten times worse than that.
+      - value: 10
+        misconception: S06-M07
+        feedback: Only one new server joined, and yet nearly every URL moves. N sits inside the formula.
+    explanation: A change to N changes almost every owner, so a capacity upgrade becomes a near-total cache flush and an origin stampede. Modulo balances load fine, at 1.02 times the mean, so balance was never the problem. Consistent hashing with 160 points moves 8.2%.
+    covers: [S06-C54, S06-C57]
+    tags: [measured]
+    taughtIn: seg-a-reverse-proxy-you-rent-by-the-city
+
+  - id: s06-digest-q05
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: Two students run `curl -s https://www.cloudflare.com/cdn-cgi/trace` on two networks and get two different `colo` codes. Why?
+    options:
+      - text: BGP anycast routes each network to a different announcement of the same address.
+        correct: true
+        feedback: One address is announced from every city, and the routing decides which announcement each network reaches.
+      - text: Each student resolved the domain to a different IP address.
+        correct: false
+        misconception: S06-M10
+        feedback: The address is the same for both. Anycast puts one address in every city.
+      - text: Each student picked a region, and the CDN honoured that choice.
+        correct: false
+        misconception: S06-M09
+        feedback: You never choose. The colo code only tells you which building answered, after the fact.
+    explanation: BGP picks a path by policy and path length, not by latency, so anycast gives you a nearby point of presence and not reliably the nearest one. The colo is an IATA airport code, and the suffix of every `cf-ray` header carries it, which is how you debug one slow user.
+    covers: [S06-C73, S06-C74, S06-C75, S06-C78]
+    tags: []
+    taughtIn: seg-a-reverse-proxy-you-rent-by-the-city
+
+  - id: s06-digest-q06
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: You put a CDN in front of your site and change nothing else. Which of these gets cached?
+    options:
+      - text: '`/page/home`, your HTML home page.'
+        correct: false
+        misconception: S06-M11
+        feedback: HTML is not on the default eligibility list, so the edge never looks in the cache for it.
+      - text: '`/api/orders`, a JSON endpoint.'
+        correct: false
+        misconception: S06-M11
+        feedback: JSON is off the list too. A Cache Rule is what makes either one eligible.
+      - text: '`/static/app.css`.'
+        correct: true
+        feedback: Eligibility comes from the extension, and the Cloudflare list holds 68 static ones.
+    explanation: A CDN decides eligibility from the file extension before it thinks about freshness. HTML and JSON are off that list, and so is anything carrying `Set-Cookie` or `private`. When the origin then says nothing about freshness, the default edge TTL is 2 hours for a 200 or a 301.
+    covers: [S06-C81, S06-C83, S06-C84]
+    tags: []
+    taughtIn: two-defaults-you-did-not-choose
+
+  - id: s06-digest-q07
+    use: [check, exit, practice]
+    segment: 3
+    type: mcq
+    prompt: 'A response comes back with `cf-cache-status: DYNAMIC`. What happened?'
+    options:
+      - text: The object was never eligible, so the edge did not look in the cache at all.
+        correct: true
+        feedback: DYNAMIC is the default answer for HTML. Nothing was looked up and nothing was stored.
+      - text: The edge looked in the cache and the object was absent.
+        correct: false
+        misconception: S06-M12
+        feedback: MISS is the word for a consulted-and-absent object. DYNAMIC means the edge never asked.
+      - text: The object changes on every request, so the edge refused to store it.
+        correct: false
+        misconception: S06-M12
+        feedback: The edge knows nothing about how often the body changes. It read the extension.
+    explanation: Four of the eight words say what the edge did with the cache, not what the content is like. DYNAMIC means never eligible. BYPASS means eligible and then unstorable, because the origin sent `no-store`. MISS means eligible and absent. HIT means fresh, and the origin was never touched.
+    covers: [S06-C91, S06-C92, S06-C98]
+    tags: []
+    taughtIn: seg-what-the-edge-keeps-and-the-eight-words-it-reports
+
+  - id: s06-digest-q08
+    use: [check, practice]
+    segment: 3
+    type: predict
+    prompt: 100 logged-in users load the same page through an edge with ESI on. How many requests reach the origin?
+    options:
+      - text: 100, unchanged, because every user still needs a page built.
+        correct: false
+        misconception: S06-M17
+        feedback: The shell is fetched once and then hit 99 times. The count changed, and it went up.
+      - text: '201: one shell fetch, plus two personal fragments for each of the 100 users.'
+        correct: true
+        feedback: Origin bytes fell 97.9% and origin requests rose. Two of the three numbers move against you.
+      - text: 1, because the shell is cached at the edge and nothing else is needed.
+        correct: false
+        misconception: S06-M17
+        feedback: The personal fragments are not cacheable, so each one is its own tiny fetch.
+    explanation: ESI moves work off the origin page rendering and onto edge assembly. The shell renders once, so origin bytes drop from 3,984,200 to 83,454, and bytes to the user rise 0.06%. Whether that is a win depends on whether your origin is short of CPU or short of request capacity.
+    covers: [S06-C104, S06-C107, S06-C114]
+    tags: [measured]
+    taughtIn: seg-what-the-edge-keeps-and-the-eight-words-it-reports
+
+  - id: s06-digest-q09
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: Cache poisoning and cache deception share one root cause. What is it?
+    options:
+      - text: The origin is too slow, so the edge caches more than it should.
+        correct: false
+        misconception: S06-M22
+        feedback: Origin speed changes nothing here. Both attacks work against a fast, correct origin.
+      - text: The TTL is set too long, so a bad answer lives for hours.
+        correct: false
+        misconception: S06-M22
+        feedback: The TTL sets how long the damage lasts, not whether the bug exists.
+      - text: The cache key does not match what the answer really depends on.
+        correct: true
+        feedback: The key is the name of the answer. When the name is wrong, a shared cache is a weapon.
+    explanation: Poisoning works when something that changed the answer is not in the key, so one request stores a hostile page under the plain URL. Deception works when the name claims a type the body does not have, so a `.css` suffix on a private path stores the victim's page. Drop the unkeyed header at the edge, and stop caching by extension alone.
+    covers: [S06-C127, S06-C128, S06-C133, S06-C136]
+    tags: []
+    taughtIn: the-key-is-the-name-of-the-answer
+
+  - id: s06-digest-q10
+    use: [check, practice]
+    segment: 4
+    type: predict
+    prompt: An edge runs 8 worker processes, each with its own origin connection pool, at 82.7% reuse. The operator moves to 32 worker pools. What happens to reuse?
+    options:
+      - text: It falls, from 82.7% to 45.3%.
+        correct: true
+        feedback: Each worker now sees a quarter of the traffic, so its connections go idle and the origin closes them.
+      - text: It rises, because there are four times as many pools to draw from.
+        correct: false
+        misconception: S06-M28
+        feedback: A pooled connection belongs to the worker that opened it. More pools means each one is starved.
+      - text: It stays the same, because the total request rate did not change.
+        correct: false
+        misconception: S06-M28
+        feedback: The total is the same and the share for each worker is not. The idle timeout does the rest.
+    explanation: The fix is less partitioning, not more pooling. One shared pool reached 98.7% reuse in the same bench, and the mean time to first byte fell from 160 ms to 57 ms. nginx partitions by worker and Pingora does not, which is where the 87.1% to 99.92% result comes from.
+    covers: [S06-C153, S06-C157]
+    tags: [measured]
+    taughtIn: seg-two-ways-to-break-the-cache-three-ways-to-beat-the-clock
+
+  - id: s06-digest-q11
+    use: [check, exit, practice]
+    segment: 5
+    type: mcq
+    prompt: The WAF demo ends by turning on `--safe`, and then every bypass payload returns no rows. What changed?
+    options:
+      - text: The edge turned on full normalisation, so it strips SQL comments before matching.
+        correct: false
+        misconception: S06-M31
+        feedback: Full normalisation still missed `' --`, which has no OR, no UNION and no digits.
+      - text: The WAF gained more rules, so the remaining spellings are covered.
+        correct: false
+        misconception: S06-M31
+        feedback: A denylist can never enumerate every spelling. That is the arms race you do not win.
+      - text: The origin binds its query parameters instead of formatting them into a string.
+        correct: true
+        feedback: The defect was always in the origin. The WAF only filtered spellings of it.
+    explanation: 'A WAF handles volume: mass-scanned payloads such as Log4Shell probes and the OWASP top patterns. It does not handle a targeted attacker who spells the same attack another way. Both facts are true at once, and only parameter binding removes the defect.'
+    covers: [S06-C173, S06-C180, S06-C182]
+    tags: []
+    taughtIn: the-perimeter-sits-where-traffic-converges
+
+  - id: s06-digest-q12
+    use: [check, practice]
+    segment: 5
+    type: numeric
+    prompt: A limit of 100 requests per 10 seconds runs as a fixed window. A client sends 100 requests from t=9.5 s and 100 more from t=10.0 s. How many pass between t=9.5 s and t=10.5 s?
+    answer: { value: 200, tolerance: 0, unit: null }
+    distractors:
+      - value: 100
+        misconception: S06-M32
+        feedback: 100 is what an exact sliding log allows. A fixed window resets its counter at the boundary.
+      - value: 104
+        misconception: S06-M32
+        feedback: 104 is the sliding-window estimate, which weights the previous window by its overlap.
+    explanation: "\"100 per 10 seconds\" has five meanings: 200 for a fixed window, 100 for a sliding log, 104 for the sliding estimate, 109 for a token bucket, and 10 for a leaky bucket with burst 0. The Cloudflare free plan offers only the 10-second fixed window, which is exactly this weakness."
+    covers: [S06-C191, S06-C194]
+    tags: [measured]
+    taughtIn: seg-everything-that-is-not-speed
+
+  - id: s06-digest-q13
+    use: [check, practice]
+    segment: 5
+    type: spot-bug
+    prompt: An edge verifies a JWT, sets `X-User` from the verified claims, and the origin trusts `X-User`. The origin sits on a public IP address with no filtering. Where is the bug?
+    options:
+      - text: Nowhere, because the edge overwrites any `X-User` a client sends.
+        correct: false
+        misconception: S06-M35
+        feedback: That part is correct, and it only protects requests that go through the edge.
+      - text: The attacker reaches the origin address directly and sets `X-User` freely.
+        correct: true
+        feedback: Authentication at the edge is a filter on one path, never a property of the origin.
+      - text: The HS256 algorithm is too weak for an identity token.
+        correct: false
+        misconception: S06-M35
+        feedback: 'The algorithm is fine. The lab refuses `alg: none` for exactly that reason.'
+    explanation: 'The fix makes the origin unreachable except through the edge: mutual TLS, which Cloudflare calls Authenticated Origin Pulls, or a Tunnel with no inbound port at all. With mutual TLS on, the direct request gets a connection reset and the edge still works.'
+    covers: [S06-C207, S06-C210, S06-C213]
+    tags: []
+    taughtIn: seg-everything-that-is-not-speed
+
+  - id: s06-digest-q14
+    use: [check, practice]
+    segment: 6
+    type: mcq
+    prompt: What is a Cloudflare Worker?
+    options:
+      - text: A small container, booted for each request at the point of presence.
+        correct: false
+        misconception: S06-M37
+        feedback: A container costs about 35 MB and a cold start. An isolate costs about 3 MB and about 5 ms.
+      - text: A FastCGI process kept warm at the edge instead of at your origin.
+        correct: false
+        misconception: S06-M37
+        feedback: Close in spirit, and wrong in unit. A Worker needs no process of its own at all.
+      - text: A V8 isolate inside a runtime that is already resident in every point of presence.
+        correct: true
+        feedback: No fork, no exec and no virtual machine to boot. The runtime was already running.
+      - text: A long-lived virtual machine that the CDN schedules near your users.
+        correct: false
+        misconception: S06-M37
+        feedback: A virtual machine has to boot. The whole point of an isolate is that nothing boots.
+    explanation: The unit of isolation keeps getting cheaper. CGI forked a process for each request, FastCGI kept them warm, nginx ran one event loop, and a Worker runs an isolate. Each step amortises more of the setup, which is the one thread running from class 3 into this class.
+    covers: [S06-C236, S06-C237, S06-C238, S06-C240]
+    tags: []
+    taughtIn: the-unit-of-isolation-keeps-getting-cheaper
+
+  - id: s06-digest-q15
+    use: [check, exit, practice]
+    segment: 6
+    type: mcq
+    prompt: Which of these makes leaving a CDN after two years hardest?
+    options:
+      - text: The WAF rules, the rate limits, the token checks and the Workers that now live at the edge.
+        correct: true
+        feedback: A cache is swappable. A perimeter is a rebuild, because the rules are in the vendor's language.
+      - text: The objects already cached in 300 cities, which a new provider would have to fetch again.
+        correct: false
+        misconception: S06-M43
+        feedback: A cold cache warms up in hours. That is a cost, and it is not the hard part.
+      - text: The DNS records that point your domain at the edge.
+        correct: false
+        misconception: S06-M43
+        feedback: A DNS change takes minutes. Lock-in here is by architecture, not by configuration.
+    explanation: 'The bill has four lines: your TLS private keys, a single point of failure, the power to see and shape traffic, and lock-in by architecture. The honest mitigation is to keep the security rules expressible somewhere else, and to know which ones are not.'
+    covers: [S06-C246, S06-C251, S06-C252]
+    tags: []
+    taughtIn: seg-your-own-code-up-there-and-the-bill

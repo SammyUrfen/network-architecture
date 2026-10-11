@@ -1,0 +1,363 @@
+# The questions of the class 7 digest. Three for each of the five parts, in
+# page order. q01, q05, q08, q10 and q15 come back in the exit quiz, one from
+# each part.
+# The misconceptions come from docs/curriculum/session-07.md, which names 33
+# of them, S07-M01 to S07-M33. A distractor reuses a named misconception from
+# a neighbouring module when the module of its own part names none that fits
+# the wrong belief.
+# Segments: 1 the six stages, 2 the definition and the four questions, 3 the
+# three knobs and the breaker, 4 the player, 5 the whole system.
+items:
+  - id: s07-digest-q01
+    use: [check, exit, practice]
+    segment: 1
+    type: mcq
+    prompt: Which failure can leave half-finished work on the server?
+    options:
+      - text: A DNS lookup that timed out.
+        correct: false
+        misconception: S07-M01
+        feedback: The name never became an address, so the request never left your machine.
+      - text: A read timeout, after your request bytes went out.
+        correct: true
+        feedback: A server saw the request, so it may have written the row and lost the answer.
+      - text: A TCP connect timeout.
+        correct: false
+        misconception: S07-M01
+        feedback: Stage 2 ends before any server reads a byte of yours.
+      - text: A CORS preflight that the browser refused.
+        correct: false
+        misconception: S07-M12
+        feedback: The client refused, so the real request never left and no server saw it.
+    explanation: Stages 1 to 3 finish before a server reads a byte, so a failure there proves that no work started. From the request write onward a server can finish the work and lose the answer. The word in the log is the same, and only the stage name separates the two.
+    covers: [S07-C21, S07-C27, S07-C30, S07-C60]
+    tags: []
+    taughtIn: the-stage-decides
+
+  - id: s07-digest-q02
+    use: [check, practice]
+    segment: 1
+    type: mcq
+    prompt: A call returns 500. What does that tell you about your data?
+    options:
+      - text: Nothing. The server admits a failure and stays silent about side effects.
+        correct: true
+        feedback: A 5xx carries one fact only, and that fact is about the server.
+      - text: The server changed nothing, because it failed before it did the work.
+        correct: false
+        misconception: S07-M02
+        feedback: The failure can land after the row, the email or the charge.
+      - text: The same as a 400 would tell you, because both are errors.
+        correct: false
+        misconception: S07-M03
+        feedback: A 4xx blames your bytes. A 5xx blames the server.
+      - text: The server wrote the row and then failed on the way back.
+        correct: false
+        misconception: S07-M02
+        feedback: That is one of several stories, and the status code names none of them.
+    explanation: 'A 5xx says "I failed" and nothing more. The class of the code is a prior and not a rule, in both directions: the deck itself names two retryable 4xx codes, 408 and 429.'
+    covers: [S07-C37, S07-C38]
+    tags: []
+    taughtIn: seg-six-places-to-fail-one-question-for-every-status
+
+  - id: s07-digest-q03
+    use: [check, practice]
+    segment: 1
+    type: predict
+    prompt: A client sets a linger option of 1 and 0, then closes the socket. What does the peer get?
+    options:
+      - text: A FIN, so its read returns zero bytes and the stream ends cleanly.
+        correct: false
+        misconception: S07-M01
+        feedback: An abortive close replaces the orderly end, so the read fails instead.
+      - text: An RST, so its read fails with "connection reset by peer".
+        correct: true
+        feedback: Stage 6 dies, and the peer learns nothing about stage 5.
+      - text: Nothing at all, so it waits for its own timeout.
+        correct: false
+        misconception: S07-M01
+        feedback: The close still sends a packet. It sends a reset in place of a FIN.
+    explanation: The class 1 client of the deck sets that option on purpose. A zero linger time makes the kernel abort the connection, so the peer sees the response stage break with no news about the work stage. The printed pair on the slide cannot connect, because the slide prints port 8080 and the repo file uses 2026.
+    covers: [S07-C17, S07-C18]
+    tags: []
+    taughtIn: seg-six-places-to-fail-one-question-for-every-status
+
+  - id: s07-digest-q04
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: A client gets 401, fetches a new token, and sends the same call again. What is the second call?
+    options:
+      - text: A retry with a longer delay.
+        correct: false
+        misconception: S07-M05
+        feedback: A delay is not the test. The test asks whether the request changed.
+      - text: A retry, because the method and the path did not change.
+        correct: false
+        misconception: S07-M05
+        feedback: The headers that matter changed, and the Authorization header matters most.
+      - text: A different request, because the Authorization header changed.
+        correct: true
+        feedback: It answers information the server just gave you, so it needs its own code path.
+    explanation: A retry is the identical request again. A new token answers what the server said, so the second call is handling and not retrying. A retry counter around a refresh hides a credential that is simply wrong, and the client then loops against the token endpoint for nothing.
+    covers: [S07-C46, S07-C47, S07-C50]
+    tags: []
+    taughtIn: same-request-or-a-new-one
+
+  - id: s07-digest-q05
+    use: [check, exit, practice]
+    segment: 2
+    type: mcq
+    prompt: A payment POST times out while you read the response. What is the safe move?
+    options:
+      - text: Retry blindly, because a write that failed changed nothing.
+        correct: false
+        misconception: S07-M10
+        feedback: With no response you cannot tell whether the charge went through.
+      - text: Never retry a POST. Fail the payment and tell the user.
+        correct: false
+        misconception: S07-M10
+        feedback: The fix is not "do not retry". The fix makes attempt 2 recognisable.
+      - text: Retry with the same idempotency key, so the server can recognise attempt 2.
+        correct: true
+        feedback: The server checks the key and deduplicates, so one charge stands.
+      - text: Retry with a fresh idempotency key for the second attempt.
+        correct: false
+        misconception: S07-M10
+        feedback: A new key tells the server that this is new work, so it charges again.
+    explanation: GET, PUT and DELETE are idempotent, so a blind retry after a timeout is safe. POST is not, and a blind second attempt can double-execute. The client sends an idempotency key with both attempts, and the server matches the key and answers from its store.
+    covers: [S07-C79, S07-C80, S07-C81, S07-C84]
+    tags: []
+    taughtIn: seg-a-retry-is-the-same-request-and-four-questions-come-first
+
+  - id: s07-digest-q06
+    use: [check, practice]
+    segment: 2
+    type: mcq
+    prompt: Which failure deserves a retry, and not a stop?
+    options:
+      - text: A read timeout on a PUT.
+        correct: true
+        feedback: The cause clears on its own, and setting X twice still gives X.
+      - text: A 404 for a file on an on-demand asset.
+        correct: false
+        misconception: S07-M04
+        feedback: A resource that is not there now will not be there 200 ms from now.
+      - text: A geo-block that returns 403.
+        correct: false
+        misconception: S07-M04
+        feedback: The refusal is policy, and no retry changes geography.
+      - text: A CORS preflight that failed before the real request.
+        correct: false
+        misconception: S07-M12
+        feedback: The client already refused, so the real request never left.
+    explanation: 'Five answers mean stop: a 404, a failure before the handshake, a geo-block, a preflight refusal and an outright auth failure. Two families mean retry: the server admits fault, or the environment shifted under you. A read timeout sits in the first family, and PUT is idempotent, so the retry is safe as well as useful.'
+    covers: [S07-C58, S07-C62, S07-C63, S07-C69, S07-C76]
+    tags: []
+    taughtIn: seg-a-retry-is-the-same-request-and-four-questions-come-first
+
+  - id: s07-digest-q07
+    use: [check, practice]
+    segment: 3
+    type: numeric
+    prompt: The live loop takes 5 attempts, a base of 0.2 s and a cap of 8.0 s. What is the longest it can sleep in total, in seconds?
+    answer: { value: 3.0, tolerance: 0, unit: s }
+    distractors:
+      - value: 8.0
+        misconception: S07-M18
+        feedback: 8.0 s is the cap, and the cap never binds here. The ceiling first passes 8.0 at attempt 6.
+      - value: 6.2
+        misconception: S07-M18
+        feedback: 6.2 s adds the attempt 4 ceiling of 3.2 s. On the last attempt the loop raises instead of sleeping.
+    explanation: 'The loop sleeps after attempts 0, 1, 2 and 3, with ceilings of 0.2, 0.4, 0.8 and 1.6 s, and it raises on attempt 4. So the sleep ceiling is 3.0 s, and the full-jitter mean is half of it, 1.5 s. Our arithmetic, recomputed by hand and in Python.'
+    covers: [S07-C92, S07-C93, S07-C94]
+    tags: []
+    taughtIn: three-knobs-three-jobs
+
+  - id: s07-digest-q08
+    use: [check, exit, practice]
+    segment: 3
+    type: mcq
+    prompt: Ten thousand clients back off exponentially with no jitter. What happens when the upstream recovers?
+    options:
+      - text: They spread out, because each delay is longer than the last.
+        correct: false
+        misconception: S07-M15
+        feedback: A longer delay is still the same delay for every client.
+      - text: They all retry on the same tick.
+        correct: true
+        feedback: The same formula with the same inputs gives the same number.
+      - text: They spread out, because each client started at a different moment.
+        correct: false
+        misconception: S07-M15
+        feedback: They all started failing at the same moment, which is why the schedules line up.
+      - text: The cap of 8.0 s staggers them.
+        correct: false
+        misconception: S07-M18
+        feedback: A cap clamps a delay. It never varies one.
+    explanation: Exponential growth spaces the attempts of one client out. It does nothing across clients. Full jitter is a uniform draw between zero and the delay, and it is the only coordination a client gets for free. A delay of plus or minus 10% keeps the herd inside a narrow window around the same instant.
+    covers: [S07-C90, S07-C98, S07-C99, S07-C100]
+    tags: []
+    taughtIn: three-knobs-three-jobs
+
+  - id: s07-digest-q09
+    use: [check, practice]
+    segment: 3
+    type: mcq
+    prompt: 'A 503 arrives with `Retry-After: 30`. Your own curve says 0.8 s. How long do you wait?'
+    options:
+      - text: 0.8 s, because your curve is yours.
+        correct: false
+        misconception: S07-M17
+        feedback: The server knows its own load better than your curve does.
+      - text: 30.8 s, your curve on top of the header.
+        correct: false
+        misconception: S07-M17
+        feedback: Do not add your own delay on top of a number the server named.
+      - text: 30 s, the number the server named.
+        correct: true
+        feedback: Trust the number over the curve, in both directions.
+    explanation: A 429 is a rate limit and the server is fine. A 503 often carries the header during maintenance or load shedding. A 408 means the server gave up waiting for your bytes, and it rejected nothing about the request. When a server names the wait, its number wins.
+    covers: [S07-C105, S07-C106, S07-C107, S07-C112]
+    tags: []
+    taughtIn: seg-three-knobs-then-one-level-up
+
+  - id: s07-digest-q10
+    use: [check, exit, practice]
+    segment: 4
+    type: mcq
+    prompt: A player asks for the newest segment of a live stream and gets 404. What is right?
+    options:
+      - text: Stop, because a 404 means the resource is gone.
+        correct: false
+        misconception: S07-M20
+        feedback: At the live edge the origin may still be encoding that segment.
+      - text: Full exponential backoff with 5 attempts, as an API client would use.
+        correct: false
+        misconception: S07-M04
+        feedback: The budget here is human. A viewer takes seconds, not a correct curve.
+      - text: 2 or 3 attempts with a small fixed delay, for live-edge segments only.
+        correct: true
+        feedback: The segment exists a few hundred milliseconds later.
+    explanation: 'The live-edge 404 is a race and not a verdict. The origin may still encode the segment, or the CDN may not have finished propagating it. The exception is narrow: live-edge segment requests and nowhere else. An on-demand 404 still means give up.'
+    covers: [S07-C139, S07-C140, S07-C142, S07-C143, S07-C144]
+    tags: []
+    taughtIn: seg-a-video-player-where-the-answer-is-often-a-different-source
+
+  - id: s07-digest-q11
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: Your player gets 419 from its own backend. What do you do?
+    options:
+      - text: Retry with backoff, because no RFC says otherwise.
+        correct: false
+        misconception: S07-M23
+        feedback: The same expired token gives the same answer, however long you wait.
+      - text: Handle it like auth, with a token refresh.
+        correct: true
+        feedback: A 419 marks token or session expiry, so a new credential is the fix.
+      - text: Stop, because the registry holds no entry for that code.
+        correct: false
+        misconception: S07-M23
+        feedback: A missing registry entry is a documentation gap, not a verdict.
+    explanation: 'Players meet 419, 474 and 475, which no RFC defines. The lesson is not the numbers. Your own codes owe a caller the same two facts that an RFC code gives: what the condition means, and whether a retry can change it.'
+    covers: [S07-C145, S07-C146, S07-C148, S07-C149]
+    tags: []
+    taughtIn: seg-a-video-player-where-the-answer-is-often-a-different-source
+
+  - id: s07-digest-q12
+    use: [check, practice]
+    segment: 4
+    type: mcq
+    prompt: A device cannot decode the codec of the rendition that is playing. What does the player do?
+    options:
+      - text: Retry the segment request with backoff.
+        correct: false
+        misconception: S07-M22
+        feedback: The device cannot decode those bytes, and a second copy of them changes nothing.
+      - text: Switch to a different CDN for the same rendition.
+        correct: false
+        misconception: S07-M22
+        feedback: Another host sends the same codec. The source is not the problem.
+      - text: Pick another rendition from the manifest.
+        correct: true
+        feedback: A fallback changes the resource, so the device gets bytes it can decode.
+    explanation: 'Some player failures are not network failures at all. A denied DRM key, an unsupported codec and a broken device media state never clear on their own, so each one needs a fallback: a lower security level or another key system, another rendition, or a rebuilt pipeline.'
+    covers: [S07-C130, S07-C132, S07-C151, S07-C154]
+    tags: []
+    taughtIn: switch-instead-of-retry
+
+  - id: s07-digest-q13
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: Your origin is unreachable and your CDN keeps answering with an old copy. What made that legal?
+    options:
+      - text: A retry inside the CDN, which hid the dead origin.
+        correct: false
+        misconception: S07-M26
+        feedback: No attempt succeeded. The cache changed the answer, not the attempt.
+      - text: The `stale-if-error` directive of RFC 5861.
+        correct: true
+        feedback: The cache serves its last good copy when it cannot reach the origin.
+      - text: A circuit breaker at the edge.
+        correct: false
+        misconception: S07-M26
+        feedback: A breaker stops calls. It does not produce a body to send back.
+    explanation: A system that can answer with slightly-wrong data survives outages that a perfectly-fresh-or-nothing system does not. The cache decides to serve something known-stale rather than nothing, and that generalization reaches far past caches.
+    covers: [S07-C175, S07-C176, S07-C177, S07-C178]
+    tags: []
+    taughtIn: seg-what-survives-is-the-system-not-the-request
+
+  - id: s07-digest-q14
+    use: [check, practice]
+    segment: 5
+    type: mcq
+    prompt: Which moment of an incident is the most dangerous?
+    options:
+      - text: The moment the dependency fails.
+        correct: false
+        misconception: S07-M27
+        feedback: At the failure the load drains away.
+      - text: The moment the first alert fires.
+        correct: false
+        misconception: S07-M27
+        feedback: An alert costs a pager, not a second outage.
+      - text: The moment the dependency comes back.
+        correct: true
+        feedback: The clients are synchronized and the server is cold.
+      - text: The moment the fix deploys.
+        correct: false
+        misconception: S07-M27
+        feedback: The deploy is planned. The traffic spike that follows it is not.
+    explanation: Every client that was retrying, backing off or waiting on a cooldown tries again at once, because they all started failing at the same moment. The recovering service runs at 1% of capacity while it warms caches, and it gets close to 100% of normal traffic in its first reachable second. The three mitigations are jitter, staggered half-open probes and server slow start.
+    covers: [S07-C188, S07-C189, S07-C190, S07-C191, S07-C192, S07-C194]
+    tags: []
+    taughtIn: seg-what-survives-is-the-system-not-the-request
+
+  - id: s07-digest-q15
+    use: [check, exit, practice]
+    segment: 5
+    type: mcq
+    prompt: A breaker is OPEN on your only payment provider, which has returned 500 for ten minutes. What does the last step of the chain ask for?
+    options:
+      - text: A longer backoff and a higher attempt cap.
+        correct: false
+        misconception: S07-M31
+        feedback: Step 3 already ran and found no answer. The chain does not go back up.
+      - text: An error page, because the engineering failed.
+        correct: false
+        misconception: S07-M32
+        feedback: A worse answer beats no answer, and the class calls it the thing that survives.
+      - text: 'An answer that is worse than the ideal: a second provider, a stale copy, or a queued payment.'
+        correct: true
+        feedback: Anything but nothing.
+      - text: Quiet calls to the provider in the background, to find out when it returns.
+        correct: false
+        misconception: S07-M19
+        feedback: In OPEN no call leaves. Only the half-open probe goes out.
+    explanation: 'The chain runs in one order: classify, structural stop, transient retry, dependency breaker, no answer left. Each step runs only when the step above found no answer. Step 5 exists because steps 1 to 4 all assume a healthy path somewhere, and when there is none the only choice left is the quality of the answer.'
+    covers: [S07-C180, S07-C185, S07-C201, S07-C202, S07-C221]
+    tags: []
+    taughtIn: answer-with-something-worse

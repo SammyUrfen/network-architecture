@@ -1,0 +1,127 @@
+# The review cards of the class 5 digest, from docs/curriculum/session-05.md.
+# 30 cards, in page order: c01 to c05 the connection per file, c06 to c11 the
+# validators and the body, c12 to c15 the specification, c16 to c19 the bill,
+# c20 to c24 the frames, c25 to c30 the transport.
+# Each card asks for one detail with one short exact answer. No card asks
+# which slide says what, and none gives a step of the graded work.
+items:
+  - id: s05-digest-c01
+    front: A page holds N objects and the client speaks HTTP/1.0. What does the page cost, and what does more bandwidth buy?
+    back: 2 times N round trips, one to open the connection and one to ask and answer. Bandwidth buys none of them back. 24 objects at 200 ms RTT cost 9.6 s.
+    covers: [S05-C30, S05-C32]
+  - id: s05-digest-c02
+    front: A client sends a second request on the same HTTP/1.0 socket. What does the read return?
+    back: Empty bytes. The server closed the connection after the first answer, so this is normal and not an error.
+    covers: [S05-C31]
+  - id: s05-digest-c03
+    front: Which RFC made the persistent connection the default, in which month, and how does a client opt out?
+    back: 'RFC 2068, January 1997. `Connection: close` opts out. The flipped default gave the fast path to every implementation that did nothing at all.'
+    covers: [S05-C44, S05-C47]
+  - id: s05-digest-c04
+    front: What does an HTTP/1.1 server answer to a request with no Host header, and which limit did that one field remove?
+    back: 400 Bad Request. The field removed one website per IP address, in January 1997.
+    covers: [S05-C49, S05-C34, S05-C36]
+  - id: s05-digest-c05
+    front: After Host, where does the same move of putting the name inside the message repeat?
+    back: SNI inside the TLS handshake, then `:authority` in HTTP/2, then topics, routing keys and Ingress host rules.
+    covers: [S05-C51]
+  - id: s05-digest-c06
+    front: Name the three ways that a timestamp fails as a validator of a body.
+    back: It has no sub-second field, clocks drift, and a modification time is not an identity.
+    covers: [S05-C40]
+  - id: s05-digest-c07
+    front: What does server11 build an ETag from, and what does a matching If-None-Match save on the wire?
+    back: The first 16 hex digits of a SHA-256 of the body. A 202,000-byte answer becomes a 304 of 256 bytes, headers only.
+    covers: [S05-C52, S05-C53, S05-C54]
+  - id: s05-digest-c08
+    front: What does a leading `W/` on an ETag promise, and which kind of request may not use one?
+    back: An equivalent answer, not the same bytes. A Range request needs a strong validator.
+    covers: [S05-C55]
+  - id: s05-digest-c09
+    front: What does Vary tell a cache, and what do Accept-Encoding, User-Agent and `*` each do to its keys?
+    back: It names the fields that pick between several answers for one URL. Accept-Encoding is correct and cheap, User-Agent makes millions of keys, and `*` turns caching off.
+    covers: [S05-C59, S05-C60]
+  - id: s05-digest-c10
+    front: 'A client sends `Range: bytes=100-199` for a file of 202,000 bytes. Give the status, the Content-Range and the Content-Length.'
+    back: 206, with Content-Range bytes 100-199/202000, and a Content-Length of 100, because both ends of a range count.
+    covers: [S05-C61]
+  - id: s05-digest-c11
+    front: In a chunked body, what comes in front of each piece and in which base, and what ends the body?
+    back: The size of the piece, in hexadecimal. A line with 0 on it ends the body. The style.css body opened with 37, which is 55 bytes.
+    covers: [S05-C66, S05-C67]
+  - id: s05-digest-c12
+    front: A message carries Content-Length and Transfer-Encoding together. What did RFC 2616 tell a parser to do, and what does RFC 9112 say instead?
+    back: RFC 2616 section 4.4 said ignore Content-Length and recover. RFC 9112 says a server MAY reject the request or use Transfer-Encoding alone, and either way it MUST close the connection.
+    covers: [S05-C91, S05-C92]
+  - id: s05-digest-c13
+    front: Which pair of boxes turns the double length field into request smuggling, and what does the attacker gain?
+    back: A CDN that trusts Content-Length in front of an origin that trusts chunked. The origin runs a request that the CDN never saw, and a spare answer waits on the connection for the next client.
+    covers: [S05-C96, S05-C97]
+  - id: s05-digest-c14
+    front: Browsers turned a redirected POST into a GET. What did RFC 2616 do about it, and what does that teach?
+    back: It renamed 302 to Found, wrote the habit down, and added 307 for the old meaning. It is easier to add a number than to fix a billion deployed clients.
+    covers: [S05-C88, S05-C89, S05-C90]
+  - id: s05-digest-c15
+    front: Which two RFCs hold the semantics and the caching of HTTP today, and what do RFC 9112, 9113 and 9114 hold?
+    back: RFC 9110 holds the semantics and RFC 9111 the caching, for all three versions. The other three only say how to write version 1.1, 2 and 3 on the wire.
+    covers: [S05-C108, S05-C109]
+  - id: s05-digest-c16
+    front: What names the request that an HTTP/1.1 answer belongs to?
+    back: Nothing in the answer does. The order is the only identifier, so the order is mandatory and the slowest answer paces everything behind it.
+    covers: [S05-C113, S05-C114]
+  - id: s05-digest-c17
+    front: How many bytes of headers does one realistic request carry, and what share of 80 such requests repeats byte for byte?
+    back: 805 bytes. Over 80 requests, 62,720 of 64,320 bytes repeat, which is 97.5%, and that costs 0.51 s on a 1 Mbit uplink.
+    covers: [S05-C116, S05-C117, S05-C118]
+  - id: s05-digest-c18
+    front: Which two TCP rules meet when a server writes the head and then the body on a connection that stays open?
+    back: Nagle holds the small second write until the first one is acknowledged, and the delayed ACK waits up to 40 ms. One write plus TCP_NODELAY removes the stall.
+    covers: [S05-C120, S05-C121, S05-C122, S05-C124]
+  - id: s05-digest-c19
+    front: How many connections to one server did RFC 2616 allow, what did browsers ship, and what did RFC 7230 do with the rule?
+    back: RFC 2616 section 8.1.4 said no more than 2. Browsers shipped 6 per origin by about 2008, and domain sharding made the real figure 18. RFC 7230 deleted the sentence in 2014.
+    covers: [S05-C78, S05-C81, S05-C82]
+  - id: s05-digest-c20
+    front: Give the five fields of the 9-byte HTTP/2 frame header with their widths, and say what the Length counts.
+    back: Length 24 bits, Type 8, Flags 8, one reserved bit, Stream Identifier 31 bits. The Length counts the payload only, never the 9 header bytes.
+    covers: [S05-C142]
+  - id: s05-digest-c21
+    front: Which stream identifiers does an HTTP/2 client use, which does a server use, and what is stream 0?
+    back: Clients use odd numbers and servers use even ones, so nobody has to coordinate. Stream 0 is the connection itself.
+    covers: [S05-C146]
+  - id: s05-digest-c22
+    front: What do the HPACK static and dynamic tables each hold, and what did one header set measure as text and as HPACK?
+    back: The static table holds 61 fixed entries, the same everywhere, so `:method GET` is index 2 and one byte. The dynamic table starts at index 62 and holds what this connection sent before. One header set was 174 bytes of text, then 79 bytes of HPACK, then 6.
+    covers: [S05-C154, S05-C155, S05-C158]
+  - id: s05-digest-c23
+    front: What does a CRIME attacker read, and which two properties of HPACK stop the same attack?
+    back: Only the size of the compressed output, which falls on a right guess. HPACK never adapts its Huffman code, and its dynamic table matches whole fields, so a right guess at a prefix wins nothing.
+    covers: [S05-C160, S05-C161]
+  - id: s05-digest-c24
+    front: One TCP packet is lost under HTTP/2. Which streams wait, and what is the kernel holding back?
+    back: Every active stream on that connection waits. The later bytes have already arrived, and in-order delivery is the promise that stops the kernel from handing them over.
+    covers: [S05-C176, S05-C177, S05-C178]
+  - id: s05-digest-c25
+    front: Why does QUIC run on UDP?
+    back: Every NAT, firewall, CGNAT and proxy drops a transport that it does not know, and SCTP has existed since 2000 without crossing the internet. UDP is not a good foundation, it is a hole that already exists.
+    covers: [S05-C182, S05-C183]
+  - id: s05-digest-c26
+    front: Give the round trips to the first response byte for TLS 1.2, TLS 1.3, cold QUIC and 0-RTT.
+    back: 4, 3, 2 and 1. QUIC runs one handshake, because the TLS ClientHello rides inside a QUIC CRYPTO frame, and there is no unencrypted QUIC.
+    covers: [S05-C187, S05-C188, S05-C189, S05-C190]
+  - id: s05-digest-c27
+    front: Which requests may ride in a QUIC 0-RTT first flight, and which risk sets that limit?
+    back: Idempotent requests only. An attacker can replay early data, and a single-use ticket cache covers one server of a farm. A GET is fine, a payment POST is not, and the origin can refuse with 425 Too Early.
+    covers: [S05-C194, S05-C195, S05-C197]
+  - id: s05-digest-c28
+    front: What kills a TCP connection when a phone moves from Wi-Fi to LTE, and what keeps a QUIC connection alive?
+    back: A TCP connection is its four-tuple, so a new address ends it. A connection ID names the QUIC connection instead, and endpoints rotate a pool of IDs so that no observer can link them.
+    covers: [S05-C203, S05-C205, S05-C207]
+  - id: s05-digest-c29
+    front: Why does HTTP/3 need QPACK instead of HPACK, and which two streams does QPACK add?
+    back: HPACK assumes one total order across all streams, so a header block could wait for a table insert that has not arrived. QPACK puts the inserts on an encoder stream, type 0x02, and the acknowledgements on a decoder stream, 0x03, and the encoder names only entries that it knows are safe.
+    covers: [S05-C209, S05-C210, S05-C211, S05-C212]
+  - id: s05-digest-c30
+    front: Name the three ways that a client learns a site speaks HTTP/3, and what each one costs.
+    back: ALPN (RFC 7301, 2014) picks h3 inside the TLS handshake, free but only after a handshake. Alt-Svc (RFC 7838, 2016) is a header the browser remembers, so a cold cache first pays one TCP and TLS connection. The HTTPS DNS record, type 65 (RFC 9460, 2023), carries the list in the DNS answer, so the first connection can be QUIC.
+    covers: [S05-C216, S05-C217, S05-C218]
